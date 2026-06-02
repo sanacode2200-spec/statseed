@@ -20,11 +20,43 @@
 ```
 Frontend   Next.js 14 (App Router) + TypeScript + Tailwind CSS
 Backend    FastAPI (Python 3.11+)
-計算       scipy · statsmodels · pandas · numpy
-グラフ     Plotly (画面表示・インタラクティブ) + matplotlib / seaborn (論文用出力)
+計算       標準ライブラリ優先 + scipy · statsmodels · pandas · numpy（必要時のみ）
+グラフ     Plotly（画面表示） + matplotlib / seaborn（論文用出力・必要時のみ）
 DB         PostgreSQL (Supabase)
 認証       Supabase Auth
 インフラ   Vercel (Frontend) + Railway (Backend)
+```
+
+### デプロイ高速化方針
+
+初期デプロイと本番APIの体感速度を優先する。重い依存は最初から読み込まない。
+
+| 区分 | 方針 |
+|------|------|
+| ベースAPI | `fastapi` / `uvicorn` / `pydantic` のみで起動 |
+| 解析系依存 | `numpy` / `scipy` / `pandas` / `statsmodels` は `analysis` extra |
+| グラフ出力依存 | `matplotlib` / `seaborn` は `graph` extra |
+| 起動時import | 重いライブラリのトップレベルimportは禁止 |
+| 本番Docs | Swagger / ReDoc / OpenAPI はデフォルト無効 |
+
+環境変数:
+
+```bash
+STATSEED_ENABLE_DOCS=1       # /docs, /redoc, /openapi.json を有効化
+STATSEED_ENABLE_SCIPY=1      # scipy が必要な正規性検定などを有効化
+```
+
+インストール例:
+
+```bash
+# 軽量なAPIサーバーのみ
+pip install .
+
+# 統計解析機能まで有効化
+pip install ".[analysis]"
+
+# 論文用グラフ出力まで有効化
+pip install ".[analysis,graph]"
 ```
 
 ---
@@ -175,7 +207,9 @@ UIはプリセット選択 + カスタム入力の2段構え。
 
 ## 計算エンジン方針（計算ミス絶対防止）
 
-- **自前実装禁止** — scipy / statsmodels の関数を直接使う
+- **本格的な推測統計は自前実装禁止** — t検定・ANOVA・回帰・多重比較などは scipy / statsmodels の関数を直接使う
+- **軽量な記述統計は標準ライブラリ可** — 起動速度のため、平均・SD・中央値・四分位数などは依存追加なしで実装してよい
+- **重い依存は遅延import** — scipy / pandas / matplotlib などは該当処理の内部で必要時のみimportする
 - **入力バリデーション** — Pydanticで型・範囲を厳密にチェック
 - **テスト必須** — 既知の答えがある問題で必ず検証テストを書く
 - **結果の解釈文を自動生成** — 数値だけでなく「この結果は〜を意味します」を日本語で添える
@@ -250,3 +284,4 @@ GET  /api/guide/suggest        # 検定選択ガイド
 3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証
 4. **型安全** — TypeScript / Pydantic を徹底する
 5. **コメディカル視点** — 医療統計初学者が迷わない設計を常に意識する
+6. **高速起動を維持** — 本番ランタイムで不要な依存・不要なimport・不要なAPIドキュメント生成を避ける
