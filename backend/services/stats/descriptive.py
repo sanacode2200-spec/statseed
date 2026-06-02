@@ -1,35 +1,65 @@
 import math
-
-import numpy as np
-from scipy import stats
+import os
+import statistics
 
 from backend.schemas.descriptive import DescriptiveRequest, DescriptiveResponse
 
+T_CRITICAL_975 = {
+    1: 12.706,
+    2: 4.303,
+    3: 3.182,
+    4: 2.776,
+    5: 2.571,
+    6: 2.447,
+    7: 2.365,
+    8: 2.306,
+    9: 2.262,
+    10: 2.228,
+    11: 2.201,
+    12: 2.179,
+    13: 2.160,
+    14: 2.145,
+    15: 2.131,
+    16: 2.120,
+    17: 2.110,
+    18: 2.101,
+    19: 2.093,
+    20: 2.086,
+    21: 2.080,
+    22: 2.074,
+    23: 2.069,
+    24: 2.064,
+    25: 2.060,
+    26: 2.056,
+    27: 2.052,
+    28: 2.048,
+    29: 2.045,
+    30: 2.042,
+}
+
 
 def summarize_continuous(request: DescriptiveRequest) -> DescriptiveResponse:
-    cleaned = np.array([value for value in request.values if value is not None], dtype=float)
-    n = int(cleaned.size)
+    cleaned = sorted(float(value) for value in request.values if value is not None)
+    n = len(cleaned)
     missing = len(request.values) - n
 
-    mean = float(np.mean(cleaned)) if n > 0 else None
-    sd = float(np.std(cleaned, ddof=1)) if n >= 2 else None
-    median = float(np.median(cleaned))
-    q1 = float(np.percentile(cleaned, 25, method="linear"))
-    q3 = float(np.percentile(cleaned, 75, method="linear"))
-    minimum = float(np.min(cleaned))
-    maximum = float(np.max(cleaned))
+    mean = statistics.fmean(cleaned) if n > 0 else None
+    sd = statistics.stdev(cleaned) if n >= 2 else None
+    median = _percentile_linear(cleaned, 50)
+    q1 = _percentile_linear(cleaned, 25)
+    q3 = _percentile_linear(cleaned, 75)
+    minimum = cleaned[0]
+    maximum = cleaned[-1]
 
     ci95_low: float | None = None
     ci95_high: float | None = None
     if n >= 2 and sd is not None:
         sem = sd / math.sqrt(n)
-        margin = float(stats.t.ppf(0.975, df=n - 1) * sem)
+        margin = _t_critical_975(n - 1) * sem
         ci95_low = mean - margin if mean is not None else None
         ci95_high = mean + margin if mean is not None else None
 
-    shapiro_wilk_p: float | None = None
-    if 3 <= n <= 5000:
-        shapiro_wilk_p = float(stats.shapiro(cleaned).pvalue)
+    shapiro_wilk_p = _optional_shapiro_wilk_p(cleaned)
 
     interpretation = _build_interpretation(
         variable_name=request.variable_name,
@@ -60,6 +90,44 @@ def summarize_continuous(request: DescriptiveRequest) -> DescriptiveResponse:
         shapiro_wilk_p=shapiro_wilk_p,
         interpretation=interpretation,
     )
+
+
+def _percentile_linear(values: list[float], percentile: float) -> float:
+    if len(values) == 1:
+        return values[0]
+
+    rank = (len(values) - 1) * percentile / 100
+    lower = math.floor(rank)
+    upper = math.ceil(rank)
+    if lower == upper:
+        return values[lower]
+
+    weight = rank - lower
+    return values[lower] * (1 - weight) + values[upper] * weight
+
+
+def _t_critical_975(df: int) -> float:
+    if df <= 30:
+        return T_CRITICAL_975[df]
+    if df <= 60:
+        return 2.000
+    if df <= 120:
+        return 1.980
+    return 1.960
+
+
+def _optional_shapiro_wilk_p(values: list[float]) -> float | None:
+    if not (3 <= len(values) <= 5000):
+        return None
+    if os.getenv("STATSEED_ENABLE_SCIPY") != "1":
+        return None
+
+    try:
+        from scipy import stats
+    except ImportError:
+        return None
+
+    return float(stats.shapiro(values).pvalue)
 
 
 def _build_interpretation(

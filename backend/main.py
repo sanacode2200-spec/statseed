@@ -1,11 +1,18 @@
+import os
+
 from fastapi import FastAPI
 
 from backend.routers import descriptive
+
+enable_docs = os.getenv("STATSEED_ENABLE_DOCS") == "1"
 
 app = FastAPI(
     title="Statseed API",
     description="コメディカル向け医療統計WebアプリのAPI",
     version="0.1.0",
+    docs_url="/docs" if enable_docs else None,
+    redoc_url="/redoc" if enable_docs else None,
+    openapi_url="/openapi.json" if enable_docs else None,
 )
 
 app.include_router(descriptive.router, prefix="/api")
