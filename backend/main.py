@@ -2,7 +2,7 @@ import os
 
 from fastapi import FastAPI
 
-from backend.routers import descriptive
+from backend.routers import descriptive, graph, guide, test, upload
 
 enable_docs = os.getenv("STATSEED_ENABLE_DOCS") == "1"
 
@@ -16,6 +16,10 @@ app = FastAPI(
 )
 
 app.include_router(descriptive.router, prefix="/api")
+app.include_router(test.router, prefix="/api")
+app.include_router(graph.router, prefix="/api")
+app.include_router(upload.router, prefix="/api")
+app.include_router(guide.router, prefix="/api")
 
 
 @app.get("/health")

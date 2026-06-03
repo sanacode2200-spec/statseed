@@ -11,7 +11,7 @@ OKABE_ITO = {
 
 STATSEED_THEME = {
     "font.family": "sans-serif",
-    "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"],
+    "font.sans-serif": ["Arial", "Noto Sans CJK JP", "Noto Sans JP", "DejaVu Sans"],
     "font.size": 9,
     "axes.labelsize": 9,
     "axes.titlesize": 10,

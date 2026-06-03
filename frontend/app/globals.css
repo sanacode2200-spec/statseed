@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ss-blue:      #0072B2;
+  --ss-orange:    #E69F00;
+  --ss-green:     #009E73;
+  --ss-pink:      #CC79A7;
+  --ss-sky:       #56B4E9;
+  --ss-vermilion: #D55E00;
+  --ss-charcoal:  #373737;
+}
+
+body {
+  color: var(--ss-charcoal);
+  font-family: Arial, Helvetica, "Noto Sans JP", sans-serif;
+}
