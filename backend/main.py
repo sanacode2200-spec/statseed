@@ -1,10 +1,19 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers import descriptive, graph, guide, test, upload
 
 enable_docs = os.getenv("STATSEED_ENABLE_DOCS") == "1"
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "STATSEED_CORS_ORIGINS",
+        "http://localhost:3000,http://127.0.0.1:3000",
+    ).split(",")
+    if origin.strip()
+]
 
 app = FastAPI(
     title="Statseed API",
@@ -13,6 +22,14 @@ app = FastAPI(
     docs_url="/docs" if enable_docs else None,
     redoc_url="/redoc" if enable_docs else None,
     openapi_url="/openapi.json" if enable_docs else None,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(descriptive.router, prefix="/api")

@@ -104,18 +104,19 @@ def _histogram_fig(req: HistogramRequest, plt):  # type: ignore[no-untyped-def]
     if req.show_normal_curve and n >= 4:
         mean = statistics.fmean(req.values)
         sd = statistics.stdev(req.values)
-        bin_width = edges[1] - edges[0]
-        x_min = edges[0] - bin_width
-        x_max = edges[-1] + bin_width
-        xs = np.linspace(x_min, x_max, 200)
-        ys = (
-            n
-            * bin_width
-            * np.exp(-0.5 * ((xs - mean) / sd) ** 2)
-            / (sd * math.sqrt(2 * math.pi))
-        )
-        ax.plot(xs, ys, color=_COLORS[1], linewidth=1.5, linestyle="--", label="正規分布曲線")
-        ax.legend()
+        if sd > 0:
+            bin_width = edges[1] - edges[0]
+            x_min = edges[0] - bin_width
+            x_max = edges[-1] + bin_width
+            xs = np.linspace(x_min, x_max, 200)
+            ys = (
+                n
+                * bin_width
+                * np.exp(-0.5 * ((xs - mean) / sd) ** 2)
+                / (sd * math.sqrt(2 * math.pi))
+            )
+            ax.plot(xs, ys, color=_COLORS[1], linewidth=1.5, linestyle="--", label="正規分布曲線")
+            ax.legend()
 
     ax.set_xlabel(req.x_label or "")
     ax.set_ylabel("度数")

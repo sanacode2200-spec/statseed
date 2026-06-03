@@ -105,23 +105,24 @@ def histogram_figure(request: HistogramRequest) -> PlotlyFigure:
     if request.show_normal_curve and n >= 4:
         mean = statistics.fmean(request.values)
         sd = statistics.stdev(request.values)
-        min_v = min(request.values)
-        max_v = max(request.values)
-        span = max_v - min_v or 1.0
-        x_curve = [min_v - 0.1 * span + span * 1.2 * i / 100 for i in range(101)]
-        bin_width = span * 1.2 / bins
-        y_curve = [
-            n * bin_width * math.exp(-0.5 * ((x - mean) / sd) ** 2) / (sd * math.sqrt(2 * math.pi))
-            for x in x_curve
-        ]
-        traces.append({
-            "type": "scatter",
-            "x": x_curve,
-            "y": y_curve,
-            "mode": "lines",
-            "name": "正規分布曲線",
-            "line": {"color": OKABE_ITO[1], "width": 2, "dash": "dot"},
-        })
+        if sd > 0:
+            min_v = min(request.values)
+            max_v = max(request.values)
+            span = max_v - min_v or 1.0
+            x_curve = [min_v - 0.1 * span + span * 1.2 * i / 100 for i in range(101)]
+            bin_width = span * 1.2 / bins
+            y_curve = [
+                n * bin_width * math.exp(-0.5 * ((x - mean) / sd) ** 2) / (sd * math.sqrt(2 * math.pi))
+                for x in x_curve
+            ]
+            traces.append({
+                "type": "scatter",
+                "x": x_curve,
+                "y": y_curve,
+                "mode": "lines",
+                "name": "正規分布曲線",
+                "line": {"color": OKABE_ITO[1], "width": 2, "dash": "dot"},
+            })
 
     layout = _layout(
         title={"text": request.title, "font": {"size": 13}} if request.title else {},
