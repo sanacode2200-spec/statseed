@@ -11,6 +11,12 @@ import { PlotlyChart } from "@/components/charts/PlotlyChart";
 type ChartType = "boxplot" | "histogram" | "scatter";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
 
+const inputCls =
+  "rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[12px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
+
+const textareaCls =
+  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[12px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
+
 function parseNums(text: string): number[] {
   return text
     .split(/[\n,\t\s]+/)
@@ -187,19 +193,29 @@ export default function GraphPage() {
     { value: "scatter", label: "散布図" },
   ];
 
+  const toggleBtn = (active: boolean) =>
+    `px-3 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+      active
+        ? "text-white border-transparent"
+        : "text-gray-500 dark:text-neutral-500 border-gray-200 dark:border-neutral-800 bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-900"
+    }`;
+
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-800 mb-1">グラフ作成</h1>
-      <p className="text-sm text-gray-500 mb-6">
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+        解析
+      </div>
+      <h1 className="text-[18px] font-bold text-gray-900 dark:text-white mb-1">グラフ作成</h1>
+      <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-5">
         グラフを作成し、PNG・SVG・PDFで論文品質出力できます。
       </p>
 
-      <Card className="mb-6">
-        <form onSubmit={handleDraw} className="space-y-5">
+      <Card className="mb-5">
+        <form onSubmit={handleDraw} className="space-y-4">
           {/* グラフ種別 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">グラフの種類</label>
-            <div className="flex gap-2">
+            <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">グラフの種類</label>
+            <div className="flex gap-1.5">
               {CHART_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -209,11 +225,7 @@ export default function GraphPage() {
                     setFigure(null);
                     setError(null);
                   }}
-                  className={`px-4 py-1.5 rounded-md text-sm font-medium border transition-colors ${
-                    chartType === opt.value
-                      ? "text-white border-transparent"
-                      : "text-gray-600 border-gray-300 bg-white hover:bg-gray-50"
-                  }`}
+                  className={toggleBtn(chartType === opt.value)}
                   style={chartType === opt.value ? { backgroundColor: "#0072B2" } : undefined}
                 >
                   {opt.label}
@@ -224,12 +236,12 @@ export default function GraphPage() {
 
           {/* タイトル */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">タイトル（任意）</label>
+            <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">タイトル（任意）</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`${inputCls} w-full`}
               placeholder="例：介入前後の握力比較"
             />
           </div>
@@ -238,12 +250,12 @@ export default function GraphPage() {
           {chartType === "boxplot" && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Y軸ラベル</label>
+                <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
                 <input
                   type="text"
                   value={bpYLabel}
                   onChange={(e) => setBpYLabel(e.target.value)}
-                  className="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`${inputCls} w-48`}
                   placeholder="例：握力 (kg)"
                 />
               </div>
@@ -255,13 +267,13 @@ export default function GraphPage() {
                         type="text"
                         value={bpGroupNames[i]}
                         onChange={(e) => updateBpName(i, e.target.value)}
-                        className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[12px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
                       />
                       {bpGroupTexts.length > 2 && (
                         <button
                           type="button"
                           onClick={() => removeBpGroup(i)}
-                          className="text-xs text-red-400 hover:text-red-600"
+                          className="text-[11px] text-red-400 dark:text-red-500 hover:text-red-600"
                         >
                           ✕
                         </button>
@@ -271,7 +283,7 @@ export default function GraphPage() {
                       value={text}
                       onChange={(e) => updateBpGroup(i, e.target.value)}
                       rows={5}
-                      className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={textareaCls}
                       placeholder="1行1データ"
                     />
                   </div>
@@ -281,11 +293,11 @@ export default function GraphPage() {
                 <button
                   type="button"
                   onClick={addBpGroup}
-                  className="text-sm text-blue-600 hover:underline"
+                  className="text-[11px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
                 >
                   + 群を追加
                 </button>
-                <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={bpShowJitter}
@@ -302,26 +314,26 @@ export default function GraphPage() {
           {chartType === "histogram" && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">X軸ラベル</label>
+                <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
                 <input
                   type="text"
                   value={histXLabel}
                   onChange={(e) => setHistXLabel(e.target.value)}
-                  className="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`${inputCls} w-48`}
                   placeholder="例：年齢 (歳)"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">データ</label>
+                <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
                 <textarea
                   value={histText}
                   onChange={(e) => setHistText(e.target.value)}
                   rows={7}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={textareaCls}
                   placeholder="1行1データ（またはスペース/カンマ区切り）"
                 />
               </div>
-              <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={histShowNormal}
@@ -347,19 +359,19 @@ export default function GraphPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder={`${label}軸ラベル`}
-                      className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm mb-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={`${inputCls} w-full mb-1.5`}
                     />
                     <textarea
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       rows={6}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={textareaCls}
                       placeholder="1行1データ"
                     />
                   </div>
                 ))}
               </div>
-              <label className="flex items-center gap-1.5 text-sm text-gray-600 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={scShowReg}
@@ -384,20 +396,16 @@ export default function GraphPage() {
           <PlotlyChart figure={figure} />
 
           {/* エクスポート */}
-          <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-3">
             {/* フォントプリセット */}
-            <div>
-              <span className="text-sm text-gray-600 mr-2">フォント：</span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[11px] text-gray-400 dark:text-neutral-600 mr-1">フォント：</span>
               {(["論文標準", "日本語対応", "ポスター", "カスタム"] as const).map((p) => (
                 <button
                   key={p}
                   type="button"
                   onClick={() => setFontPreset(p)}
-                  className={`mr-1.5 px-3 py-1 rounded text-xs font-medium border transition-colors ${
-                    fontPreset === p
-                      ? "text-white border-transparent"
-                      : "text-gray-600 border-gray-300 bg-white hover:bg-gray-50"
-                  }`}
+                  className={toggleBtn(fontPreset === p)}
                   style={fontPreset === p ? { backgroundColor: "#56B4E9" } : undefined}
                 >
                   {p}
@@ -406,13 +414,13 @@ export default function GraphPage() {
             </div>
 
             {fontPreset === "カスタム" && (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={customFamily}
                   onChange={(e) => setCustomFamily(e.target.value)}
                   placeholder="フォント名（例：Helvetica）"
-                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`${inputCls} w-52`}
                 />
                 <input
                   type="number"
@@ -421,25 +429,21 @@ export default function GraphPage() {
                   min={6}
                   max={24}
                   placeholder="サイズ"
-                  className="rounded-md border border-gray-300 px-2 py-1.5 text-sm w-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={`${inputCls} w-16`}
                 />
-                <span className="text-xs text-gray-400">pt</span>
+                <span className="text-[11px] text-gray-400 dark:text-neutral-600">pt</span>
               </div>
             )}
 
             {/* フォーマット & ダウンロード */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">形式：</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[11px] text-gray-400 dark:text-neutral-600 mr-1">形式：</span>
               {(["png", "svg", "pdf"] as const).map((fmt) => (
                 <button
                   key={fmt}
                   type="button"
                   onClick={() => setExportFormat(fmt)}
-                  className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
-                    exportFormat === fmt
-                      ? "text-white border-transparent"
-                      : "text-gray-600 border-gray-300 bg-white hover:bg-gray-50"
-                  }`}
+                  className={toggleBtn(exportFormat === fmt)}
                   style={exportFormat === fmt ? { backgroundColor: "#009E73" } : undefined}
                 >
                   {fmt.toUpperCase()}
@@ -449,7 +453,7 @@ export default function GraphPage() {
                 variant="secondary"
                 onClick={handleExport}
                 loading={exporting}
-                className="ml-2"
+                className="ml-1"
               >
                 ダウンロード
               </Button>

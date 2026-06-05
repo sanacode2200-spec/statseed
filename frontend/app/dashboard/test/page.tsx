@@ -33,6 +33,12 @@ const TEST_OPTIONS: { value: TestType; label: string; category: string }[] = [
   { value: "spearman", label: "Spearman順位相関係数", category: "相関" },
 ];
 
+const inputCls =
+  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[12px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
+
+const textareaCls =
+  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[12px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
+
 function parseNums(text: string): number[] {
   return text
     .split(/[\n,\t\s]+/)
@@ -169,14 +175,17 @@ export default function TestPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-gray-800 mb-1">統計検定</h1>
-      <p className="text-sm text-gray-500 mb-6">検定を選んでデータを入力してください。</p>
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+        解析
+      </div>
+      <h1 className="text-[18px] font-bold text-gray-900 dark:text-white mb-1">統計検定</h1>
+      <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-5">検定を選んでデータを入力してください。</p>
 
-      <Card className="mb-6">
-        <form onSubmit={handleSubmit} className="space-y-5">
+      <Card className="mb-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {/* 検定選択 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">検定の種類</label>
+            <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">検定の種類</label>
             <select
               value={testType}
               onChange={(e) => {
@@ -184,7 +193,7 @@ export default function TestPage() {
                 setResult(null);
                 setError(null);
               }}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={inputCls}
             >
               {Object.entries(grouped).map(([category, opts]) => (
                 <optgroup key={category} label={category}>
@@ -201,12 +210,12 @@ export default function TestPage() {
           {/* 変数名（テーブル系以外） */}
           {!isTable && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">変数名</label>
+              <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
               <input
                 type="text"
                 value={variableName}
                 onChange={(e) => setVariableName(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputCls}
                 placeholder="例：握力"
               />
             </div>
@@ -224,13 +233,13 @@ export default function TestPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm mb-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`${inputCls} mb-1.5`}
                   />
                   <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     rows={6}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={textareaCls}
                     placeholder="数値を1行1つ入力"
                   />
                 </div>
@@ -246,12 +255,12 @@ export default function TestPage() {
                 { label: "介入後", text: afterText, setText: setAfterText },
               ].map(({ label, text, setText }) => (
                 <div key={label}>
-                  <p className="text-sm font-medium text-gray-600 mb-1.5">{label}</p>
+                  <p className="text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</p>
                   <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     rows={6}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={textareaCls}
                     placeholder="1行1データ"
                   />
                 </div>
@@ -270,13 +279,13 @@ export default function TestPage() {
                         type="text"
                         value={multiGroupNames[i]}
                         onChange={(e) => updateMultiGroupName(i, e.target.value)}
-                        className="w-28 rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-28 rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[12px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
                       />
                       {multiGroupTexts.length > 3 && (
                         <button
                           type="button"
                           onClick={() => removeGroup(i)}
-                          className="text-xs text-red-500 hover:underline"
+                          className="text-[11px] text-red-500 dark:text-red-400 hover:underline"
                         >
                           削除
                         </button>
@@ -286,7 +295,7 @@ export default function TestPage() {
                       value={text}
                       onChange={(e) => updateMultiGroup(i, e.target.value)}
                       rows={4}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className={textareaCls}
                       placeholder="1行1データ"
                     />
                   </div>
@@ -295,7 +304,7 @@ export default function TestPage() {
               <button
                 type="button"
                 onClick={addGroup}
-                className="text-sm text-blue-600 hover:underline"
+                className="text-[11px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
               >
                 + 群を追加
               </button>
@@ -305,17 +314,17 @@ export default function TestPage() {
           {/* クロス集計表 */}
           {isTable && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                 クロス集計表
               </label>
-              <p className="text-xs text-gray-400 mb-2">
+              <p className="text-[11px] text-gray-400 dark:text-neutral-600 mb-1.5">
                 行を改行で、列をスペース/タブ/カンマで区切って入力してください。
               </p>
               <textarea
                 value={tableText}
                 onChange={(e) => setTableText(e.target.value)}
                 rows={5}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={textareaCls}
                 placeholder={"例（2×2）：\n10 5\n3 12"}
               />
             </div>
@@ -333,14 +342,14 @@ export default function TestPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm mb-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`${inputCls} mb-1.5`}
                     placeholder={i === 0 ? "X 変数名" : "Y 変数名"}
                   />
                   <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     rows={6}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={textareaCls}
                     placeholder="1行1データ"
                   />
                 </div>
