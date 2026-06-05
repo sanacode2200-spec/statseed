@@ -14,7 +14,7 @@
 
 body {
   color: #373737;
-  font-family: Arial, Helvetica, "Noto Sans JP", sans-serif;
+  font-family: var(--font-line-seed-jp), "Noto Sans JP", sans-serif;
 }
 
 .dark body {

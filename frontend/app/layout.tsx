@@ -1,5 +1,33 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
+
+const lineSeedJP = localFont({
+  src: [
+    {
+      path: "../public/fonts/line-seed-jp/LINESeedJP_OTF_Th.woff2",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/line-seed-jp/LINESeedJP_OTF_Rg.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/line-seed-jp/LINESeedJP_OTF_Bd.woff2",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/line-seed-jp/LINESeedJP_OTF_Eb.woff2",
+      weight: "800",
+      style: "normal",
+    },
+  ],
+  variable: "--font-line-seed-jp",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Statseed — コメディカル向け医療統計",
@@ -10,7 +38,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja" suppressHydrationWarning>
+    <html lang="ja" suppressHydrationWarning className={lineSeedJP.variable}>
       <head>
         {/* dark mode flash prevention */}
         <script
