@@ -1,5 +1,6 @@
 import math
 import statistics
+from itertools import combinations
 
 from backend.schemas.test import (
     ChiSquareRequest,
@@ -7,6 +8,9 @@ from backend.schemas.test import (
     CorrelationResult,
     MultiGroupRequest,
     PairedRequest,
+    PairwiseComparison,
+    PosthocRequest,
+    PosthocResult,
     TestResult,
     TwoGroupRequest,
 )
@@ -417,6 +421,160 @@ def run_correlation(request: CorrelationRequest) -> CorrelationResult:
         ci95_high=ci_high,
         interpretation=interpretation,
     )
+
+
+# --- 多重比較（事後検定）---
+
+def run_posthoc(request: PosthocRequest) -> PosthocResult:
+    groups = [list(g) for g in request.groups]
+    n_grp = len(groups)
+    names = request.group_names or [f"群{i + 1}" for i in range(n_grp)]
+
+    if request.method == "tukey":
+        pairs, method_label = _run_tukey(groups, names)
+    elif request.method in ("bonferroni", "holm"):
+        pairs, method_label = _run_parametric_corrected(groups, names, request.method)
+    else:
+        pairs, method_label = _run_steel_dwass(groups, names)
+
+    n_sig = sum(1 for p in pairs if p.significant)
+    sig_pairs = [f"{p.group_a}–{p.group_b}" for p in pairs if p.significant]
+    if n_sig == 0:
+        summary = f"全{len(pairs)}ペアに有意差は認められませんでした（{method_label}、α=0.05）。"
+    else:
+        summary = (
+            f"全{len(pairs)}ペア中{n_sig}ペアに有意差が認められました（{method_label}、α=0.05）。"
+            f"有意差あり: {', '.join(sig_pairs)}。"
+        )
+
+    return PosthocResult(
+        method=method_label,
+        variable_name=request.variable_name,
+        pairs=pairs,
+        n_comparisons=len(pairs),
+        interpretation=summary,
+    )
+
+
+def _run_tukey(
+    groups: list[list[float]], names: list[str]
+) -> tuple[list[PairwiseComparison], str]:
+    from scipy.stats import tukey_hsd
+
+    res = tukey_hsd(*groups)
+    means = [statistics.fmean(g) for g in groups]
+
+    pairs: list[PairwiseComparison] = []
+    for i, j in combinations(range(len(groups)), 2):
+        p_adj = float(res.pvalue[i][j])
+        pairs.append(PairwiseComparison(
+            group_a=names[i],
+            group_b=names[j],
+            mean_a=round(means[i], 4),
+            mean_b=round(means[j], 4),
+            mean_diff=round(means[i] - means[j], 4),
+            p_raw=p_adj,
+            p_adjusted=p_adj,
+            significant=p_adj < 0.05,
+        ))
+    return pairs, "Tukey HSD"
+
+
+def _run_parametric_corrected(
+    groups: list[list[float]], names: list[str], method: str
+) -> tuple[list[PairwiseComparison], str]:
+    from scipy import stats
+
+    means = [statistics.fmean(g) for g in groups]
+    pair_indices = list(combinations(range(len(groups)), 2))
+    raw_p: list[float] = []
+    for i, j in pair_indices:
+        _, p = stats.ttest_ind(groups[i], groups[j], equal_var=False)
+        raw_p.append(float(p))
+
+    k = len(raw_p)
+    if method == "bonferroni":
+        adj_p = [min(p * k, 1.0) for p in raw_p]
+        method_label = "Bonferroni補正（Welch t検定）"
+    else:
+        adj_p = _holm_correction(raw_p)
+        method_label = "Holm-Bonferroni補正（Welch t検定）"
+
+    pairs: list[PairwiseComparison] = []
+    for idx, (i, j) in enumerate(pair_indices):
+        pairs.append(PairwiseComparison(
+            group_a=names[i],
+            group_b=names[j],
+            mean_a=round(means[i], 4),
+            mean_b=round(means[j], 4),
+            mean_diff=round(means[i] - means[j], 4),
+            p_raw=round(raw_p[idx], 6),
+            p_adjusted=round(adj_p[idx], 6),
+            significant=adj_p[idx] < 0.05,
+        ))
+    return pairs, method_label
+
+
+def _run_steel_dwass(
+    groups: list[list[float]], names: list[str]
+) -> tuple[list[PairwiseComparison], str]:
+    """Dunn検定（順位ベース）+ Holm補正"""
+    from scipy import stats
+
+    all_values = [v for g in groups for v in g]
+    n_total = len(all_values)
+    ranked = stats.rankdata(all_values)
+
+    # 各群の平均順位
+    pos = 0
+    mean_ranks: list[float] = []
+    sizes: list[int] = []
+    for g in groups:
+        k = len(g)
+        mean_ranks.append(float(ranked[pos:pos + k].mean()))
+        sizes.append(k)
+        pos += k
+
+    # タイ補正
+    _, counts = zip(*[(v, all_values.count(v)) for v in set(all_values)]) if all_values else ([], [])
+    tie_correction = sum(c**3 - c for c in counts) / (n_total**3 - n_total) if n_total > 1 else 0.0
+    base_var = n_total * (n_total + 1) / 12 * (1 - tie_correction)
+
+    pair_indices = list(combinations(range(len(groups)), 2))
+    raw_p: list[float] = []
+    for i, j in pair_indices:
+        se = math.sqrt(base_var * (1 / sizes[i] + 1 / sizes[j]))
+        if se == 0:
+            raw_p.append(1.0)
+            continue
+        z = abs(mean_ranks[i] - mean_ranks[j]) / se
+        p = 2 * (1 - float(stats.norm.cdf(z)))
+        raw_p.append(p)
+
+    adj_p = _holm_correction(raw_p)
+
+    pairs: list[PairwiseComparison] = []
+    for idx, (i, j) in enumerate(pair_indices):
+        pairs.append(PairwiseComparison(
+            group_a=names[i],
+            group_b=names[j],
+            p_raw=round(raw_p[idx], 6),
+            p_adjusted=round(adj_p[idx], 6),
+            significant=adj_p[idx] < 0.05,
+        ))
+    return pairs, "Dunn検定（Holm補正）"
+
+
+def _holm_correction(raw_p: list[float]) -> list[float]:
+    k = len(raw_p)
+    order = sorted(range(k), key=lambda x: raw_p[x])
+    adj = [0.0] * k
+    prev = 0.0
+    for rank, idx in enumerate(order):
+        a = min(raw_p[idx] * (k - rank), 1.0)
+        adj[idx] = max(a, prev)
+        prev = adj[idx]
+    return adj
 
 
 def _pearson_ci(r: float, n: int) -> tuple[float, float]:

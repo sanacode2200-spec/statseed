@@ -9,6 +9,8 @@ from backend.schemas.test import (
     CorrelationResult,
     MultiGroupRequest,
     PairedRequest,
+    PosthocRequest,
+    PosthocResult,
     TestResult,
     TwoGroupRequest,
 )
@@ -19,6 +21,7 @@ from backend.services.stats.hypothesis import (
     run_fisher,
     run_kruskal,
     run_mannwhitney,
+    run_posthoc,
     run_ttest_ind,
     run_ttest_paired,
     run_wilcoxon,
@@ -83,3 +86,8 @@ def fisher(request: ChiSquareRequest) -> TestResult:
 @router.post("/correlation", response_model=CorrelationResult)
 def correlation(request: CorrelationRequest) -> CorrelationResult:
     return _run_or_422(lambda: run_correlation(request))
+
+
+@router.post("/posthoc", response_model=PosthocResult)
+def posthoc(request: PosthocRequest) -> PosthocResult:
+    return _run_or_422(lambda: run_posthoc(request))

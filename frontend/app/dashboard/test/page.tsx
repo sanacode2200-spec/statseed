@@ -7,7 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { CorrelationResultCard, TestResultCard } from "@/components/stats/TestResultCard";
+import { PosthocResultTable } from "@/components/stats/PosthocResultTable";
 import { parseIntegerMatrix, parseNumbers } from "@/lib/parse";
+import type { PosthocResult } from "@/lib/types";
 
 type TestType =
   | "ttest"
@@ -19,7 +21,11 @@ type TestType =
   | "chisquare"
   | "fisher"
   | "pearson"
-  | "spearman";
+  | "spearman"
+  | "tukey"
+  | "bonferroni"
+  | "holm"
+  | "steel_dwass";
 
 const TEST_OPTIONS: { value: TestType; label: string; category: string }[] = [
   { value: "ttest", label: "独立2群 t検定（Welch）", category: "2群比較（連続変数）" },
@@ -28,6 +34,10 @@ const TEST_OPTIONS: { value: TestType; label: string; category: string }[] = [
   { value: "wilcoxon", label: "Wilcoxon符号順位検定", category: "対応あり比較" },
   { value: "anova", label: "一元配置ANOVA（3群以上）", category: "多群比較（連続変数）" },
   { value: "kruskal", label: "Kruskal-Wallis検定", category: "多群比較（連続変数）" },
+  { value: "tukey", label: "Tukey HSD（ANOVA後）", category: "多重比較（事後検定）" },
+  { value: "bonferroni", label: "Bonferroni補正（パラメトリック）", category: "多重比較（事後検定）" },
+  { value: "holm", label: "Holm-Bonferroni補正（パラメトリック）", category: "多重比較（事後検定）" },
+  { value: "steel_dwass", label: "Dunn検定 + Holm補正（Kruskal後）", category: "多重比較（事後検定）" },
   { value: "chisquare", label: "χ²検定", category: "カテゴリ変数" },
   { value: "fisher", label: "Fisher正確検定（2×2のみ）", category: "カテゴリ変数" },
   { value: "pearson", label: "Pearson相関係数", category: "相関" },
@@ -57,7 +67,7 @@ export default function TestPage() {
   const [xText, setXText] = useState("");
   const [yText, setYText] = useState("");
 
-  const [result, setResult] = useState<TestResult | CorrelationResult | null>(null);
+  const [result, setResult] = useState<TestResult | CorrelationResult | PosthocResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,6 +75,7 @@ export default function TestPage() {
   const isTwoGroup = testType === "ttest" || testType === "mannwhitney";
   const isPaired = testType === "ttest-paired" || testType === "wilcoxon";
   const isMultiGroup = testType === "anova" || testType === "kruskal";
+  const isPosthoc = testType === "tukey" || testType === "bonferroni" || testType === "holm" || testType === "steel_dwass";
   const isTable = testType === "chisquare" || testType === "fisher";
 
   async function handleSubmit(e: React.FormEvent) {
@@ -93,15 +104,18 @@ export default function TestPage() {
         if (before.length !== after.length) throw new Error("介入前後のデータ数が一致しません。");
         const req = { variable_name: variableName, before, after };
         setResult(testType === "ttest-paired" ? await api.ttestPaired(req) : await api.wilcoxon(req));
-      } else if (isMultiGroup) {
+      } else if (isMultiGroup || isPosthoc) {
         const groups = multiGroupTexts.map(parseNumbers);
         if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
-        const req = {
-          variable_name: variableName,
-          groups,
-          group_names: multiGroupNames,
-        };
-        setResult(testType === "anova" ? await api.anova(req) : await api.kruskal(req));
+        const req = { variable_name: variableName, groups, group_names: multiGroupNames };
+        if (isPosthoc) {
+          setResult(await api.posthoc({
+            ...req,
+            method: testType as "tukey" | "bonferroni" | "holm" | "steel_dwass",
+          }));
+        } else {
+          setResult(testType === "anova" ? await api.anova(req) : await api.kruskal(req));
+        }
       } else if (isTable) {
         const observed = parseIntegerMatrix(tableText);
         if (observed.length < 2) throw new Error("2行以上のデータが必要です。");
@@ -248,8 +262,8 @@ export default function TestPage() {
             </div>
           )}
 
-          {/* 多群 */}
-          {isMultiGroup && (
+          {/* 多群・多重比較（同じ入力UI） */}
+          {(isMultiGroup || isPosthoc) && (
             <div className="space-y-3">
               {multiGroupTexts.map((text, i) => (
                 <div key={i} className="flex gap-2 items-start">
@@ -345,12 +359,15 @@ export default function TestPage() {
 
       {error && <ErrorMessage message={error} />}
 
-      {result &&
-        ("r" in result ? (
+      {result && (
+        "pairs" in result ? (
+          <PosthocResultTable result={result as PosthocResult} />
+        ) : "r" in result ? (
           <CorrelationResultCard result={result as CorrelationResult} />
         ) : (
           <TestResultCard result={result as TestResult} />
-        ))}
+        )
+      )}
     </div>
   );
 }

@@ -13,6 +13,8 @@ import type {
   MultiGroupRequest,
   PairedRequest,
   PlotlyFigure,
+  PosthocRequest,
+  PosthocResult,
   ScatterRequest,
   Table1Request,
   Table1Result,
@@ -119,6 +121,9 @@ export const api = {
 
   guideSuggest: (req: GuideRequest) =>
     post<GuideResponse>("/api/guide/suggest", req),
+
+  posthoc: (req: PosthocRequest) =>
+    post<PosthocResult>("/api/test/posthoc", req),
 
   table1: (req: Table1Request) =>
     post<Table1Result>("/api/table1", req),

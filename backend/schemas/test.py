@@ -74,6 +74,41 @@ class CorrelationRequest(BaseModel):
         return self
 
 
+class PosthocRequest(BaseModel):
+    variable_name: str = Field(default="変数", min_length=1, max_length=80)
+    groups: list[list[FiniteFloat]] = Field(min_length=3)
+    group_names: list[str] | None = Field(default=None)
+    method: Literal["tukey", "bonferroni", "holm", "steel_dwass"] = "tukey"
+
+    @model_validator(mode="after")
+    def check_groups(self) -> "PosthocRequest":
+        if self.group_names is not None and len(self.group_names) != len(self.groups):
+            raise ValueError("group_namesの数がgroupsの数と一致しません")
+        for i, g in enumerate(self.groups):
+            if len(g) < 2:
+                raise ValueError(f"群{i + 1}のデータ数が2件未満です")
+        return self
+
+
+class PairwiseComparison(BaseModel):
+    group_a: str
+    group_b: str
+    mean_a: float | None = None
+    mean_b: float | None = None
+    mean_diff: float | None = None
+    p_raw: float
+    p_adjusted: float
+    significant: bool
+
+
+class PosthocResult(BaseModel):
+    method: str
+    variable_name: str
+    pairs: list[PairwiseComparison]
+    n_comparisons: int
+    interpretation: str
+
+
 class TestResult(BaseModel):
     test_name: str
     statistic: float | None

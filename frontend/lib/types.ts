@@ -141,6 +141,34 @@ export interface UploadResponse {
   preview_rows: Record<string, string | null>[];
 }
 
+// --- 多重比較（事後検定）---
+
+export interface PosthocRequest {
+  variable_name?: string;
+  groups: number[][];
+  group_names?: string[] | null;
+  method: "tukey" | "bonferroni" | "holm" | "steel_dwass";
+}
+
+export interface PairwiseComparison {
+  group_a: string;
+  group_b: string;
+  mean_a: number | null;
+  mean_b: number | null;
+  mean_diff: number | null;
+  p_raw: number;
+  p_adjusted: number;
+  significant: boolean;
+}
+
+export interface PosthocResult {
+  method: string;
+  variable_name: string;
+  pairs: PairwiseComparison[];
+  n_comparisons: number;
+  interpretation: string;
+}
+
 // --- Table 1 ---
 
 export interface ContinuousVariable {

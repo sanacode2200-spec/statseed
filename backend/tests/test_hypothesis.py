@@ -12,6 +12,7 @@ from backend.schemas.test import (
     CorrelationRequest,
     MultiGroupRequest,
     PairedRequest,
+    PosthocRequest,
     TwoGroupRequest,
 )
 from backend.services.stats.hypothesis import (
@@ -21,6 +22,7 @@ from backend.services.stats.hypothesis import (
     run_fisher,
     run_kruskal,
     run_mannwhitney,
+    run_posthoc,
     run_ttest_ind,
     run_ttest_paired,
     run_wilcoxon,
@@ -298,3 +300,78 @@ def test_missing_analysis_dependency_returns_503() -> None:
         _run_or_422(missing_dependency)
 
     assert exc_info.value.status_code == 503
+
+
+# --- 多重比較（事後検定）---
+
+def _posthoc(method, groups, names=None):
+    return run_posthoc(PosthocRequest(
+        variable_name="変数",
+        groups=groups,
+        group_names=names,
+        method=method,
+    ))
+
+
+def test_tukey_three_groups_significant() -> None:
+    a = [1.0, 2.0, 1.5, 1.2]
+    b = [5.0, 6.0, 5.5, 5.8]
+    c = [10.0, 11.0, 10.5, 10.2]
+    result = _posthoc("tukey", [a, b, c], ["A", "B", "C"])
+    assert result.method == "Tukey HSD"
+    assert result.n_comparisons == 3
+    assert all(p.significant for p in result.pairs)
+
+
+def test_tukey_no_difference() -> None:
+    g = [1.0, 2.0, 3.0, 4.0]
+    result = _posthoc("tukey", [g, g, g], ["A", "B", "C"])
+    assert not any(p.significant for p in result.pairs)
+
+
+def test_bonferroni_three_groups() -> None:
+    a = [1.0, 2.0, 1.5]
+    b = [10.0, 11.0, 10.5]
+    c = [1.2, 1.8, 1.6]
+    result = _posthoc("bonferroni", [a, b, c])
+    assert "Bonferroni" in result.method
+    # A-C は差なし、A-B・B-C は有意
+    pairs = {(p.group_a, p.group_b): p for p in result.pairs}
+    assert pairs[("群1", "群2")].significant
+    assert pairs[("群2", "群3")].significant
+    assert not pairs[("群1", "群3")].significant
+
+
+def test_holm_adjusted_p_not_less_than_raw() -> None:
+    groups = [[1.0, 2.0, 1.5], [5.0, 6.0, 5.5], [1.2, 1.8, 1.4]]
+    result = _posthoc("holm", groups)
+    for p in result.pairs:
+        assert p.p_adjusted >= p.p_raw - 1e-9
+
+
+def test_steel_dwass_nonparametric() -> None:
+    a = [1, 2, 1, 2, 1]
+    b = [10, 11, 10, 11, 10]
+    c = [1, 2, 1, 2, 1]
+    result = _posthoc("steel_dwass", [a, b, c])
+    assert "Dunn" in result.method
+    pairs = {(p.group_a, p.group_b): p for p in result.pairs}
+    assert pairs[("群1", "群2")].significant
+    assert pairs[("群2", "群3")].significant
+    assert not pairs[("群1", "群3")].significant
+
+
+def test_posthoc_mean_diff_is_a_minus_b() -> None:
+    a = [10.0, 10.0]
+    b = [5.0, 5.0]
+    c = [1.0, 1.0]
+    result = _posthoc("bonferroni", [a, b, c], ["A", "B", "C"])
+    pair = next(p for p in result.pairs if p.group_a == "A" and p.group_b == "B")
+    assert abs(pair.mean_diff - 5.0) < 1e-6
+
+
+def test_posthoc_group_names_in_result() -> None:
+    g = [[1.0, 2.0], [5.0, 6.0], [10.0, 11.0]]
+    result = _posthoc("tukey", g, ["X1", "X2", "X3"])
+    names = {p.group_a for p in result.pairs} | {p.group_b for p in result.pairs}
+    assert names == {"X1", "X2", "X3"}
