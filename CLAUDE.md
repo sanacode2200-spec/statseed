@@ -247,7 +247,7 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 
 ### 記述統計
 - [x] 連続変数: 平均・SD・中央値・IQR・最小・最大・95%CI
-- [ ] カテゴリ変数: 頻度・割合（Phase 2）
+- [x] カテゴリ変数: 頻度・割合（`POST /api/descriptive/categorical`）
 - [ ] Table 1 自動生成（Phase 2）
 - [x] 正規性検定（Shapiro-Wilk、STATSEED_ENABLE_SCIPY=1 時のみ）
 
@@ -265,14 +265,13 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] 散布図（回帰直線付き）
 - [ ] 棒グラフ（Phase 2）
 - [x] PNG 300dpi / SVG / PDF 出力
-- [ ] フォントプリセット切り替えUI（Phase 2）
+- [x] フォントプリセット切り替えUI（論文標準 / 日本語対応 / ポスター / カスタム）
 
 ---
 
 ## Phase 2 候補
 
 - Table 1 自動生成（論文の背景データ表）
-- カテゴリ変数の記述統計（頻度・割合）
 - 多重比較（Tukey法・Bonferroni法）
 - 棒グラフ（エラーバー付き）
 - カプランマイヤー曲線
@@ -289,6 +288,7 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 GET  /health                   # ヘルスチェック
 
 POST /api/descriptive          # 記述統計（連続変数）
+POST /api/descriptive/categorical  # 記述統計（カテゴリ変数 — 頻度・割合）
 
 POST /api/test/ttest           # Welch t検定（独立2群）
 POST /api/test/mannwhitney     # Mann-Whitney U検定
