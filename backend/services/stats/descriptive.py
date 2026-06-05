@@ -2,7 +2,13 @@ import math
 import os
 import statistics
 
-from backend.schemas.descriptive import DescriptiveRequest, DescriptiveResponse
+from backend.schemas.descriptive import (
+    CategoricalRequest,
+    CategoricalResponse,
+    CategoryCount,
+    DescriptiveRequest,
+    DescriptiveResponse,
+)
 
 T_CRITICAL_975 = {
     1: 12.706,
@@ -156,3 +162,43 @@ def _build_interpretation(
             normality_text = f"Shapiro-Wilk検定ではp={shapiro_wilk_p:.3f}で、正規分布から大きく外れているとはいえません。"
 
     return f"{location} 有効データ数は{n}件です。{missing_text} {normality_text}".strip()
+
+
+def summarize_categorical(request: CategoricalRequest) -> CategoricalResponse:
+    _MISSING = {"", "na", "-"}
+    cleaned = [
+        v.strip()
+        for v in request.values
+        if v is not None and v.strip().lower() not in _MISSING
+    ]
+    n = len(cleaned)
+    missing = len(request.values) - n
+
+    counts: dict[str, int] = {}
+    for v in cleaned:
+        counts[v] = counts.get(v, 0) + 1
+
+    categories = sorted(
+        [CategoryCount(label=label, count=count, percent=count / n * 100 if n > 0 else 0.0)
+         for label, count in counts.items()],
+        key=lambda c: (-c.count, c.label),
+    )
+
+    most_common = categories[0].label if categories else "—"
+    top_percent = f"{categories[0].percent:.1f}" if categories else "0"
+    missing_text = f"欠損値は{missing}件あります。" if missing else "欠損値はありません。"
+    interpretation = (
+        f"{request.variable_name}は{len(categories)}カテゴリ、有効データ数{n}件です。"
+        f"{missing_text}"
+        f"最頻値は「{most_common}」（{categories[0].count}件、{top_percent}%）です。"
+        if categories
+        else f"{request.variable_name}の有効データがありません。"
+    )
+
+    return CategoricalResponse(
+        variable_name=request.variable_name,
+        n=n,
+        missing=missing,
+        categories=categories,
+        interpretation=interpretation,
+    )

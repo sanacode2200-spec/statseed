@@ -14,6 +14,9 @@ class BoxplotRequest(BaseModel):
     def check_names(self) -> "BoxplotRequest":
         if self.group_names is not None and len(self.group_names) != len(self.groups):
             raise ValueError("group_namesの数がgroupsの数と一致しません")
+        for i, group in enumerate(self.groups):
+            if len(group) < 2:
+                raise ValueError(f"群{i + 1}のデータ数が2件未満です")
         return self
 
 
@@ -48,6 +51,9 @@ class PlotlyFigure(BaseModel):
 class ExportRequest(BaseModel):
     chart_type: Literal["boxplot", "histogram", "scatter"]
     format: Literal["png", "svg", "pdf"] = "png"
+    font_preset: Literal["論文標準", "日本語対応", "ポスター", "カスタム"] | None = None
+    font_family: str | None = Field(default=None, max_length=80)
+    font_size: int | None = Field(default=None, ge=6, le=24)
     boxplot: BoxplotRequest | None = None
     histogram: HistogramRequest | None = None
     scatter: ScatterRequest | None = None

@@ -9,6 +9,7 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
 
 type ChartType = "boxplot" | "histogram" | "scatter";
+type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
 
 function parseNums(text: string): number[] {
   return text
@@ -46,6 +47,11 @@ export default function GraphPage() {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<"png" | "svg" | "pdf">("png");
+
+  // font preset
+  const [fontPreset, setFontPreset] = useState<FontPreset>("論文標準");
+  const [customFamily, setCustomFamily] = useState("");
+  const [customSize, setCustomSize] = useState("9");
 
   function updateBpGroup(i: number, v: string) {
     setBpGroupTexts((p) => p.map((t, j) => (j === i ? v : t)));
@@ -119,7 +125,16 @@ export default function GraphPage() {
   async function handleExport() {
     setExporting(true);
     try {
-      const body: ExportRequest = { chart_type: chartType, format: exportFormat };
+      const body: ExportRequest = {
+        chart_type: chartType,
+        format: exportFormat,
+        font_preset: fontPreset,
+        font_family: fontPreset === "カスタム" && customFamily ? customFamily : null,
+        font_size:
+          fontPreset === "カスタム" && customSize
+            ? parseInt(customSize, 10) || null
+            : null,
+      };
       if (chartType === "boxplot") {
         body.boxplot = {
           groups: bpGroupTexts.map(parseNums),
@@ -369,31 +384,76 @@ export default function GraphPage() {
           <PlotlyChart figure={figure} />
 
           {/* エクスポート */}
-          <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
-            <span className="text-sm text-gray-600">論文用出力：</span>
-            {(["png", "svg", "pdf"] as const).map((fmt) => (
-              <button
-                key={fmt}
-                type="button"
-                onClick={() => setExportFormat(fmt)}
-                className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
-                  exportFormat === fmt
-                    ? "text-white border-transparent"
-                    : "text-gray-600 border-gray-300 bg-white hover:bg-gray-50"
-                }`}
-                style={exportFormat === fmt ? { backgroundColor: "#009E73" } : undefined}
+          <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+            {/* フォントプリセット */}
+            <div>
+              <span className="text-sm text-gray-600 mr-2">フォント：</span>
+              {(["論文標準", "日本語対応", "ポスター", "カスタム"] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setFontPreset(p)}
+                  className={`mr-1.5 px-3 py-1 rounded text-xs font-medium border transition-colors ${
+                    fontPreset === p
+                      ? "text-white border-transparent"
+                      : "text-gray-600 border-gray-300 bg-white hover:bg-gray-50"
+                  }`}
+                  style={fontPreset === p ? { backgroundColor: "#56B4E9" } : undefined}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+
+            {fontPreset === "カスタム" && (
+              <div className="flex items-center gap-3">
+                <input
+                  type="text"
+                  value={customFamily}
+                  onChange={(e) => setCustomFamily(e.target.value)}
+                  placeholder="フォント名（例：Helvetica）"
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="number"
+                  value={customSize}
+                  onChange={(e) => setCustomSize(e.target.value)}
+                  min={6}
+                  max={24}
+                  placeholder="サイズ"
+                  className="rounded-md border border-gray-300 px-2 py-1.5 text-sm w-20 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-xs text-gray-400">pt</span>
+              </div>
+            )}
+
+            {/* フォーマット & ダウンロード */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">形式：</span>
+              {(["png", "svg", "pdf"] as const).map((fmt) => (
+                <button
+                  key={fmt}
+                  type="button"
+                  onClick={() => setExportFormat(fmt)}
+                  className={`px-3 py-1 rounded text-xs font-medium border transition-colors ${
+                    exportFormat === fmt
+                      ? "text-white border-transparent"
+                      : "text-gray-600 border-gray-300 bg-white hover:bg-gray-50"
+                  }`}
+                  style={exportFormat === fmt ? { backgroundColor: "#009E73" } : undefined}
+                >
+                  {fmt.toUpperCase()}
+                </button>
+              ))}
+              <Button
+                variant="secondary"
+                onClick={handleExport}
+                loading={exporting}
+                className="ml-2"
               >
-                {fmt.toUpperCase()}
-              </button>
-            ))}
-            <Button
-              variant="secondary"
-              onClick={handleExport}
-              loading={exporting}
-              className="ml-2"
-            >
-              ダウンロード
-            </Button>
+                ダウンロード
+              </Button>
+            </div>
           </div>
         </Card>
       )}

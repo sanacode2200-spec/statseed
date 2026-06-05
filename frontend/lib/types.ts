@@ -23,6 +23,25 @@ export interface DescriptiveResponse {
   interpretation: string;
 }
 
+export interface CategoricalRequest {
+  variable_name: string;
+  values: (string | null)[];
+}
+
+export interface CategoryCount {
+  label: string;
+  count: number;
+  percent: number;
+}
+
+export interface CategoricalResponse {
+  variable_name: string;
+  n: number;
+  missing: number;
+  categories: CategoryCount[];
+  interpretation: string;
+}
+
 // --- 検定共通 ---
 
 export interface TestResult {
@@ -157,6 +176,9 @@ export interface PlotlyFigure {
 export interface ExportRequest {
   chart_type: "boxplot" | "histogram" | "scatter";
   format: "png" | "svg" | "pdf";
+  font_preset?: "論文標準" | "日本語対応" | "ポスター" | "カスタム" | null;
+  font_family?: string | null;
+  font_size?: number | null;
   boxplot?: BoxplotRequest;
   histogram?: HistogramRequest;
   scatter?: ScatterRequest;

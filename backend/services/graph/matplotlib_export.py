@@ -9,9 +9,27 @@ from backend.services.graph.theme import OKABE_ITO, STATSEED_THEME
 _COLORS = list(OKABE_ITO.values())[:4]
 
 
-def _apply_theme() -> None:
+def _apply_theme(request: ExportRequest | None = None) -> None:
     import matplotlib as mpl
     mpl.rcParams.update(STATSEED_THEME)
+
+    if request is None:
+        return
+
+    preset = request.font_preset
+    if preset == "カスタム":
+        if request.font_family:
+            mpl.rcParams["font.sans-serif"] = [request.font_family, "DejaVu Sans"]
+        if request.font_size:
+            mpl.rcParams["font.size"] = request.font_size
+            mpl.rcParams["axes.labelsize"] = request.font_size
+            mpl.rcParams["axes.titlesize"] = request.font_size + 1
+    elif preset and preset in FONT_PRESETS and FONT_PRESETS[preset]:
+        p = FONT_PRESETS[preset]
+        mpl.rcParams["font.sans-serif"] = [p["family"], "DejaVu Sans"]
+        mpl.rcParams["font.size"] = p["size"]
+        mpl.rcParams["axes.labelsize"] = p["size"]
+        mpl.rcParams["axes.titlesize"] = p["size"] + 1
 
 
 def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
@@ -19,7 +37,7 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
-    _apply_theme()
+    _apply_theme(request)
 
     fmt = request.format
     mime = {"png": "image/png", "svg": "image/svg+xml", "pdf": "application/pdf"}[fmt]

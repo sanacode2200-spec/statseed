@@ -1,7 +1,7 @@
 import math
 
-from backend.schemas.descriptive import DescriptiveRequest
-from backend.services.stats.descriptive import summarize_continuous
+from backend.schemas.descriptive import CategoricalRequest, DescriptiveRequest
+from backend.services.stats.descriptive import summarize_categorical, summarize_continuous
 
 
 def test_summarize_continuous_returns_basic_statistics() -> None:
@@ -32,3 +32,46 @@ def test_summarize_continuous_counts_missing_values() -> None:
     assert result.n == 2
     assert result.missing == 2
     assert "欠損値は2件あります" in result.interpretation
+
+
+def test_summarize_categorical_frequency_and_percent() -> None:
+    request = CategoricalRequest(
+        variable_name="性別",
+        values=["男性", "女性", "男性", "男性", "女性"],
+    )
+
+    result = summarize_categorical(request)
+
+    assert result.n == 5
+    assert result.missing == 0
+    labels = {c.label: c for c in result.categories}
+    assert labels["男性"].count == 3
+    assert math.isclose(labels["男性"].percent, 60.0)
+    assert labels["女性"].count == 2
+    assert math.isclose(labels["女性"].percent, 40.0)
+    assert result.categories[0].label == "男性"  # sorted by count desc
+    assert "男性" in result.interpretation
+    assert "60.0" in result.interpretation
+
+
+def test_summarize_categorical_counts_missing() -> None:
+    request = CategoricalRequest(
+        variable_name="診断名",
+        values=["脳梗塞", None, "骨折", "NA", "脳梗塞"],
+    )
+
+    result = summarize_categorical(request)
+
+    assert result.n == 3
+    assert result.missing == 2
+    assert "欠損値は2件あります" in result.interpretation
+
+
+def test_summarize_categorical_single_category() -> None:
+    request = CategoricalRequest(variable_name="群", values=["A", "A", "A"])
+
+    result = summarize_categorical(request)
+
+    assert result.n == 3
+    assert len(result.categories) == 1
+    assert result.categories[0].percent == 100.0

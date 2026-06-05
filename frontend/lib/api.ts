@@ -1,5 +1,7 @@
 import type {
   BoxplotRequest,
+  CategoricalRequest,
+  CategoricalResponse,
   ChiSquareRequest,
   CorrelationRequest,
   CorrelationResult,
@@ -46,6 +48,9 @@ async function _upload<T>(path: string, file: File): Promise<T> {
 export const api = {
   descriptive: (req: DescriptiveRequest) =>
     post<DescriptiveResponse>("/api/descriptive", req),
+
+  categoricalDescriptive: (req: CategoricalRequest) =>
+    post<CategoricalResponse>("/api/descriptive/categorical", req),
 
   ttestInd: (req: TwoGroupRequest) =>
     post<TestResult>("/api/test/ttest", req),
