@@ -13,10 +13,18 @@ def parse_csv(content: bytes, filename: str) -> UploadResponse:
 
     try:
         df = pd.read_csv(io.BytesIO(content), nrows=_MAX_ROWS)
+    except UnicodeDecodeError:
+        try:
+            df = pd.read_csv(io.BytesIO(content), nrows=_MAX_ROWS, encoding="cp932")
+        except Exception as e:
+            raise ValueError(f"CSVの読み込みに失敗しました: {e}")
     except Exception as e:
         raise ValueError(f"CSVの読み込みに失敗しました: {e}")
 
-    return _build_response(df, filename)
+    try:
+        return _build_response(df, filename)
+    except ValueError as e:
+        raise ValueError(f"CSVの読み込みに失敗しました: {e}") from e
 
 
 def parse_excel(content: bytes, filename: str) -> UploadResponse:
@@ -27,15 +35,19 @@ def parse_excel(content: bytes, filename: str) -> UploadResponse:
     except Exception as e:
         raise ValueError(f"Excelの読み込みに失敗しました: {e}")
 
-    return _build_response(df, filename)
+    try:
+        return _build_response(df, filename)
+    except ValueError as e:
+        raise ValueError(f"Excelの読み込みに失敗しました: {e}") from e
 
 
 def _build_response(df, filename: str) -> UploadResponse:
     import pandas as pd
-    import numpy as np
 
     df = df.iloc[:, :_MAX_COLS]
     n_rows, n_cols = df.shape
+    if n_rows == 0 or n_cols == 0:
+        raise ValueError("データ行と列を含むファイルを選択してください")
 
     columns: list[ColumnInfo] = []
     for col in df.columns:
@@ -43,16 +55,17 @@ def _build_response(df, filename: str) -> UploadResponse:
         numeric = pd.to_numeric(series, errors="coerce")
         is_numeric = numeric.notna().sum() >= series.notna().sum() * 0.8
 
-        n_missing = int(series.isna().sum())
-        n_valid = n_rows - n_missing
-
         if is_numeric:
             dtype: Literal["continuous", "categorical"] = "continuous"
+            n_missing = int(numeric.isna().sum())
+            n_valid = n_rows - n_missing
             values: list[float | None] = [
                 None if pd.isna(v) else float(v) for v in numeric.tolist()
             ]
         else:
             dtype = "categorical"
+            n_missing = int(series.isna().sum())
+            n_valid = n_rows - n_missing
             values = []
 
         preview = [None if pd.isna(v) else str(v) for v in series.head(_PREVIEW_ROWS).tolist()]

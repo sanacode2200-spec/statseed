@@ -44,11 +44,17 @@ class ChiSquareRequest(BaseModel):
     @model_validator(mode="after")
     def check_table(self) -> "ChiSquareRequest":
         ncols = len(self.observed[0])
+        if ncols < 2:
+            raise ValueError("クロス集計表は2列以上必要です")
         for row in self.observed:
             if len(row) != ncols:
                 raise ValueError("クロス集計表の列数が行によって異なります")
             if any(c < 0 for c in row):
                 raise ValueError("観測度数に負の値が含まれています")
+            if sum(row) == 0:
+                raise ValueError("合計が0の行は含められません")
+        if any(sum(row[col] for row in self.observed) == 0 for col in range(ncols)):
+            raise ValueError("合計が0の列は含められません")
         return self
 
 

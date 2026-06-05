@@ -19,6 +19,11 @@ async def upload_csv(file: UploadFile) -> UploadResponse:
     content = await _read_file(file, _MAX_BYTES)
     try:
         return parse_csv(content, file.filename or "data.csv")
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="データ読み込みには analysis オプションが必要です（pip install '.[analysis]'）",
+        )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
@@ -30,6 +35,11 @@ async def upload_excel(file: UploadFile) -> UploadResponse:
     content = await _read_file(file, _MAX_BYTES)
     try:
         return parse_excel(content, file.filename or "data.xlsx")
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="データ読み込みには analysis オプションが必要です（pip install '.[analysis]'）",
+        )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 

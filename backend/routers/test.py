@@ -31,6 +31,11 @@ T = TypeVar("T")
 def _run_or_422(func: Callable[[], T]) -> T:
     try:
         return func()
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="統計検定には analysis オプションが必要です（pip install '.[analysis]'）",
+        )
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 

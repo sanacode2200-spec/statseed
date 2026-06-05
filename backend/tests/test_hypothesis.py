@@ -2,6 +2,7 @@ import math
 import os
 
 import pytest
+from fastapi import HTTPException
 
 os.environ["STATSEED_ENABLE_SCIPY"] = "1"
 
@@ -23,6 +24,7 @@ from backend.services.stats.hypothesis import (
     run_ttest_paired,
     run_wilcoxon,
 )
+from backend.routers.test import _run_or_422
 
 
 # --- t検定（独立2群）---
@@ -54,6 +56,13 @@ def test_ttest_ind_no_difference() -> None:
 
     assert result.p_value > 0.05
     assert "有意差は認められませんでした" in result.interpretation
+
+
+def test_ttest_ind_rejects_data_without_variance() -> None:
+    req = TwoGroupRequest(group_a=[1, 1], group_b=[1, 1])
+
+    with pytest.raises(ValueError, match="ばらつき"):
+        run_ttest_ind(req)
 
 
 # --- Mann-Whitney U検定 ---
@@ -92,6 +101,13 @@ def test_ttest_paired_length_mismatch() -> None:
         PairedRequest(variable_name="体重", before=[50, 60], after=[55])
 
 
+def test_ttest_paired_rejects_data_without_variance() -> None:
+    req = PairedRequest(before=[1, 1], after=[1, 1])
+
+    with pytest.raises(ValueError, match="ばらつき"):
+        run_ttest_paired(req)
+
+
 # --- Wilcoxon符号順位検定 ---
 
 def test_wilcoxon_significant() -> None:
@@ -105,6 +121,13 @@ def test_wilcoxon_significant() -> None:
 
     assert result.p_value < 0.05
     assert "有意差が認められました" in result.interpretation
+
+
+def test_wilcoxon_rejects_all_zero_differences() -> None:
+    req = PairedRequest(before=[1, 2], after=[1, 2])
+
+    with pytest.raises(ValueError, match="すべてのペアの差が0"):
+        run_wilcoxon(req)
 
 
 # --- 一元配置ANOVA ---
@@ -129,6 +152,13 @@ def test_anova_requires_three_groups() -> None:
         MultiGroupRequest(variable_name="筋力", groups=[[1, 2], [3, 4]])
 
 
+def test_anova_rejects_data_without_variance() -> None:
+    req = MultiGroupRequest(groups=[[1, 1], [1, 1], [1, 1]])
+
+    with pytest.raises(ValueError, match="ばらつき"):
+        run_anova(req)
+
+
 # --- Kruskal-Wallis検定 ---
 
 def test_kruskal_significant() -> None:
@@ -140,6 +170,13 @@ def test_kruskal_significant() -> None:
 
     assert result.p_value < 0.05
     assert "有意差が認められました" in result.interpretation
+
+
+def test_kruskal_rejects_data_without_variance() -> None:
+    req = MultiGroupRequest(groups=[[1, 1], [1, 1], [1, 1]])
+
+    with pytest.raises(ValueError, match="ばらつき"):
+        run_kruskal(req)
 
 
 # --- χ²検定 ---
@@ -163,6 +200,13 @@ def test_chisquare_no_association() -> None:
     assert "有意な関連は認められませんでした" in result.interpretation
 
 
+def test_chisquare_rejects_zero_total_row() -> None:
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError, match="合計が0の行"):
+        ChiSquareRequest(observed=[[0, 0], [1, 2]])
+
+
 # --- Fisher正確検定 ---
 
 def test_fisher_2x2() -> None:
@@ -178,6 +222,16 @@ def test_fisher_requires_2x2() -> None:
     req = ChiSquareRequest(observed=[[10, 5, 3], [2, 8, 4]])
     with pytest.raises(ValueError, match="2×2"):
         run_fisher(req)
+
+
+def test_fisher_handles_infinite_odds_ratio() -> None:
+    req = ChiSquareRequest(observed=[[1, 0], [0, 1]])
+
+    result = run_fisher(req)
+
+    assert result.statistic is None
+    assert result.effect_size is None
+    assert "算出不能" in result.interpretation
 
 
 # --- 相関 ---
@@ -211,3 +265,30 @@ def test_spearman_correlation() -> None:
     assert result.r > 0
     assert result.ci95_low is None
     assert "Spearman" in result.method
+
+
+def test_correlation_rejects_constant_input() -> None:
+    req = CorrelationRequest(x=[1, 1, 1], y=[2, 3, 4])
+
+    with pytest.raises(ValueError, match="ばらつき"):
+        run_correlation(req)
+
+
+def test_pearson_perfect_correlation() -> None:
+    req = CorrelationRequest(x=[1, 2, 3, 4], y=[2, 4, 6, 8])
+
+    result = run_correlation(req)
+
+    assert math.isclose(result.r, 1.0)
+    assert result.ci95_low is not None and math.isclose(result.ci95_low, 1.0)
+    assert result.ci95_high is not None and math.isclose(result.ci95_high, 1.0)
+
+
+def test_missing_analysis_dependency_returns_503() -> None:
+    def missing_dependency() -> None:
+        raise ImportError
+
+    with pytest.raises(HTTPException) as exc_info:
+        _run_or_422(missing_dependency)
+
+    assert exc_info.value.status_code == 503

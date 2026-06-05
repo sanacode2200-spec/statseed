@@ -36,13 +36,13 @@ def scatter(request: ScatterRequest) -> PlotlyFigure:
 def export(request: ExportRequest) -> Response:
     try:
         from backend.services.graph.matplotlib_export import export_bytes
+        data, mime = export_bytes(request)
     except ImportError:
         raise HTTPException(
             status_code=503,
             detail="論文出力には graph オプションが必要です（pip install '.[graph]'）",
         )
 
-    data, mime = export_bytes(request)
     ext = request.format
     filename = f"statseed_graph.{ext}"
     return Response(

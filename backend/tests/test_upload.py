@@ -27,6 +27,13 @@ def test_parse_csv_basic() -> None:
     assert result.filename == "test.csv"
 
 
+def test_parse_csv_shift_jis() -> None:
+    result = parse_csv(_CSV_SJIS, "japanese.csv")
+
+    assert result.n_rows == 2
+    assert [column.name for column in result.columns] == ["年齢", "スコア"]
+
+
 def test_parse_csv_column_types() -> None:
     result = parse_csv(_CSV, "test.csv")
 
@@ -50,6 +57,16 @@ def test_parse_csv_values_for_continuous() -> None:
 
     age_col = next(c for c in result.columns if c.name == "age")
     assert age_col.values == [20.0, 22.0, 24.0, 26.0, 28.0]
+
+
+def test_parse_csv_numeric_conversion_failure_counts_as_missing() -> None:
+    result = parse_csv(b"value\n1\n2\ninvalid\n4\n5\n", "mixed.csv")
+
+    column = result.columns[0]
+    assert column.dtype == "continuous"
+    assert column.n_valid == 4
+    assert column.n_missing == 1
+    assert column.values == [1.0, 2.0, None, 4.0, 5.0]
 
 
 def test_parse_csv_categorical_has_empty_values() -> None:

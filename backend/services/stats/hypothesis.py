@@ -12,14 +12,27 @@ from backend.schemas.test import (
 )
 
 
+def _require_finite_result(**values: float) -> None:
+    if any(not math.isfinite(value) for value in values.values()):
+        raise ValueError("データのばらつきがないため、この検定は計算できません")
+
+
+def _has_variance(values: list[float]) -> bool:
+    return any(value != values[0] for value in values[1:])
+
+
 # --- 独立2群 t検定 ---
 
 def run_ttest_ind(request: TwoGroupRequest) -> TestResult:
     from scipy import stats
 
+    if not _has_variance(request.group_a) and not _has_variance(request.group_b):
+        raise ValueError("データのばらつきがないため、この検定は計算できません")
+
     t, p = stats.ttest_ind(request.group_a, request.group_b, equal_var=False)
     t = float(t)
     p = float(p)
+    _require_finite_result(statistic=t, p_value=p)
 
     na, nb = len(request.group_a), len(request.group_b)
     mean_a = statistics.fmean(request.group_a)
@@ -143,11 +156,15 @@ def _r_label(r: float) -> str:
 def run_ttest_paired(request: PairedRequest) -> TestResult:
     from scipy import stats
 
+    diffs = [b - a for b, a in zip(request.before, request.after)]
+    if not _has_variance(diffs):
+        raise ValueError("データのばらつきがないため、この検定は計算できません")
+
     t, p = stats.ttest_rel(request.before, request.after)
     t = float(t)
     p = float(p)
+    _require_finite_result(statistic=t, p_value=p)
 
-    diffs = [b - a for b, a in zip(request.before, request.after)]
     mean_diff = statistics.fmean(diffs)
     sd_diff = statistics.stdev(diffs) if len(diffs) >= 2 else 0.0
     n = len(diffs)
@@ -181,9 +198,13 @@ def run_ttest_paired(request: PairedRequest) -> TestResult:
 def run_wilcoxon(request: PairedRequest) -> TestResult:
     from scipy import stats
 
+    if all(before == after for before, after in zip(request.before, request.after)):
+        raise ValueError("すべてのペアの差が0のため、Wilcoxon符号順位検定は計算できません")
+
     w, p = stats.wilcoxon(request.before, request.after)
     w = float(w)
     p = float(p)
+    _require_finite_result(statistic=w, p_value=p)
 
     n = len(request.before)
     r = 1 - 2 * w / (n * (n + 1) / 2)
@@ -210,11 +231,15 @@ def run_wilcoxon(request: PairedRequest) -> TestResult:
 def run_anova(request: MultiGroupRequest) -> TestResult:
     from scipy import stats
 
+    all_vals = [v for g in request.groups for v in g]
+    if not _has_variance(all_vals):
+        raise ValueError("データのばらつきがないため、この検定は計算できません")
+
     f, p = stats.f_oneway(*request.groups)
     f = float(f)
     p = float(p)
+    _require_finite_result(statistic=f, p_value=p)
 
-    all_vals = [v for g in request.groups for v in g]
     n_total = len(all_vals)
     k = len(request.groups)
     grand_mean = statistics.fmean(all_vals)
@@ -250,9 +275,14 @@ def run_anova(request: MultiGroupRequest) -> TestResult:
 def run_kruskal(request: MultiGroupRequest) -> TestResult:
     from scipy import stats
 
+    all_vals = [v for group in request.groups for v in group]
+    if not _has_variance(all_vals):
+        raise ValueError("データのばらつきがないため、この検定は計算できません")
+
     h, p = stats.kruskal(*request.groups)
     h = float(h)
     p = float(p)
+    _require_finite_result(statistic=h, p_value=p)
 
     n_total = sum(len(g) for g in request.groups)
     k = len(request.groups)
@@ -289,6 +319,7 @@ def run_chisquare(request: ChiSquareRequest) -> TestResult:
     chi2, p, dof, expected = stats.chi2_contingency(table)
     chi2 = float(chi2)
     p = float(p)
+    _require_finite_result(statistic=chi2, p_value=p)
 
     n = int(table.sum())
     min_dim = min(table.shape) - 1
@@ -330,15 +361,17 @@ def run_fisher(request: ChiSquareRequest) -> TestResult:
     p = float(p)
 
     sig = "有意な関連が認められました" if p < 0.05 else "有意な関連は認められませんでした"
+    finite_odds_ratio = odds_ratio if math.isfinite(odds_ratio) else None
+    odds_ratio_text = f"{odds_ratio:.3f}" if finite_odds_ratio is not None else "算出不能（ゼロセルあり）"
     interpretation = (
-        f"Fisher正確検定において、{sig}（p={p:.3f}）。オッズ比={odds_ratio:.3f}。"
+        f"Fisher正確検定において、{sig}（p={p:.3f}）。オッズ比={odds_ratio_text}。"
     )
 
     return TestResult(
         test_name="Fisher正確検定",
-        statistic=odds_ratio,
+        statistic=finite_odds_ratio,
         p_value=p,
-        effect_size=odds_ratio,
+        effect_size=finite_odds_ratio,
         effect_size_label="オッズ比",
         interpretation=interpretation,
     )
@@ -348,9 +381,10 @@ def run_fisher(request: ChiSquareRequest) -> TestResult:
 
 def run_correlation(request: CorrelationRequest) -> CorrelationResult:
     from scipy import stats
-    import numpy as np
 
     n = len(request.x)
+    if not _has_variance(request.x) or not _has_variance(request.y):
+        raise ValueError("データのばらつきがないため、この検定は計算できません")
 
     if request.method == "pearson":
         r, p = stats.pearsonr(request.x, request.y)
@@ -363,6 +397,7 @@ def run_correlation(request: CorrelationRequest) -> CorrelationResult:
 
     r = float(r)
     p = float(p)
+    _require_finite_result(correlation=r, p_value=p)
 
     direction = "正の相関" if r > 0 else "負の相関"
     strength = _r_strength(abs(r))
@@ -385,7 +420,7 @@ def run_correlation(request: CorrelationRequest) -> CorrelationResult:
 
 
 def _pearson_ci(r: float, n: int) -> tuple[float, float]:
-    if n < 4:
+    if n < 4 or abs(r) >= 1:
         return (r, r)
     z = math.atanh(r)
     se = 1 / math.sqrt(n - 3)

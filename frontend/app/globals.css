@@ -13,6 +13,41 @@
 }
 
 body {
-  color: var(--ss-charcoal);
+  color: #373737;
   font-family: Arial, Helvetica, "Noto Sans JP", sans-serif;
 }
+
+.dark body {
+  color: #ededed;
+}
+
+/* ── ダークモード: フォーム要素 ── */
+.dark input[type="text"],
+.dark input[type="number"],
+.dark textarea,
+.dark select {
+  background-color: #1a1a1a;
+  border-color: #333333;
+  color: #ededed;
+}
+
+.dark input[type="text"]::placeholder,
+.dark input[type="number"]::placeholder,
+.dark textarea::placeholder {
+  color: #555555;
+}
+
+/* ── ダークモード: ページ内テキスト ── */
+.dark h1, .dark h2, .dark h3 {
+  color: #ededed;
+}
+
+.dark label {
+  color: #a3a3a3;
+}
+
+.dark .text-gray-800 { color: #e5e5e5; }
+.dark .text-gray-700 { color: #d4d4d4; }
+.dark .text-gray-600 { color: #a3a3a3; }
+.dark .text-gray-500 { color: #737373; }
+.dark .text-gray-400 { color: #525252; }
