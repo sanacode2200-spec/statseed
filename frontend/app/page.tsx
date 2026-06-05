@@ -31,13 +31,13 @@ export default function LandingPage() {
       <header className="border-b border-gray-200 dark:border-neutral-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <Image src="/sana2.png" alt="Statseed" width={30} height={30} className="rounded-md" />
-          <span className="text-lg font-semibold tracking-tight text-gray-900 dark:text-white">
+          <span className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-white">
             Statseed
           </span>
         </div>
         <Link
           href="/dashboard"
-          className="text-sm px-4 py-2 rounded-md text-white font-medium transition-opacity hover:opacity-90"
+          className="text-[15px] px-4 py-2 rounded-md text-white font-medium transition-opacity hover:opacity-90"
           style={{ backgroundColor: "#0072B2" }}
         >
           解析をはじめる
@@ -49,18 +49,18 @@ export default function LandingPage() {
         <div className="mb-6">
           <Image src="/sana2.png" alt="Statseed" width={72} height={72} className="mx-auto rounded-2xl shadow-md" />
         </div>
-        <p className="text-sm font-medium mb-3 tracking-wide" style={{ color: "#0072B2" }}>
+        <p className="text-[15px] font-medium mb-3 tracking-wide" style={{ color: "#0072B2" }}>
           PT / OT / ST / 看護師 / 臨床検査技師 向け
         </p>
-        <h1 className="text-4xl font-bold mb-5 text-gray-900 dark:text-white">
+        <h1 className="text-[40px] font-bold mb-5 text-gray-900 dark:text-white">
           医療統計を、もっとかんたんに。
         </h1>
-        <p className="text-lg text-gray-500 dark:text-neutral-400 max-w-xl mb-10">
+        <p className="text-[20px] text-gray-500 dark:text-neutral-400 max-w-xl mb-10">
           インストール不要・完全無料。ブラウザだけで統計解析から論文品質グラフ出力まで。
         </p>
         <Link
           href="/dashboard"
-          className="px-8 py-3 rounded-lg text-white text-base font-semibold shadow-sm transition-opacity hover:opacity-90"
+          className="px-8 py-3 rounded-lg text-white text-[18px] font-semibold shadow-sm transition-opacity hover:opacity-90"
           style={{ backgroundColor: "#0072B2" }}
         >
           無料で使ってみる
@@ -75,16 +75,16 @@ export default function LandingPage() {
               key={f.title}
               className="bg-white dark:bg-[#1a1a1a] rounded-xl p-6 border border-gray-200 dark:border-neutral-800"
             >
-              <div className="text-2xl mb-3">{f.icon}</div>
-              <h3 className="font-semibold text-sm mb-1 text-gray-900 dark:text-white">{f.title}</h3>
-              <p className="text-sm text-gray-500 dark:text-neutral-400 leading-relaxed">{f.desc}</p>
+              <div className="text-[26px] mb-3">{f.icon}</div>
+              <h3 className="font-semibold text-[15px] mb-1 text-gray-900 dark:text-white">{f.title}</h3>
+              <p className="text-[15px] text-gray-500 dark:text-neutral-400 leading-relaxed">{f.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 dark:border-neutral-800 text-center text-xs text-gray-400 dark:text-neutral-600 py-6">
+      <footer className="border-t border-gray-200 dark:border-neutral-800 text-center text-[13px] text-gray-400 dark:text-neutral-600 py-6">
         © 2025 Statseed
       </footer>
     </div>

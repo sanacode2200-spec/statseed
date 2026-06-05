@@ -12,10 +12,10 @@ type ChartType = "boxplot" | "histogram" | "scatter";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
 
 const inputCls =
-  "rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[12px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
+  "rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
 
 const textareaCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[12px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
+  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
 
 function parseNums(text: string): number[] {
   return text
@@ -194,7 +194,7 @@ export default function GraphPage() {
   ];
 
   const toggleBtn = (active: boolean) =>
-    `px-3 py-1 rounded-md text-[11px] font-medium border transition-colors ${
+    `px-3 py-1 rounded-md text-[12px] font-medium border transition-colors ${
       active
         ? "text-white border-transparent"
         : "text-gray-500 dark:text-neutral-500 border-gray-200 dark:border-neutral-800 bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-900"
@@ -202,11 +202,11 @@ export default function GraphPage() {
 
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
         解析
       </div>
-      <h1 className="text-[18px] font-bold text-gray-900 dark:text-white mb-1">グラフ作成</h1>
-      <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-5">
+      <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">グラフ作成</h1>
+      <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">
         グラフを作成し、PNG・SVG・PDFで論文品質出力できます。
       </p>
 
@@ -214,7 +214,7 @@ export default function GraphPage() {
         <form onSubmit={handleDraw} className="space-y-4">
           {/* グラフ種別 */}
           <div>
-            <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">グラフの種類</label>
+            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">グラフの種類</label>
             <div className="flex gap-1.5">
               {CHART_OPTIONS.map((opt) => (
                 <button
@@ -236,7 +236,7 @@ export default function GraphPage() {
 
           {/* タイトル */}
           <div>
-            <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">タイトル（任意）</label>
+            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">タイトル（任意）</label>
             <input
               type="text"
               value={title}
@@ -250,7 +250,7 @@ export default function GraphPage() {
           {chartType === "boxplot" && (
             <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
+                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
                 <input
                   type="text"
                   value={bpYLabel}
@@ -267,13 +267,13 @@ export default function GraphPage() {
                         type="text"
                         value={bpGroupNames[i]}
                         onChange={(e) => updateBpName(i, e.target.value)}
-                        className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[12px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
+                        className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
                       />
                       {bpGroupTexts.length > 2 && (
                         <button
                           type="button"
                           onClick={() => removeBpGroup(i)}
-                          className="text-[11px] text-red-400 dark:text-red-500 hover:text-red-600"
+                          className="text-[12px] text-red-400 dark:text-red-500 hover:text-red-600"
                         >
                           ✕
                         </button>
@@ -293,11 +293,11 @@ export default function GraphPage() {
                 <button
                   type="button"
                   onClick={addBpGroup}
-                  className="text-[11px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
+                  className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
                 >
                   + 群を追加
                 </button>
-                <label className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+                <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={bpShowJitter}
@@ -314,7 +314,7 @@ export default function GraphPage() {
           {chartType === "histogram" && (
             <div className="space-y-3">
               <div>
-                <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
+                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
                 <input
                   type="text"
                   value={histXLabel}
@@ -324,7 +324,7 @@ export default function GraphPage() {
                 />
               </div>
               <div>
-                <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
+                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
                 <textarea
                   value={histText}
                   onChange={(e) => setHistText(e.target.value)}
@@ -333,7 +333,7 @@ export default function GraphPage() {
                   placeholder="1行1データ（またはスペース/カンマ区切り）"
                 />
               </div>
-              <label className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={histShowNormal}
@@ -371,7 +371,7 @@ export default function GraphPage() {
                   </div>
                 ))}
               </div>
-              <label className="flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+              <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={scShowReg}
@@ -399,7 +399,7 @@ export default function GraphPage() {
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-3">
             {/* フォントプリセット */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] text-gray-400 dark:text-neutral-600 mr-1">フォント：</span>
+              <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">フォント：</span>
               {(["論文標準", "日本語対応", "ポスター", "カスタム"] as const).map((p) => (
                 <button
                   key={p}
@@ -431,13 +431,13 @@ export default function GraphPage() {
                   placeholder="サイズ"
                   className={`${inputCls} w-16`}
                 />
-                <span className="text-[11px] text-gray-400 dark:text-neutral-600">pt</span>
+                <span className="text-[12px] text-gray-400 dark:text-neutral-600">pt</span>
               </div>
             )}
 
             {/* フォーマット & ダウンロード */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] text-gray-400 dark:text-neutral-600 mr-1">形式：</span>
+              <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">形式：</span>
               {(["png", "svg", "pdf"] as const).map((fmt) => (
                 <button
                   key={fmt}

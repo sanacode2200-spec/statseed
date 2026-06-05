@@ -174,7 +174,7 @@ function SuggestionCard({ s }: { s: SuggestedTest }) {
     >
       <div className="flex items-center gap-2 mb-2">
         <span
-          className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${
+          className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
             isRecommended
               ? "bg-[#0072B2] text-white"
               : "bg-gray-100 dark:bg-neutral-900 text-gray-500 dark:text-neutral-500"
@@ -182,17 +182,17 @@ function SuggestionCard({ s }: { s: SuggestedTest }) {
         >
           {s.confidence}
         </span>
-        <h3 className="text-[13px] font-semibold text-gray-800 dark:text-neutral-200">{s.test_name}</h3>
+        <h3 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">{s.test_name}</h3>
       </div>
-      <p className="text-[12px] text-gray-500 dark:text-neutral-500 leading-relaxed mb-2">{s.reason}</p>
+      <p className="text-[13px] text-gray-500 dark:text-neutral-500 leading-relaxed mb-2">{s.reason}</p>
       {s.caution && (
-        <p className="text-[11px] text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 rounded px-2 py-1 mb-3">
+        <p className="text-[12px] text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/20 rounded px-2 py-1 mb-3">
           ⚠️ {s.caution}
         </p>
       )}
       <Link
         href={ENDPOINT_LABELS[s.endpoint] ?? "/dashboard/test"}
-        className="inline-block text-[12px] font-medium text-[#0072B2] dark:text-[#56B4E9] hover:underline"
+        className="inline-block text-[13px] font-medium text-[#0072B2] dark:text-[#56B4E9] hover:underline"
       >
         → この検定を実行する
       </Link>
@@ -270,18 +270,18 @@ export default function GuidePage() {
 
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
         解析
       </div>
-      <h1 className="text-[18px] font-bold text-gray-900 dark:text-white mb-1">検定選択ガイド</h1>
-      <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-5">
+      <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">検定選択ガイド</h1>
+      <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">
         質問に答えるだけで、データに合った統計検定を提案します。
       </p>
 
       {/* プログレスバー */}
       {step !== "result" && (
         <div className="mb-5">
-          <div className="flex justify-between text-[10px] text-gray-400 dark:text-neutral-600 mb-1">
+          <div className="flex justify-between text-[11px] text-gray-400 dark:text-neutral-600 mb-1">
             <span>ステップ {currentIndex}</span>
             <span>最大 {totalSteps} 問</span>
           </div>
@@ -300,7 +300,7 @@ export default function GuidePage() {
       {/* 質問ステップ */}
       {stepConfig && (
         <Card>
-          <h2 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200 mb-4">
+          <h2 className="text-[15px] font-semibold text-gray-800 dark:text-neutral-200 mb-4">
             {stepConfig.question}
           </h2>
           <div className="space-y-2">
@@ -314,12 +314,12 @@ export default function GuidePage() {
                   transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-xl">{c.icon}</span>
+                  <span className="text-[22px]">{c.icon}</span>
                   <div>
-                    <div className="text-[13px] font-medium text-gray-800 dark:text-neutral-200 group-hover:text-gray-900 dark:group-hover:text-white">
+                    <div className="text-[14px] font-medium text-gray-800 dark:text-neutral-200 group-hover:text-gray-900 dark:group-hover:text-white">
                       {c.label}
                     </div>
-                    <div className="text-[11px] text-gray-400 dark:text-neutral-600 mt-0.5">{c.description}</div>
+                    <div className="text-[12px] text-gray-400 dark:text-neutral-600 mt-0.5">{c.description}</div>
                   </div>
                 </div>
               </button>
@@ -330,7 +330,7 @@ export default function GuidePage() {
             <button
               type="button"
               onClick={handleBack}
-              className="mt-4 text-[11px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
+              className="mt-4 text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
             >
               ← 前の質問に戻る
             </button>
@@ -342,13 +342,13 @@ export default function GuidePage() {
       {step === "result" && (
         <div className="space-y-3">
           {loading && (
-            <div className="text-center text-[12px] text-gray-400 dark:text-neutral-600 py-8">提案を生成中...</div>
+            <div className="text-center text-[13px] text-gray-400 dark:text-neutral-600 py-8">提案を生成中...</div>
           )}
           {error && <ErrorMessage message={error} />}
           {result && (
             <>
               <Card>
-                <p className="text-[12px] text-gray-600 dark:text-neutral-400 leading-relaxed">{result.summary}</p>
+                <p className="text-[13px] text-gray-600 dark:text-neutral-400 leading-relaxed">{result.summary}</p>
               </Card>
               {result.suggestions.map((s) => (
                 <SuggestionCard key={s.test_name} s={s} />
@@ -356,13 +356,13 @@ export default function GuidePage() {
               <div className="flex gap-4 pt-1">
                 <button
                   onClick={handleBack}
-                  className="text-[11px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
+                  className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
                 >
                   ← 前の質問に戻る
                 </button>
                 <button
                   onClick={handleReset}
-                  className="text-[11px] text-[#0072B2] dark:text-[#56B4E9] hover:underline"
+                  className="text-[12px] text-[#0072B2] dark:text-[#56B4E9] hover:underline"
                 >
                   最初からやり直す
                 </button>

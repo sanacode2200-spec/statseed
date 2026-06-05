@@ -34,10 +34,10 @@ const TEST_OPTIONS: { value: TestType; label: string; category: string }[] = [
 ];
 
 const inputCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[12px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
+  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
 
 const textareaCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[12px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
+  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
 
 function parseNums(text: string): number[] {
   return text
@@ -175,17 +175,17 @@ export default function TestPage() {
 
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
         解析
       </div>
-      <h1 className="text-[18px] font-bold text-gray-900 dark:text-white mb-1">統計検定</h1>
-      <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-5">検定を選んでデータを入力してください。</p>
+      <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">統計検定</h1>
+      <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">検定を選んでデータを入力してください。</p>
 
       <Card className="mb-5">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 検定選択 */}
           <div>
-            <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">検定の種類</label>
+            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">検定の種類</label>
             <select
               value={testType}
               onChange={(e) => {
@@ -210,7 +210,7 @@ export default function TestPage() {
           {/* 変数名（テーブル系以外） */}
           {!isTable && (
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
+              <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
               <input
                 type="text"
                 value={variableName}
@@ -255,7 +255,7 @@ export default function TestPage() {
                 { label: "介入後", text: afterText, setText: setAfterText },
               ].map(({ label, text, setText }) => (
                 <div key={label}>
-                  <p className="text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</p>
+                  <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</p>
                   <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
@@ -279,13 +279,13 @@ export default function TestPage() {
                         type="text"
                         value={multiGroupNames[i]}
                         onChange={(e) => updateMultiGroupName(i, e.target.value)}
-                        className="w-28 rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[12px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
+                        className="w-28 rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
                       />
                       {multiGroupTexts.length > 3 && (
                         <button
                           type="button"
                           onClick={() => removeGroup(i)}
-                          className="text-[11px] text-red-500 dark:text-red-400 hover:underline"
+                          className="text-[12px] text-red-500 dark:text-red-400 hover:underline"
                         >
                           削除
                         </button>
@@ -304,7 +304,7 @@ export default function TestPage() {
               <button
                 type="button"
                 onClick={addGroup}
-                className="text-[11px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
+                className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
               >
                 + 群を追加
               </button>
@@ -314,10 +314,10 @@ export default function TestPage() {
           {/* クロス集計表 */}
           {isTable && (
             <div>
-              <label className="block text-[11px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+              <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                 クロス集計表
               </label>
-              <p className="text-[11px] text-gray-400 dark:text-neutral-600 mb-1.5">
+              <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-1.5">
                 行を改行で、列をスペース/タブ/カンマで区切って入力してください。
               </p>
               <textarea

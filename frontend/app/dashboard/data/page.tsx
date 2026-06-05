@@ -10,11 +10,11 @@ const ACCEPT = ".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedo
 
 function ColTypeBadge({ dtype }: { dtype: ColumnInfo["dtype"] }) {
   return dtype === "continuous" ? (
-    <span className="inline-block rounded px-1.5 py-0.5 text-[10px] font-medium bg-blue-50 dark:bg-[#0072B2]/10 text-[#0072B2] dark:text-[#56B4E9]">
+    <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 dark:bg-[#0072B2]/10 text-[#0072B2] dark:text-[#56B4E9]">
       連続
     </span>
   ) : (
-    <span className="inline-block rounded px-1.5 py-0.5 text-[10px] font-medium bg-gray-100 dark:bg-neutral-900 text-gray-500 dark:text-neutral-500">
+    <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium bg-gray-100 dark:bg-neutral-900 text-gray-500 dark:text-neutral-500">
       カテゴリ
     </span>
   );
@@ -34,7 +34,7 @@ function CopyButton({ values }: { values: (number | null)[] }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-[11px] text-[#0072B2] dark:text-[#56B4E9] hover:underline whitespace-nowrap"
+      className="text-[12px] text-[#0072B2] dark:text-[#56B4E9] hover:underline whitespace-nowrap"
     >
       {copied ? "コピー済み ✓" : "値をコピー"}
     </button>
@@ -87,11 +87,11 @@ export default function DataPage() {
 
   return (
     <div>
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
         データ
       </div>
-      <h1 className="text-[18px] font-bold text-gray-900 dark:text-white mb-1">データ読み込み</h1>
-      <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-5">
+      <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">データ読み込み</h1>
+      <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">
         CSV または Excel ファイルをアップロードすると、列ごとの概要を確認できます。
         連続変数の値は「値をコピー」で記述統計・検定ページに貼り付けて使えます。
       </p>
@@ -109,10 +109,10 @@ export default function DataPage() {
         }`}
       >
         <div className="text-3xl">📂</div>
-        <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500">
+        <p className="text-[13px] font-medium text-gray-500 dark:text-neutral-500">
           クリックまたはドラッグ＆ドロップでファイルを選択
         </p>
-        <p className="text-[11px] text-gray-400 dark:text-neutral-600">CSV・Excel（.xlsx / .xls）対応 / 最大10MB</p>
+        <p className="text-[12px] text-gray-400 dark:text-neutral-600">CSV・Excel（.xlsx / .xls）対応 / 最大10MB</p>
         <input
           ref={inputRef}
           type="file"
@@ -123,7 +123,7 @@ export default function DataPage() {
       </div>
 
       {loading && (
-        <div className="text-center text-[12px] text-gray-400 dark:text-neutral-600 py-8">読み込み中...</div>
+        <div className="text-center text-[13px] text-gray-400 dark:text-neutral-600 py-8">読み込み中...</div>
       )}
 
       {error && <ErrorMessage message={error} />}
@@ -133,24 +133,24 @@ export default function DataPage() {
           {/* サマリー */}
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[13px] font-semibold text-gray-800 dark:text-neutral-200">
+              <h2 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">
                 {result.filename}
               </h2>
-              <span className="text-[11px] text-gray-400 dark:text-neutral-600">
+              <span className="text-[12px] text-gray-400 dark:text-neutral-600">
                 {result.n_rows} 行 × {result.n_cols} 列
               </span>
             </div>
 
             {/* 列一覧 */}
             <div className="overflow-x-auto">
-              <table className="w-full text-[12px]">
+              <table className="w-full text-[13px]">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-neutral-800 text-left">
-                    <th className="pb-2 pr-4 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">列名</th>
-                    <th className="pb-2 pr-4 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">型</th>
-                    <th className="pb-2 pr-4 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">有効数</th>
-                    <th className="pb-2 pr-4 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">欠損数</th>
-                    <th className="pb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600"></th>
+                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">列名</th>
+                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">型</th>
+                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">有効数</th>
+                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">欠損数</th>
+                    <th className="pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -167,7 +167,7 @@ export default function DataPage() {
                       <td className="py-2 pr-4 font-medium text-gray-700 dark:text-neutral-300">
                         {col.name}
                         {activeCol === col.name && (
-                          <span className="ml-2 text-[10px] text-gray-400 dark:text-neutral-600">▶ 選択中</span>
+                          <span className="ml-2 text-[11px] text-gray-400 dark:text-neutral-600">▶ 選択中</span>
                         )}
                       </td>
                       <td className="py-2 pr-4">
@@ -199,15 +199,15 @@ export default function DataPage() {
           {activeColInfo && (
             <Card>
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[13px] font-semibold text-gray-700 dark:text-neutral-300">
+                <h3 className="text-[14px] font-semibold text-gray-700 dark:text-neutral-300">
                   {activeColInfo.name} — 値のプレビュー
                 </h3>
                 <CopyButton values={activeColInfo.values} />
               </div>
-              <p className="text-[11px] text-gray-400 dark:text-neutral-600 mb-3">
+              <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-3">
                 「値をコピー」→ 記述統計や検定ページに貼り付けて解析できます
               </p>
-              <div className="font-mono text-[12px] bg-gray-50 dark:bg-[#111] rounded-md p-3 max-h-48 overflow-y-auto leading-relaxed text-gray-600 dark:text-neutral-400">
+              <div className="font-mono text-[13px] bg-gray-50 dark:bg-[#111] rounded-md p-3 max-h-48 overflow-y-auto leading-relaxed text-gray-600 dark:text-neutral-400">
                 {activeColInfo.values.slice(0, 50).map((v, i) => (
                   <span key={i} className="mr-2">
                     {v === null ? <span className="text-orange-400">NA</span> : v}
@@ -222,11 +222,11 @@ export default function DataPage() {
 
           {/* データプレビューテーブル */}
           <Card>
-            <h3 className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 mb-3">
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 mb-3">
               先頭 {result.preview_rows.length} 行
             </h3>
             <div className="overflow-x-auto">
-              <table className="text-[11px] min-w-full">
+              <table className="text-[12px] min-w-full">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-neutral-800">
                     {result.columns.map((col) => (

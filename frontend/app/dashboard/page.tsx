@@ -67,18 +67,18 @@ export default function DashboardHome() {
         {/* ヘッダー */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600">
               Overview
             </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+            <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
               style={{ color: "#009E73", backgroundColor: "rgba(0,158,115,0.1)", border: "1px solid rgba(0,158,115,0.3)" }}>
               Phase 1 完了
             </span>
           </div>
-          <h1 className="text-[22px] font-bold text-gray-900 dark:text-white tracking-tight">
+          <h1 className="text-[24px] font-bold text-gray-900 dark:text-white tracking-tight">
             Statseed
           </h1>
-          <p className="text-[12px] text-gray-400 dark:text-neutral-600 mt-0.5">
+          <p className="text-[13px] text-gray-400 dark:text-neutral-600 mt-0.5">
             コメディカル向け医療統計 Web アプリ
           </p>
         </div>
@@ -88,24 +88,24 @@ export default function DashboardHome() {
           {STATS.map(({ label, value, sub }) => (
             <div key={label}
               className="bg-white dark:bg-[#111] border border-gray-200 dark:border-neutral-900 rounded-lg px-4 py-3">
-              <div className="text-[20px] font-bold text-gray-900 dark:text-white leading-tight">{value}</div>
-              <div className="text-[11px] font-medium text-gray-600 dark:text-neutral-400 mt-0.5">{label}</div>
-              <div className="text-[10px] text-gray-400 dark:text-neutral-600 mt-0.5 font-mono">{sub}</div>
+              <div className="text-[22px] font-bold text-gray-900 dark:text-white leading-tight">{value}</div>
+              <div className="text-[12px] font-medium text-gray-600 dark:text-neutral-400 mt-0.5">{label}</div>
+              <div className="text-[11px] text-gray-400 dark:text-neutral-600 mt-0.5 font-mono">{sub}</div>
             </div>
           ))}
         </div>
 
         {/* 解析の流れ */}
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
             Quick Start
           </div>
           <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-neutral-900 rounded-lg divide-y divide-gray-100 dark:divide-neutral-900">
             {FLOW.map(({ n, label, href }) => (
               <Link key={n} href={href}
                 className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-neutral-950 transition-colors group">
-                <span className="text-[10px] font-mono text-gray-300 dark:text-neutral-700 w-4 shrink-0">{n}</span>
-                <span className="text-[12px] text-gray-700 dark:text-neutral-300 flex-1">{label}</span>
+                <span className="text-[11px] font-mono text-gray-300 dark:text-neutral-700 w-4 shrink-0">{n}</span>
+                <span className="text-[13px] text-gray-700 dark:text-neutral-300 flex-1">{label}</span>
                 <span className="text-gray-300 dark:text-neutral-800 group-hover:text-gray-500 dark:group-hover:text-neutral-500 transition-colors">
                   <ChevronRight />
                 </span>
@@ -116,7 +116,7 @@ export default function DashboardHome() {
 
         {/* 技術スタック */}
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
             Stack
           </div>
           <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-neutral-900 rounded-lg divide-y divide-gray-100 dark:divide-neutral-900">
@@ -127,8 +127,8 @@ export default function DashboardHome() {
               { label: "インフラ", value: "Vercel + Railway" },
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center px-4 py-2.5 gap-4">
-                <span className="text-[10px] font-medium text-gray-400 dark:text-neutral-600 w-20 shrink-0">{label}</span>
-                <span className="text-[11px] text-gray-600 dark:text-neutral-400 font-mono">{value}</span>
+                <span className="text-[11px] font-medium text-gray-400 dark:text-neutral-600 w-20 shrink-0">{label}</span>
+                <span className="text-[12px] text-gray-600 dark:text-neutral-400 font-mono">{value}</span>
               </div>
             ))}
           </div>
@@ -137,7 +137,7 @@ export default function DashboardHome() {
 
       {/* ── 右カラム: 機能 ── */}
       <div className="w-[300px] shrink-0 space-y-3">
-        <div className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
+        <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
           機能
         </div>
         {FEATURES.map(({ href, title, desc, color, tags, icon: Icon }) => (
@@ -146,13 +146,13 @@ export default function DashboardHome() {
               hover:border-gray-300 dark:hover:border-neutral-700 transition-all">
             <div className="flex items-center gap-2 mb-1.5">
               <span style={{ color }}><Icon /></span>
-              <span className="text-[12px] font-semibold text-gray-900 dark:text-white flex-1">{title}</span>
+              <span className="text-[13px] font-semibold text-gray-900 dark:text-white flex-1">{title}</span>
               <ChevronRight />
             </div>
-            <p className="text-[11px] text-gray-400 dark:text-neutral-600 leading-relaxed mb-2">{desc}</p>
+            <p className="text-[12px] text-gray-400 dark:text-neutral-600 leading-relaxed mb-2">{desc}</p>
             <div className="flex flex-wrap gap-1">
               {tags.map(t => (
-                <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-neutral-900 text-gray-400 dark:text-neutral-600">
+                <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-neutral-900 text-gray-400 dark:text-neutral-600">
                   {t}
                 </span>
               ))}

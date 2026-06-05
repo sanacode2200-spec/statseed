@@ -33,7 +33,7 @@ export function DescriptiveResultTable({ result }: { result: DescriptiveResponse
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-neutral-800">
-      <table className="w-full text-sm">
+      <table className="w-full text-[15px]">
         <thead>
           <tr className="bg-gray-50 dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
             <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-neutral-400 w-1/2">

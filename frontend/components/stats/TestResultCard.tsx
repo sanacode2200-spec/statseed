@@ -14,7 +14,7 @@ function pBadge(p: number) {
       ? "bg-orange-100 dark:bg-orange-950/30 text-orange-700 dark:text-orange-400"
       : "bg-gray-100 dark:bg-neutral-900 text-gray-600 dark:text-neutral-400";
   return (
-    <span className={`inline-block rounded px-2 py-0.5 text-[11px] font-medium ${color}`}>
+    <span className={`inline-block rounded px-2 py-0.5 text-[12px] font-medium ${color}`}>
       p = {text}
     </span>
   );
@@ -39,11 +39,11 @@ export function TestResultCard({ result }: { result: TestResult }) {
   return (
     <Card>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[13px] font-semibold text-gray-800 dark:text-neutral-200">{result.test_name}</h3>
+        <h3 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">{result.test_name}</h3>
         {pBadge(result.p_value)}
       </div>
 
-      <table className="w-full text-[12px] mb-4">
+      <table className="w-full text-[13px] mb-4">
         <tbody>
           {rows.map(([label, value]) => (
             <tr key={label} className="border-b border-gray-100 dark:border-neutral-800 last:border-0">
@@ -54,7 +54,7 @@ export function TestResultCard({ result }: { result: TestResult }) {
         </tbody>
       </table>
 
-      <p className="text-[12px] text-gray-600 dark:text-neutral-400 leading-relaxed bg-blue-50 dark:bg-neutral-900 rounded-md px-3 py-2">
+      <p className="text-[13px] text-gray-600 dark:text-neutral-400 leading-relaxed bg-blue-50 dark:bg-neutral-900 rounded-md px-3 py-2">
         {result.interpretation}
       </p>
     </Card>
@@ -78,11 +78,11 @@ export function CorrelationResultCard({ result }: { result: CorrelationResult })
   return (
     <Card>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[13px] font-semibold text-gray-800 dark:text-neutral-200">{result.method}</h3>
+        <h3 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">{result.method}</h3>
         {pBadge(result.p_value)}
       </div>
 
-      <table className="w-full text-[12px] mb-4">
+      <table className="w-full text-[13px] mb-4">
         <tbody>
           {rows.map(([label, value]) => (
             <tr key={label} className="border-b border-gray-100 dark:border-neutral-800 last:border-0">
@@ -93,7 +93,7 @@ export function CorrelationResultCard({ result }: { result: CorrelationResult })
         </tbody>
       </table>
 
-      <p className="text-[12px] text-gray-600 dark:text-neutral-400 leading-relaxed bg-blue-50 dark:bg-neutral-900 rounded-md px-3 py-2">
+      <p className="text-[13px] text-gray-600 dark:text-neutral-400 leading-relaxed bg-blue-50 dark:bg-neutral-900 rounded-md px-3 py-2">
         {result.interpretation}
       </p>
     </Card>

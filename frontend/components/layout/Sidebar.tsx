@@ -64,10 +64,10 @@ export function Sidebar() {
           hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors text-left">
           <Image src="/sana2.png" alt="Statseed" width={20} height={20} className="rounded-sm shrink-0" />
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
+            <div className="text-[13px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
               sana's projects
             </div>
-            <div className="text-[10px] text-gray-400 dark:text-neutral-600 leading-tight">Statseed</div>
+            <div className="text-[11px] text-gray-400 dark:text-neutral-600 leading-tight">Statseed</div>
           </div>
           <ChevronDown />
         </button>
@@ -77,7 +77,7 @@ export function Sidebar() {
       <div className="px-3 py-2 border-b border-gray-100 dark:border-neutral-900">
         <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md
           bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800
-          text-gray-400 dark:text-neutral-600 text-[11px]">
+          text-gray-400 dark:text-neutral-600 text-[12px]">
           <SearchIcon />
           <span>検索...</span>
         </div>
@@ -88,7 +88,7 @@ export function Sidebar() {
         {NAV_GROUPS.map((group, gi) => (
           <div key={gi} className={gi > 0 ? "mt-4" : ""}>
             {group.label && (
-              <div className="px-2 mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">
+              <div className="px-2 mb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">
                 {group.label}
               </div>
             )}
@@ -99,7 +99,7 @@ export function Sidebar() {
                   <Link
                     key={href}
                     href={href}
-                    className={`flex items-center gap-2 px-2 py-[6px] rounded-md text-[12px] transition-colors ${
+                    className={`flex items-center gap-2 px-2 py-[6px] rounded-md text-[13px] transition-colors ${
                       active
                         ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white font-medium"
                         : "text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-950 hover:text-gray-800 dark:hover:text-neutral-300"
@@ -120,7 +120,7 @@ export function Sidebar() {
       {/* フッター */}
       <div className="px-3 py-2.5 border-t border-gray-100 dark:border-neutral-900
         flex items-center justify-between">
-        <span className="text-[10px] text-gray-300 dark:text-neutral-700">v1.0</span>
+        <span className="text-[11px] text-gray-300 dark:text-neutral-700">v1.0</span>
         <button
           onClick={toggleTheme}
           className="p-1.5 rounded-md text-gray-400 dark:text-neutral-600
