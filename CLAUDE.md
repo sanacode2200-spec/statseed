@@ -25,6 +25,7 @@ Backend    FastAPI (Python 3.11+)
 DB         PostgreSQL (Supabase)
 認証       Supabase Auth
 インフラ   Vercel (Frontend) + Railway (Backend)
+フォント   LINESeed JP（ローカル読み込み、woff2）
 ```
 
 ### デプロイ高速化方針
@@ -317,7 +318,7 @@ POST /api/guide/suggest        # 検定選択ガイド
 
 1. **日本語を優先** — エラーメッセージ・結果解釈・UIテキストはすべて日本語
 2. **グラフは妥協しない** — デザイン仕様から逸脱しない。テーマファイルを必ず使う
-3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証（現在36テスト）
+3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証（現在54テスト）
 4. **型安全** — TypeScript / Pydantic を徹底する
 5. **コメディカル視点** — 医療統計初学者が迷わない設計を常に意識する
 6. **高速起動を維持** — 本番ランタイムで不要な依存・不要なimport・不要なAPIドキュメント生成を避ける
@@ -334,3 +335,41 @@ cd frontend && npm run dev
 # テスト実行
 STATSEED_ENABLE_SCIPY=1 .venv/bin/pytest backend/tests/ -v
 ```
+
+---
+
+## UI デザイン方針（2026-06-05 確定）
+
+### レイアウト
+- **Vercel 風サイドバー** — 200px 固定、黒背景（dark）/ 白（light）、グループ付きナビ
+- **ダッシュボード** — 左カラム（概要・Quick Start・Stack）+ 右カラム（機能一覧）
+- **ブレッドクラム** — トップバーに `Statseed / ページ名`
+
+### フォント
+- **LINESeed JP** — `next/font/local` でローカル読み込み（woff2 × 4ウェイト）
+- フォントファイル: `frontend/public/fonts/line-seed-jp/`
+- CSS 変数: `--font-line-seed-jp`
+
+### フォントサイズ体系（px）
+| 用途 | サイズ |
+|------|--------|
+| セクションラベル（uppercase） | 11px |
+| 補助テキスト・説明文 | 12–13px |
+| 本文・フォーム | 13px |
+| 小見出し | 14–15px |
+| ページタイトル | 20px |
+| ヒーロー見出し | 40px |
+
+### カラー・ダークモード
+- ダークモード: `darkMode: "class"` + `localStorage` 永続化 + フラッシュ防止スクリプト
+- ダーク背景: `#0a0a0a`（ページ）/ `#111`（カード・入力）
+- ボーダー: `gray-200` / `neutral-800`（dark）
+
+### ボタン・フォーム
+- **Button**: `px-3 py-1.5 text-[12px]`、primary は `#0072B2`
+- **切り替えボタン**: `text-[11px] px-3 py-1`、active は brand color
+- **input / textarea / select**: `border-gray-200 dark:border-neutral-800 dark:bg-[#111]`
+
+### アイコン
+- **sana2.png** — クラゲ猫ロゴ（757×757px、余白トリミング済み）
+- サイドバートップ・ランディングページで使用
