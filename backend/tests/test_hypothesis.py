@@ -3,6 +3,7 @@ import os
 
 import pytest
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 os.environ["STATSEED_ENABLE_SCIPY"] = "1"
 
@@ -63,6 +64,11 @@ def test_ttest_ind_rejects_data_without_variance() -> None:
 
     with pytest.raises(ValueError, match="ばらつき"):
         run_ttest_ind(req)
+
+
+def test_test_request_rejects_non_finite_values() -> None:
+    with pytest.raises(ValidationError):
+        TwoGroupRequest(group_a=[1, math.nan], group_b=[2, 3])
 
 
 # --- Mann-Whitney U検定 ---

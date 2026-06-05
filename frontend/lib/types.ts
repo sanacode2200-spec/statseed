@@ -141,6 +141,45 @@ export interface UploadResponse {
   preview_rows: Record<string, string | null>[];
 }
 
+// --- Table 1 ---
+
+export interface ContinuousVariable {
+  name: string;
+  type: "continuous";
+  values: (number | null)[];
+  display?: "mean_sd" | "median_iqr";
+}
+
+export interface CategoricalVariable {
+  name: string;
+  type: "categorical";
+  values: (string | null)[];
+}
+
+export type Table1Variable = ContinuousVariable | CategoricalVariable;
+
+export interface Table1Request {
+  variables: Table1Variable[];
+  group_values?: (string | null)[] | null;
+  group_name?: string;
+}
+
+export interface Table1Row {
+  variable: string;
+  indent: boolean;
+  overall: string;
+  groups: Record<string, string> | null;
+  p_value: string | null;
+  test_name: string | null;
+}
+
+export interface Table1Result {
+  rows: Table1Row[];
+  group_names: string[] | null;
+  n_overall: number;
+  n_by_group: Record<string, number> | null;
+}
+
 // --- グラフ ---
 
 export interface BoxplotRequest {

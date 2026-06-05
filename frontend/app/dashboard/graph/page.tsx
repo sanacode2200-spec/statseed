@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
+import { parseNumbers } from "@/lib/parse";
 
 type ChartType = "boxplot" | "histogram" | "scatter";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
@@ -16,14 +17,6 @@ const inputCls =
 
 const textareaCls =
   "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
-
-function parseNums(text: string): number[] {
-  return text
-    .split(/[\n,\t\s]+/)
-    .filter((s) => s.trim() !== "")
-    .map((s) => parseFloat(s.trim()))
-    .filter((n) => !isNaN(n));
-}
 
 export default function GraphPage() {
   const [chartType, setChartType] = useState<ChartType>("boxplot");
@@ -83,7 +76,7 @@ export default function GraphPage() {
 
     try {
       if (chartType === "boxplot") {
-        const groups = bpGroupTexts.map(parseNums);
+        const groups = bpGroupTexts.map(parseNumbers);
         if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
         setFigure(
           await api.graphBoxplot({
@@ -95,7 +88,7 @@ export default function GraphPage() {
           })
         );
       } else if (chartType === "histogram") {
-        const values = parseNums(histText);
+        const values = parseNumbers(histText);
         if (values.length < 3) throw new Error("3件以上のデータが必要です。");
         setFigure(
           await api.graphHistogram({
@@ -106,8 +99,8 @@ export default function GraphPage() {
           })
         );
       } else {
-        const x = parseNums(scXText);
-        const y = parseNums(scYText);
+        const x = parseNumbers(scXText);
+        const y = parseNumbers(scYText);
         if (x.length < 3) throw new Error("3件以上のデータが必要です。");
         if (x.length !== y.length) throw new Error("XとYのデータ数が一致しません。");
         setFigure(
@@ -143,7 +136,7 @@ export default function GraphPage() {
       };
       if (chartType === "boxplot") {
         body.boxplot = {
-          groups: bpGroupTexts.map(parseNums),
+          groups: bpGroupTexts.map(parseNumbers),
           group_names: bpGroupNames,
           title,
           y_label: bpYLabel,
@@ -151,15 +144,15 @@ export default function GraphPage() {
         };
       } else if (chartType === "histogram") {
         body.histogram = {
-          values: parseNums(histText),
+          values: parseNumbers(histText),
           title,
           x_label: histXLabel,
           show_normal_curve: histShowNormal,
         };
       } else {
         body.scatter = {
-          x: parseNums(scXText),
-          y: parseNums(scYText),
+          x: parseNumbers(scXText),
+          y: parseNumbers(scYText),
           title,
           x_label: scXLabel,
           y_label: scYLabel,

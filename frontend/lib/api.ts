@@ -14,12 +14,38 @@ import type {
   PairedRequest,
   PlotlyFigure,
   ScatterRequest,
+  Table1Request,
+  Table1Result,
   TestResult,
   TwoGroupRequest,
   UploadResponse,
 } from "./types";
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+function errorMessage(payload: unknown, fallback: string): string {
+  if (typeof payload !== "object" || payload === null || !("detail" in payload)) {
+    return fallback;
+  }
+
+  const detail = payload.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => {
+        if (typeof item !== "object" || item === null || !("msg" in item)) return null;
+        return typeof item.msg === "string" ? item.msg.replace(/^Value error, /, "") : null;
+      })
+      .filter((message): message is string => message !== null);
+    if (messages.length > 0) return messages.join("\n");
+  }
+  return fallback;
+}
+
+async function responseError(res: Response, fallback: string): Promise<Error> {
+  const payload: unknown = await res.json().catch(() => null);
+  return new Error(errorMessage(payload, `${fallback} (${res.status})`));
+}
 
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
@@ -28,8 +54,7 @@ async function post<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    const detail = await res.json().catch(() => ({}));
-    throw new Error(detail?.detail ?? `APIエラー (${res.status})`);
+    throw await responseError(res, "APIエラー");
   }
   return res.json() as Promise<T>;
 }
@@ -39,8 +64,7 @@ async function _upload<T>(path: string, file: File): Promise<T> {
   form.append("file", file);
   const res = await fetch(`${BASE}${path}`, { method: "POST", body: form });
   if (!res.ok) {
-    const detail = await res.json().catch(() => ({}));
-    throw new Error(detail?.detail ?? `アップロードエラー (${res.status})`);
+    throw await responseError(res, "アップロードエラー");
   }
   return res.json() as Promise<T>;
 }
@@ -95,4 +119,7 @@ export const api = {
 
   guideSuggest: (req: GuideRequest) =>
     post<GuideResponse>("/api/guide/suggest", req),
+
+  table1: (req: Table1Request) =>
+    post<Table1Result>("/api/table1", req),
 };

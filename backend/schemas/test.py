@@ -2,19 +2,21 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from backend.schemas.common import FiniteFloat
+
 
 class TwoGroupRequest(BaseModel):
     variable_name: str = Field(default="変数", min_length=1, max_length=80)
-    group_a: list[float] = Field(min_length=2)
-    group_b: list[float] = Field(min_length=2)
+    group_a: list[FiniteFloat] = Field(min_length=2)
+    group_b: list[FiniteFloat] = Field(min_length=2)
     group_a_name: str = Field(default="群A", min_length=1, max_length=40)
     group_b_name: str = Field(default="群B", min_length=1, max_length=40)
 
 
 class PairedRequest(BaseModel):
     variable_name: str = Field(default="変数", min_length=1, max_length=80)
-    before: list[float] = Field(min_length=2)
-    after: list[float] = Field(min_length=2)
+    before: list[FiniteFloat] = Field(min_length=2)
+    after: list[FiniteFloat] = Field(min_length=2)
 
     @model_validator(mode="after")
     def check_same_length(self) -> "PairedRequest":
@@ -25,7 +27,7 @@ class PairedRequest(BaseModel):
 
 class MultiGroupRequest(BaseModel):
     variable_name: str = Field(default="変数", min_length=1, max_length=80)
-    groups: list[list[float]] = Field(min_length=3)
+    groups: list[list[FiniteFloat]] = Field(min_length=3)
     group_names: list[str] | None = Field(default=None)
 
     @model_validator(mode="after")
@@ -61,8 +63,8 @@ class ChiSquareRequest(BaseModel):
 class CorrelationRequest(BaseModel):
     variable_x_name: str = Field(default="X", min_length=1, max_length=80)
     variable_y_name: str = Field(default="Y", min_length=1, max_length=80)
-    x: list[float] = Field(min_length=3)
-    y: list[float] = Field(min_length=3)
+    x: list[FiniteFloat] = Field(min_length=3)
+    y: list[FiniteFloat] = Field(min_length=3)
     method: Literal["pearson", "spearman"] = "pearson"
 
     @model_validator(mode="after")

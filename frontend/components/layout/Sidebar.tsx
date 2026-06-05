@@ -17,6 +17,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/dashboard/descriptive", label: "記述統計", exact: false, icon: ChartBarIcon },
       { href: "/dashboard/test", label: "統計検定", exact: false, icon: FlaskIcon },
+      { href: "/dashboard/table1", label: "Table 1", exact: false, icon: TableIcon },
       { href: "/dashboard/graph", label: "グラフ", exact: false, icon: GraphIcon },
       { href: "/dashboard/guide", label: "検定ガイド", exact: false, icon: CompassIcon },
     ],
@@ -65,7 +66,7 @@ export function Sidebar() {
           <Image src="/sana2.png" alt="Statseed" width={20} height={20} className="rounded-sm shrink-0" />
           <div className="min-w-0 flex-1">
             <div className="text-[13px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
-              sana's projects
+              sana&apos;s projects
             </div>
             <div className="text-[11px] text-gray-400 dark:text-neutral-600 leading-tight">Statseed</div>
           </div>
@@ -173,6 +174,17 @@ function CompassIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </svg>
+  );
+}
+
+function TableIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <line x1="3" y1="15" x2="21" y2="15" />
+      <line x1="9" y1="9" x2="9" y2="21" />
     </svg>
   );
 }

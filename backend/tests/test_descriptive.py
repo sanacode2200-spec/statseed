@@ -1,5 +1,8 @@
 import math
 
+import pytest
+from pydantic import ValidationError
+
 from backend.schemas.descriptive import CategoricalRequest, DescriptiveRequest
 from backend.services.stats.descriptive import summarize_categorical, summarize_continuous
 
@@ -32,6 +35,12 @@ def test_summarize_continuous_counts_missing_values() -> None:
     assert result.n == 2
     assert result.missing == 2
     assert "欠損値は2件あります" in result.interpretation
+
+
+@pytest.mark.parametrize("value", [math.nan, math.inf, -math.inf])
+def test_descriptive_rejects_non_finite_values(value: float) -> None:
+    with pytest.raises(ValidationError):
+        DescriptiveRequest(values=[value])
 
 
 def test_summarize_categorical_frequency_and_percent() -> None:

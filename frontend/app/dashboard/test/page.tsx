@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { CorrelationResultCard, TestResultCard } from "@/components/stats/TestResultCard";
+import { parseIntegerMatrix, parseNumbers } from "@/lib/parse";
 
 type TestType =
   | "ttest"
@@ -38,27 +39,6 @@ const inputCls =
 
 const textareaCls =
   "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
-
-function parseNums(text: string): number[] {
-  return text
-    .split(/[\n,\t\s]+/)
-    .filter((s) => s.trim() !== "")
-    .map((s) => parseFloat(s.trim()))
-    .filter((n) => !isNaN(n));
-}
-
-function parseMatrix(text: string): number[][] {
-  return text
-    .split("\n")
-    .map((row) =>
-      row
-        .split(/[,\t\s]+/)
-        .filter((s) => s.trim() !== "")
-        .map(Number)
-        .filter((n) => !isNaN(n))
-    )
-    .filter((row) => row.length > 0);
-}
 
 export default function TestPage() {
   const [testType, setTestType] = useState<TestType>("ttest");
@@ -95,8 +75,8 @@ export default function TestPage() {
 
     try {
       if (isTwoGroup) {
-        const ga = parseNums(groupAText);
-        const gb = parseNums(groupBText);
+        const ga = parseNumbers(groupAText);
+        const gb = parseNumbers(groupBText);
         if (ga.length < 2 || gb.length < 2) throw new Error("各群に2件以上のデータが必要です。");
         const req = {
           variable_name: variableName,
@@ -107,14 +87,14 @@ export default function TestPage() {
         };
         setResult(testType === "ttest" ? await api.ttestInd(req) : await api.mannwhitney(req));
       } else if (isPaired) {
-        const before = parseNums(beforeText);
-        const after = parseNums(afterText);
+        const before = parseNumbers(beforeText);
+        const after = parseNumbers(afterText);
         if (before.length < 2) throw new Error("2件以上のデータが必要です。");
         if (before.length !== after.length) throw new Error("介入前後のデータ数が一致しません。");
         const req = { variable_name: variableName, before, after };
         setResult(testType === "ttest-paired" ? await api.ttestPaired(req) : await api.wilcoxon(req));
       } else if (isMultiGroup) {
-        const groups = multiGroupTexts.map(parseNums);
+        const groups = multiGroupTexts.map(parseNumbers);
         if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
         const req = {
           variable_name: variableName,
@@ -123,13 +103,13 @@ export default function TestPage() {
         };
         setResult(testType === "anova" ? await api.anova(req) : await api.kruskal(req));
       } else if (isTable) {
-        const observed = parseMatrix(tableText);
+        const observed = parseIntegerMatrix(tableText);
         if (observed.length < 2) throw new Error("2行以上のデータが必要です。");
         const req = { observed };
         setResult(testType === "chisquare" ? await api.chisquare(req) : await api.fisher(req));
       } else if (isCorrelation) {
-        const x = parseNums(xText);
-        const y = parseNums(yText);
+        const x = parseNumbers(xText);
+        const y = parseNumbers(yText);
         if (x.length < 3) throw new Error("3件以上のデータが必要です。");
         if (x.length !== y.length) throw new Error("XとYのデータ数が一致しません。");
         setResult(

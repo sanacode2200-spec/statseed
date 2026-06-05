@@ -2,9 +2,11 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
+from backend.schemas.common import FiniteFloat
+
 
 class BoxplotRequest(BaseModel):
-    groups: list[list[float]] = Field(min_length=1)
+    groups: list[list[FiniteFloat]] = Field(min_length=1)
     group_names: list[str] | None = None
     title: str = ""
     y_label: str = ""
@@ -21,7 +23,7 @@ class BoxplotRequest(BaseModel):
 
 
 class HistogramRequest(BaseModel):
-    values: list[float] = Field(min_length=3)
+    values: list[FiniteFloat] = Field(min_length=3)
     title: str = ""
     x_label: str = ""
     bins: int | None = Field(default=None, ge=2, le=100)
@@ -29,8 +31,8 @@ class HistogramRequest(BaseModel):
 
 
 class ScatterRequest(BaseModel):
-    x: list[float] = Field(min_length=3)
-    y: list[float] = Field(min_length=3)
+    x: list[FiniteFloat] = Field(min_length=3)
+    y: list[FiniteFloat] = Field(min_length=3)
     title: str = ""
     x_label: str = ""
     y_label: str = ""

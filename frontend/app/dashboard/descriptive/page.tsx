@@ -8,34 +8,15 @@ import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { DescriptiveResultTable } from "@/components/stats/DescriptiveResultTable";
 import { CategoricalResultTable } from "@/components/stats/CategoricalResultTable";
+import {
+  parseCategoricalValues,
+  parseNullableNumbers,
+} from "@/lib/parse";
 
 type Mode = "continuous" | "categorical";
 
 const inputCls =
   "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
-
-function parseValues(text: string): (number | null)[] {
-  return text
-    .split(/[\n,\t\s]+/)
-    .filter((s) => s.trim() !== "")
-    .map((s) => {
-      const t = s.trim();
-      if (t === "" || t === "NA" || t === "na" || t === "-") return null;
-      const n = parseFloat(t);
-      return isNaN(n) ? null : n;
-    });
-}
-
-function parseCategorical(text: string): (string | null)[] {
-  return text
-    .split(/[\n,\t]+/)
-    .map((s) => {
-      const t = s.trim();
-      if (t === "" || t === "NA" || t === "na" || t === "-") return null;
-      return t;
-    })
-    .filter((v) => v !== undefined) as (string | null)[];
-}
 
 export default function DescriptivePage() {
   const [mode, setMode] = useState<Mode>("continuous");
@@ -62,12 +43,12 @@ export default function DescriptivePage() {
 
     try {
       if (mode === "continuous") {
-        const values = parseValues(rawText);
+        const values = parseNullableNumbers(rawText);
         if (values.length === 0) throw new Error("データを入力してください。");
         const res = await api.descriptive({ variable_name: variableName, values });
         setContinuousResult(res);
       } else {
-        const values = parseCategorical(rawText);
+        const values = parseCategoricalValues(rawText);
         if (values.length === 0) throw new Error("データを入力してください。");
         const res = await api.categoricalDescriptive({ variable_name: variableName, values });
         setCategoricalResult(res);
@@ -130,11 +111,11 @@ export default function DescriptivePage() {
             <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
             {mode === "continuous" ? (
               <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-1.5">
-                数値を改行・スペース・カンマのいずれかで区切って入力してください。欠損値は空行、NA、- で表せます。
+                数値を改行・スペース・カンマのいずれかで区切って入力してください。欠損値はNA、- で表せます。
               </p>
             ) : (
               <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-1.5">
-                カテゴリ値を1行1件（またはカンマ・タブ区切り）で入力してください。欠損値は空行、NA、- で表せます。
+                カテゴリ値を1行1件（またはカンマ・タブ区切り）で入力してください。欠損値はNA、- で表せます。
               </p>
             )}
             <textarea
