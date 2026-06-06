@@ -87,33 +87,40 @@ statseed/
 │   │   └── stats/             # DescriptiveResultTable / TestResultCard
 │   └── lib/
 │       ├── api.ts             # バックエンドAPI呼び出し
-│       └── types.ts           # 型定義（バックエンドスキーマと対応）
+│       ├── types.ts           # 型定義（バックエンドスキーマと対応）
+│       └── parse.ts           # テキスト入力パース（数値・カテゴリ・行列）
 │
 ├── backend/                   # FastAPI
 │   ├── main.py
 │   ├── routers/
 │   │   ├── descriptive.py     # 記述統計API
-│   │   ├── test.py            # 検定API（9種）
+│   │   ├── test.py            # 検定API（9種 + 事後検定）
 │   │   ├── graph.py           # グラフ出力API
+│   │   ├── table1.py          # Table 1 API
 │   │   ├── upload.py          # CSV/Excelアップロード
 │   │   └── guide.py           # 検定選択ガイド
 │   ├── services/
 │   │   ├── stats/
 │   │   │   ├── descriptive.py
-│   │   │   └── hypothesis.py
+│   │   │   ├── hypothesis.py  # 検定 + 事後検定（Tukey/Bonferroni/Holm/Dunn）
+│   │   │   └── table1.py      # Table 1 生成
 │   │   ├── graph/
 │   │   │   ├── theme.py           # Statseedテーマ定義
 │   │   │   ├── plotly_charts.py   # Plotly JSON生成
+│   │   │   ├── kaplan_meier.py    # KM推定・ログランク検定
+│   │   │   ├── roc.py             # ROC曲線・AUC（Hanley & McNeil CI）
 │   │   │   └── matplotlib_export.py  # 論文用出力
 │   │   ├── upload.py          # CSV/Excel解析（pandas）
 │   │   └── guide.py           # 検定提案ルールエンジン
 │   ├── schemas/               # Pydanticスキーマ
+│   │   ├── common.py          # FiniteFloat（NaN/Inf拒否）
 │   │   ├── descriptive.py
-│   │   ├── test.py
-│   │   ├── graph.py
+│   │   ├── test.py            # 検定 + PosthocRequest/Result
+│   │   ├── graph.py           # グラフ各種リクエスト/レスポンス
+│   │   ├── table1.py          # Table1Variable（discriminated union）
 │   │   ├── upload.py
 │   │   └── guide.py
-│   └── tests/                 # 計算検証テスト（36本）
+│   └── tests/                 # 計算検証テスト（105本）
 │
 ├── pyproject.toml
 └── CLAUDE.md                  # このファイル
@@ -249,7 +256,6 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 ### 記述統計
 - [x] 連続変数: 平均・SD・中央値・IQR・最小・最大・95%CI
 - [x] カテゴリ変数: 頻度・割合（`POST /api/descriptive/categorical`）
-- [ ] Table 1 自動生成（Phase 2）
 - [x] 正規性検定（Shapiro-Wilk、STATSEED_ENABLE_SCIPY=1 時のみ）
 
 ### 検定
@@ -264,22 +270,24 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] ヒストグラム（正規分布曲線オーバーレイ）
 - [x] 箱ひげ図（jitterプロット付き）
 - [x] 散布図（回帰直線付き）
-- [ ] 棒グラフ（Phase 2）
 - [x] PNG 300dpi / SVG / PDF 出力
 - [x] フォントプリセット切り替えUI（論文標準 / 日本語対応 / ポスター / カスタム）
 
 ---
 
-## Phase 2 候補
+## Phase 2 実装状況
 
-- Table 1 自動生成（論文の背景データ表）
-- 多重比較（Tukey法・Bonferroni法）
-- 棒グラフ（エラーバー付き）
-- カプランマイヤー曲線
-- ROC曲線・AUC計算
-- Supabase Auth 認証
-- データ保存（セッション管理）
-- CSV エクスポート（解析結果）
+### 完了済み
+- [x] **Table 1 自動生成** — 連続変数（mean±SD / median(IQR)）+ カテゴリ変数（n(%)）、群比較p値付き、TSVコピー対応
+- [x] **多重比較（事後検定）** — Tukey HSD / Bonferroni / Holm（パラメトリック）/ Dunn + Holm（ノンパラメトリック）
+- [x] **棒グラフ** — エラーバー付き（SD / SEM / 95%CI 切り替え）
+- [x] **カプランマイヤー曲線** — 打ち切りマーク・95%CIバンド・リスクテーブル・ログランク検定p値
+- [x] **ROC曲線** — AUC + 95%CI（Hanley & McNeil 1982）・最適カットオフ（Youden指数）・感度/特異度表示
+
+### 残候補
+- [ ] Supabase Auth 認証
+- [ ] データ保存（セッション管理）
+- [ ] CSV エクスポート（解析結果）
 
 ---
 
@@ -304,12 +312,19 @@ POST /api/test/correlation     # Pearson / Spearman 相関
 POST /api/graph/boxplot        # 箱ひげ図（Plotly JSON）
 POST /api/graph/histogram      # ヒストグラム（Plotly JSON）
 POST /api/graph/scatter        # 散布図（Plotly JSON）
+POST /api/graph/barplot        # 棒グラフ（Plotly JSON、SD/SEM/95%CIエラーバー）
+POST /api/graph/kaplan-meier   # カプランマイヤー曲線（Plotly JSON）
+POST /api/graph/roc            # ROC曲線（Plotly JSON + AUC統計量）
 POST /api/graph/export         # 論文用出力（PNG/SVG/PDF）
 
 POST /api/upload/csv           # CSVアップロード（最大10MB）
 POST /api/upload/excel         # Excelアップロード（最大10MB）
 
 POST /api/guide/suggest        # 検定選択ガイド
+
+POST /api/test/posthoc         # 多重比較（Tukey/Bonferroni/Holm/Dunn+Holm）
+
+POST /api/table1               # Table 1 生成
 ```
 
 ---
@@ -318,7 +333,7 @@ POST /api/guide/suggest        # 検定選択ガイド
 
 1. **日本語を優先** — エラーメッセージ・結果解釈・UIテキストはすべて日本語
 2. **グラフは妥協しない** — デザイン仕様から逸脱しない。テーマファイルを必ず使う
-3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証（現在54テスト）
+3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証（現在105テスト）
 4. **型安全** — TypeScript / Pydantic を徹底する
 5. **コメディカル視点** — 医療統計初学者が迷わない設計を常に意識する
 6. **高速起動を維持** — 本番ランタイムで不要な依存・不要なimport・不要なAPIドキュメント生成を避ける
@@ -327,13 +342,13 @@ POST /api/guide/suggest        # 検定選択ガイド
 
 ```bash
 # バックエンド起動
-STATSEED_ENABLE_SCIPY=1 .venv/bin/uvicorn backend.main:app --reload
+STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/uvicorn backend.main:app --reload
 
 # フロントエンド起動
 cd frontend && npm run dev
 
 # テスト実行
-STATSEED_ENABLE_SCIPY=1 .venv/bin/pytest backend/tests/ -v
+STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/pytest backend/tests/ -v
 ```
 
 ---
