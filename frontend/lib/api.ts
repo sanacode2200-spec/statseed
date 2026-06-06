@@ -1,6 +1,7 @@
 import type {
   BarplotRequest,
   BoxplotRequest,
+  KaplanMeierRequest,
   CategoricalRequest,
   CategoricalResponse,
   ChiSquareRequest,
@@ -105,6 +106,9 @@ export const api = {
 
   correlation: (req: CorrelationRequest) =>
     post<CorrelationResult>("/api/test/correlation", req),
+
+  graphKaplanMeier: (req: KaplanMeierRequest) =>
+    post<PlotlyFigure>("/api/graph/kaplan-meier", req),
 
   graphBarplot: (req: BarplotRequest) =>
     post<PlotlyFigure>("/api/graph/barplot", req),

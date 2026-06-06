@@ -3,7 +3,7 @@ import math
 import random
 import statistics
 
-from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, ScatterRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, KaplanMeierRequest, ScatterRequest
 from backend.services.graph.theme import OKABE_ITO, STATSEED_THEME
 
 _COLORS = list(OKABE_ITO.values())[:4]
@@ -48,6 +48,8 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
         fig = _histogram_fig(request.histogram, plt)
     elif request.chart_type == "barplot" and request.barplot:
         fig = _barplot_fig(request.barplot, plt)
+    elif request.chart_type == "kaplan_meier" and request.kaplan_meier:
+        fig = _km_fig(request.kaplan_meier, plt)
     else:
         fig = _scatter_fig(request.scatter, plt)  # type: ignore[arg-type]
 
@@ -190,6 +192,81 @@ def _error_value(values: list[float], error_type: str) -> float:
               6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228,
               20: 2.086, 30: 2.042}.get(n - 1) or (2.042 if n <= 30 else 1.96)
     return t_crit * sem
+
+
+def _km_fig(req: KaplanMeierRequest, plt):  # type: ignore[no-untyped-def]
+    from backend.services.graph.kaplan_meier import logrank_p, parse_groups
+    from collections import defaultdict
+
+    times = [float(t) for t in req.times]
+    curves = parse_groups(times, req.events, req.group_labels)
+    colors = [_COLORS[i % len(_COLORS)] for i in range(len(curves))]
+    multi = len(curves) > 1
+
+    if req.show_risk_table:
+        fig, (ax, ax_risk) = plt.subplots(
+            2, 1, figsize=(6, 5),
+            gridspec_kw={"height_ratios": [4, 1], "hspace": 0.05},
+        )
+    else:
+        fig, ax = plt.subplots(figsize=(6, 4))
+        ax_risk = None
+
+    for curve, color in zip(curves, colors):
+        label = f"{curve.name} (n={curve.n_total})" if multi else curve.name
+        # Step function
+        ax.step(curve.step_times, curve.step_surv, where="post", color=color, linewidth=1.5, label=label)
+        # CI band
+        if req.show_ci and len(curve.step_times) > 1:
+            import numpy as np
+            # Expand step for fill
+            t_arr = np.repeat(curve.step_times, 2)[1:]
+            l_arr = np.repeat(curve.ci_lower, 2)[:-1]
+            u_arr = np.repeat(curve.ci_upper, 2)[:-1]
+            ax.fill_between(t_arr, l_arr, u_arr, alpha=0.12, color=color, step=None)
+        # Censor marks
+        if curve.censor_times:
+            ax.plot(curve.censor_times, curve.censor_surv, "+", color=color, markersize=7, markeredgewidth=1.2)
+
+    # Log-rank p
+    if multi and req.group_labels:
+        grps: dict[str, tuple[list, list]] = defaultdict(lambda: ([], []))
+        for t, e, g in zip(times, req.events, req.group_labels):
+            key = g if g is not None else "不明"
+            grps[key][0].append(t)
+            grps[key][1].append(e)
+        p = logrank_p(list(grps.values()))
+        if p is not None:
+            p_str = "<0.001" if p < 0.001 else f"={p:.3f}"
+            ax.text(0.98, 0.98, f"ログランク p{p_str}", transform=ax.transAxes,
+                    ha="right", va="top", fontsize=8, color="#373737",
+                    bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "edgecolor": "#ccc", "alpha": 0.8})
+
+    ax.set_xlim(left=0)
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel(req.survival_label or "生存率")
+    ax.set_xlabel(req.time_label or "時間")
+    if req.title:
+        ax.set_title(req.title)
+    if multi:
+        ax.legend(fontsize=7, frameon=False)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+    # Risk table
+    if ax_risk is not None and curves:
+        curve0 = curves[0]
+        ax_risk.set_xlim(ax.get_xlim())
+        ax_risk.set_yticks([])
+        ax_risk.spines[:].set_visible(False)
+        for rt, rc in zip(curve0.risk_times, curve0.risk_counts):
+            ax_risk.text(rt, 0.5, str(rc), ha="center", va="center", fontsize=8, color="#555")
+        ax_risk.text(-0.01 * (ax.get_xlim()[1]), 0.5, "N at risk",
+                     ha="right", va="center", fontsize=8, color="#555")
+        ax_risk.set_xlabel(req.time_label or "時間")
+        ax.set_xlabel("")
+
+    return fig
 
 
 def _scatter_fig(req: ScatterRequest, plt):  # type: ignore[no-untyped-def]

@@ -6,6 +6,7 @@ from backend.schemas.graph import (
     BoxplotRequest,
     ExportRequest,
     HistogramRequest,
+    KaplanMeierRequest,
     PlotlyFigure,
     ScatterRequest,
 )
@@ -13,10 +14,16 @@ from backend.services.graph.plotly_charts import (
     barplot_figure,
     boxplot_figure,
     histogram_figure,
+    km_figure,
     scatter_figure,
 )
 
 router = APIRouter(prefix="/graph", tags=["graph"])
+
+
+@router.post("/kaplan-meier", response_model=PlotlyFigure)
+def kaplan_meier(request: KaplanMeierRequest) -> PlotlyFigure:
+    return km_figure(request)
 
 
 @router.post("/barplot", response_model=PlotlyFigure)

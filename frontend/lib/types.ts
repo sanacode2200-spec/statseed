@@ -210,6 +210,17 @@ export interface Table1Result {
 
 // --- グラフ ---
 
+export interface KaplanMeierRequest {
+  times: number[];
+  events: number[];
+  group_labels?: (string | null)[] | null;
+  title?: string;
+  time_label?: string;
+  survival_label?: string;
+  show_ci?: boolean;
+  show_risk_table?: boolean;
+}
+
 export interface BarplotRequest {
   groups: number[][];
   group_names?: string[];
@@ -249,7 +260,7 @@ export interface PlotlyFigure {
 }
 
 export interface ExportRequest {
-  chart_type: "boxplot" | "histogram" | "scatter" | "barplot";
+  chart_type: "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier";
   format: "png" | "svg" | "pdf";
   font_preset?: "論文標準" | "日本語対応" | "ポスター" | "カスタム" | null;
   font_family?: string | null;
@@ -258,4 +269,5 @@ export interface ExportRequest {
   histogram?: HistogramRequest;
   scatter?: ScatterRequest;
   barplot?: BarplotRequest;
+  kaplan_meier?: KaplanMeierRequest;
 }

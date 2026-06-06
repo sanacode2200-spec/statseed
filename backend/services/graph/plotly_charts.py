@@ -1,7 +1,7 @@
 import math
 import statistics
 
-from backend.schemas.graph import BarplotRequest, BoxplotRequest, HistogramRequest, PlotlyFigure, ScatterRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, HistogramRequest, KaplanMeierRequest, PlotlyFigure, ScatterRequest
 
 OKABE_ITO = ["#0072B2", "#E69F00", "#009E73", "#CC79A7"]
 
@@ -35,6 +35,138 @@ def _layout(**overrides: object) -> dict:
     layout = copy.deepcopy(_LAYOUT_BASE)
     layout.update(overrides)
     return layout
+
+
+def km_figure(request: KaplanMeierRequest) -> PlotlyFigure:
+    from backend.services.graph.kaplan_meier import logrank_p, parse_groups
+
+    times = [float(t) for t in request.times]
+    curves = parse_groups(times, request.events, request.group_labels)
+    colors = [OKABE_ITO[i % len(OKABE_ITO)] for i in range(len(curves))]
+    multi = len(curves) > 1
+
+    traces: list[dict] = []
+
+    for curve, color in zip(curves, colors):
+        # CI band (upper then lower with fill)
+        if request.show_ci and len(curve.step_times) > 1:
+            traces.append({
+                "type": "scatter",
+                "x": curve.step_times,
+                "y": curve.ci_upper,
+                "mode": "lines",
+                "line": {"color": "rgba(0,0,0,0)", "shape": "hv"},
+                "showlegend": False,
+                "hoverinfo": "skip",
+            })
+            traces.append({
+                "type": "scatter",
+                "x": curve.step_times,
+                "y": curve.ci_lower,
+                "mode": "lines",
+                "fill": "tonexty",
+                "fillcolor": _hex_to_rgba(color, 0.12),
+                "line": {"color": "rgba(0,0,0,0)", "shape": "hv"},
+                "showlegend": False,
+                "hoverinfo": "skip",
+            })
+
+        # KM step line
+        traces.append({
+            "type": "scatter",
+            "x": curve.step_times,
+            "y": curve.step_surv,
+            "mode": "lines",
+            "name": f"{curve.name} (n={curve.n_total}, イベント={curve.n_events})" if multi else curve.name,
+            "line": {"color": color, "width": 2, "shape": "hv"},
+        })
+
+        # Censor marks
+        if curve.censor_times:
+            traces.append({
+                "type": "scatter",
+                "x": curve.censor_times,
+                "y": curve.censor_surv,
+                "mode": "markers",
+                "name": "打ち切り",
+                "showlegend": False,
+                "marker": {"color": color, "size": 8, "symbol": "line-ns", "line": {"width": 2, "color": color}},
+                "hovertemplate": "打ち切り: t=%{x}<extra></extra>",
+            })
+
+    # Log-rank p-value annotation
+    annotations = []
+    if multi:
+        group_pairs = []
+        for curve in curves:
+            idx = [i for i, (t, e) in enumerate(zip(times, request.events)) if (request.group_labels or [None] * len(times))[i] == curve.name.split(" ")[0]]
+            # Rebuild from parse_groups result
+            pass
+        # Re-compute p-value
+        p = None
+        if request.group_labels:
+            from backend.services.graph.kaplan_meier import parse_groups as _pg
+            from collections import defaultdict
+            grps: dict[str, tuple[list, list]] = defaultdict(lambda: ([], []))
+            for t, e, g in zip(times, request.events, request.group_labels):
+                key = g if g is not None else "不明"
+                grps[key][0].append(t)
+                grps[key][1].append(e)
+            p = logrank_p(list(grps.values()))
+
+        if p is not None:
+            p_text = f"ログランク検定: p{'<0.001' if p < 0.001 else f'={p:.3f}'}"
+            annotations.append({
+                "text": p_text,
+                "xref": "paper", "yref": "paper",
+                "x": 0.98, "y": 0.98,
+                "xanchor": "right", "yanchor": "top",
+                "showarrow": False,
+                "font": {"size": 11, "color": "#373737"},
+                "bgcolor": "rgba(255,255,255,0.8)",
+                "bordercolor": "#ddd",
+                "borderwidth": 1,
+            })
+
+    # Risk table annotation
+    if request.show_risk_table and curves:
+        curve0 = curves[0]
+        risk_texts = [f"N at risk: {c}" for c in curve0.risk_counts]
+        risk_labels = [f"{t:.0f}" for t in curve0.risk_times]
+        for i, (rt, rn) in enumerate(zip(curve0.risk_times, curve0.risk_counts)):
+            annotations.append({
+                "text": str(rn),
+                "xref": "x", "yref": "paper",
+                "x": rt, "y": -0.10,
+                "xanchor": "center", "yanchor": "top",
+                "showarrow": False,
+                "font": {"size": 10, "color": "#555"},
+            })
+        annotations.append({
+            "text": "N at risk",
+            "xref": "paper", "yref": "paper",
+            "x": -0.02, "y": -0.10,
+            "xanchor": "right", "yanchor": "top",
+            "showarrow": False,
+            "font": {"size": 10, "color": "#555"},
+        })
+
+    layout = _layout(
+        title={"text": request.title, "font": {"size": 13}} if request.title else {},
+        xaxis=dict(_LAYOUT_BASE["xaxis"], title=request.time_label, rangemode="tozero"),
+        yaxis=dict(_LAYOUT_BASE["yaxis"], title=request.survival_label, range=[0, 1.05]),
+        showlegend=multi,
+        annotations=annotations,
+        margin={"l": 60, "r": 30, "t": 50, "b": 80},
+    )
+
+    return PlotlyFigure(data=traces, layout=layout)
+
+
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha})"
 
 
 def barplot_figure(request: BarplotRequest) -> PlotlyFigure:

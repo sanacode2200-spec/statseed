@@ -45,6 +45,29 @@ class ScatterRequest(BaseModel):
         return self
 
 
+class KaplanMeierRequest(BaseModel):
+    times: list[FiniteFloat] = Field(min_length=2)
+    events: list[int] = Field(min_length=2)
+    group_labels: list[str | None] | None = None
+    title: str = ""
+    time_label: str = "時間"
+    survival_label: str = "生存率"
+    show_ci: bool = True
+    show_risk_table: bool = True
+
+    @model_validator(mode="after")
+    def check(self) -> "KaplanMeierRequest":
+        if len(self.times) != len(self.events):
+            raise ValueError("times と events の長さが一致しません")
+        if any(e not in (0, 1) for e in self.events):
+            raise ValueError("events は 0（打ち切り）または 1（イベント）のみ入力できます")
+        if any(float(t) < 0 for t in self.times):
+            raise ValueError("times には 0 以上の値を入力してください")
+        if self.group_labels is not None and len(self.group_labels) != len(self.times):
+            raise ValueError("group_labels と times の長さが一致しません")
+        return self
+
+
 class BarplotRequest(BaseModel):
     groups: list[list[FiniteFloat]] = Field(min_length=1)
     group_names: list[str] | None = None
@@ -68,7 +91,7 @@ class PlotlyFigure(BaseModel):
 
 
 class ExportRequest(BaseModel):
-    chart_type: Literal["boxplot", "histogram", "scatter", "barplot"]
+    chart_type: Literal["boxplot", "histogram", "scatter", "barplot", "kaplan_meier"]
     format: Literal["png", "svg", "pdf"] = "png"
     font_preset: Literal["論文標準", "日本語対応", "ポスター", "カスタム"] | None = None
     font_family: str | None = Field(default=None, max_length=80)
@@ -77,6 +100,7 @@ class ExportRequest(BaseModel):
     histogram: HistogramRequest | None = None
     scatter: ScatterRequest | None = None
     barplot: BarplotRequest | None = None
+    kaplan_meier: KaplanMeierRequest | None = None
 
     @model_validator(mode="after")
     def check_chart_data(self) -> "ExportRequest":
@@ -85,6 +109,7 @@ class ExportRequest(BaseModel):
             "histogram": self.histogram,
             "scatter": self.scatter,
             "barplot": self.barplot,
+            "kaplan_meier": self.kaplan_meier,
         }
         if required[self.chart_type] is None:
             raise ValueError(f"chart_type='{self.chart_type}' のデータが含まれていません")

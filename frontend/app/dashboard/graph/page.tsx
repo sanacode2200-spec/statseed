@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
-import { parseNumbers } from "@/lib/parse";
+import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
 
-type ChartType = "boxplot" | "histogram" | "scatter" | "barplot";
+type ChartType = "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
 
 const inputCls =
@@ -20,6 +20,15 @@ const textareaCls =
 
 export default function GraphPage() {
   const [chartType, setChartType] = useState<ChartType>("boxplot");
+
+  // kaplan-meier
+  const [kmTimesText, setKmTimesText] = useState("");
+  const [kmEventsText, setKmEventsText] = useState("");
+  const [kmGroupText, setKmGroupText] = useState("");
+  const [kmTimeLabel, setKmTimeLabel] = useState("時間");
+  const [kmSurvLabel, setKmSurvLabel] = useState("生存率");
+  const [kmShowCi, setKmShowCi] = useState(true);
+  const [kmShowRisk, setKmShowRisk] = useState(true);
 
   // barplot
   const [barGroupTexts, setBarGroupTexts] = useState(["", ""]);
@@ -97,7 +106,27 @@ export default function GraphPage() {
     setLoading(true);
 
     try {
-      if (chartType === "barplot") {
+      if (chartType === "kaplan_meier") {
+        const times = parseNumbers(kmTimesText);
+        const eventsRaw = parseNumbers(kmEventsText);
+        if (times.length < 2) throw new Error("2件以上の生存時間が必要です。");
+        if (times.length !== eventsRaw.length) throw new Error("生存時間とイベントのデータ数が一致しません。");
+        const events = eventsRaw.map((v) => Math.round(v));
+        if (events.some((e) => e !== 0 && e !== 1)) throw new Error("イベントは 0（打ち切り）または 1（イベント）を入力してください。");
+        const group_labels = kmGroupText.trim()
+          ? (parseCategoricalValues(kmGroupText) as (string | null)[])
+          : null;
+        setFigure(
+          await api.graphKaplanMeier({
+            times, events, group_labels,
+            title,
+            time_label: kmTimeLabel,
+            survival_label: kmSurvLabel,
+            show_ci: kmShowCi,
+            show_risk_table: kmShowRisk,
+          })
+        );
+      } else if (chartType === "barplot") {
         const groups = barGroupTexts.map(parseNumbers);
         if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
         setFigure(
@@ -168,7 +197,14 @@ export default function GraphPage() {
             ? parseInt(customSize, 10) || null
             : null,
       };
-      if (chartType === "barplot") {
+      if (chartType === "kaplan_meier") {
+        const times = parseNumbers(kmTimesText);
+        const events = parseNumbers(kmEventsText).map(Math.round);
+        const group_labels = kmGroupText.trim()
+          ? (parseCategoricalValues(kmGroupText) as (string | null)[])
+          : null;
+        body.kaplan_meier = { times, events, group_labels, title, time_label: kmTimeLabel, survival_label: kmSurvLabel, show_ci: kmShowCi, show_risk_table: kmShowRisk };
+      } else if (chartType === "barplot") {
         body.barplot = {
           groups: barGroupTexts.map(parseNumbers),
           group_names: barGroupNames,
@@ -223,6 +259,7 @@ export default function GraphPage() {
   }
 
   const CHART_OPTIONS: { value: ChartType; label: string }[] = [
+    { value: "kaplan_meier", label: "カプランマイヤー" },
     { value: "barplot", label: "棒グラフ" },
     { value: "boxplot", label: "箱ひげ図" },
     { value: "histogram", label: "ヒストグラム" },
@@ -281,6 +318,57 @@ export default function GraphPage() {
               placeholder="例：介入前後の握力比較"
             />
           </div>
+
+          {/* カプランマイヤー */}
+          {chartType === "kaplan_meier" && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                    生存時間（1行1データ）
+                  </label>
+                  <textarea value={kmTimesText} onChange={(e) => setKmTimesText(e.target.value)}
+                    rows={7} className={textareaCls} placeholder={"例：\n12\n18\n24\n30\n6"} />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                    イベント（1=発生, 0=打ち切り）
+                  </label>
+                  <textarea value={kmEventsText} onChange={(e) => setKmEventsText(e.target.value)}
+                    rows={7} className={textareaCls} placeholder={"例：\n1\n0\n1\n1\n0"} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                  群ラベル（任意・複数群比較）
+                </label>
+                <textarea value={kmGroupText} onChange={(e) => setKmGroupText(e.target.value)}
+                  rows={3} className={textareaCls} placeholder={"例：\n治療群\n治療群\n対照群\n対照群\n治療群"} />
+              </div>
+              <div className="flex gap-4 flex-wrap">
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
+                  <input type="text" value={kmTimeLabel} onChange={(e) => setKmTimeLabel(e.target.value)}
+                    className={`${inputCls} w-32`} placeholder="時間" />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
+                  <input type="text" value={kmSurvLabel} onChange={(e) => setKmSurvLabel(e.target.value)}
+                    className={`${inputCls} w-32`} placeholder="生存率" />
+                </div>
+                <div className="flex flex-col gap-1.5 justify-end">
+                  <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+                    <input type="checkbox" checked={kmShowCi} onChange={(e) => setKmShowCi(e.target.checked)} className="rounded" />
+                    95%CI表示
+                  </label>
+                  <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+                    <input type="checkbox" checked={kmShowRisk} onChange={(e) => setKmShowRisk(e.target.checked)} className="rounded" />
+                    リスクテーブル表示
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 棒グラフ */}
           {chartType === "barplot" && (
