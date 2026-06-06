@@ -259,6 +259,33 @@ export interface PlotlyFigure {
   layout: Record<string, unknown>;
 }
 
+export interface ROCRequest {
+  scores: number[];
+  labels: number[];
+  title?: string;
+  score_label?: string;
+}
+
+export interface ROCResponse {
+  fpr: number[];
+  tpr: number[];
+  thresholds: number[];
+  auc: number;
+  auc_ci_lower: number;
+  auc_ci_upper: number;
+  optimal_threshold: number;
+  optimal_fpr: number;
+  optimal_tpr: number;
+  n_pos: number;
+  n_neg: number;
+  interpretation: string;
+}
+
+export interface ROCResult {
+  figure: PlotlyFigure;
+  stats: ROCResponse;
+}
+
 export interface ExportRequest {
   chart_type: "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier";
   format: "png" | "svg" | "pdf";

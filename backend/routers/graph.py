@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
+from pydantic import BaseModel
+
 from backend.schemas.graph import (
     BarplotRequest,
     BoxplotRequest,
@@ -8,6 +10,8 @@ from backend.schemas.graph import (
     HistogramRequest,
     KaplanMeierRequest,
     PlotlyFigure,
+    ROCRequest,
+    ROCResponse,
     ScatterRequest,
 )
 from backend.services.graph.plotly_charts import (
@@ -15,10 +19,25 @@ from backend.services.graph.plotly_charts import (
     boxplot_figure,
     histogram_figure,
     km_figure,
+    roc_figure,
     scatter_figure,
 )
 
+
+class ROCResult(BaseModel):
+    figure: PlotlyFigure
+    stats: ROCResponse
+
 router = APIRouter(prefix="/graph", tags=["graph"])
+
+
+@router.post("/roc", response_model=ROCResult)
+def roc(request: ROCRequest) -> ROCResult:
+    try:
+        fig, stats = roc_figure(request)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return ROCResult(figure=fig, stats=stats)
 
 
 @router.post("/kaplan-meier", response_model=PlotlyFigure)

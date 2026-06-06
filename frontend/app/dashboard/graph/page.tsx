@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
-import type { ExportRequest, PlotlyFigure } from "@/lib/types";
+import type { ExportRequest, PlotlyFigure, ROCResponse } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
 
-type ChartType = "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier";
+type ChartType = "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier" | "roc";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
 
 const inputCls =
@@ -53,6 +53,12 @@ export default function GraphPage() {
   const [scXLabel, setScXLabel] = useState("X");
   const [scYLabel, setScYLabel] = useState("Y");
   const [scShowReg, setScShowReg] = useState(true);
+
+  // roc
+  const [rocScoresText, setRocScoresText] = useState("");
+  const [rocLabelsText, setRocLabelsText] = useState("");
+  const [rocScoreLabel, setRocScoreLabel] = useState("スコア");
+  const [rocStats, setRocStats] = useState<ROCResponse | null>(null);
 
   // common
   const [title, setTitle] = useState("");
@@ -103,10 +109,21 @@ export default function GraphPage() {
     e.preventDefault();
     setError(null);
     setFigure(null);
+    setRocStats(null);
     setLoading(true);
 
     try {
-      if (chartType === "kaplan_meier") {
+      if (chartType === "roc") {
+        const scores = parseNumbers(rocScoresText);
+        const labelsRaw = parseNumbers(rocLabelsText);
+        if (scores.length < 4) throw new Error("4件以上のスコアが必要です。");
+        if (scores.length !== labelsRaw.length) throw new Error("スコアとラベルのデータ数が一致しません。");
+        const labels = labelsRaw.map(Math.round);
+        if (labels.some((l) => l !== 0 && l !== 1)) throw new Error("ラベルは 0（陰性）または 1（陽性）を入力してください。");
+        const result = await api.graphRoc({ scores, labels, title, score_label: rocScoreLabel });
+        setFigure(result.figure);
+        setRocStats(result.stats);
+      } else if (chartType === "kaplan_meier") {
         const times = parseNumbers(kmTimesText);
         const eventsRaw = parseNumbers(kmEventsText);
         if (times.length < 2) throw new Error("2件以上の生存時間が必要です。");
@@ -260,6 +277,7 @@ export default function GraphPage() {
 
   const CHART_OPTIONS: { value: ChartType; label: string }[] = [
     { value: "kaplan_meier", label: "カプランマイヤー" },
+    { value: "roc", label: "ROC曲線" },
     { value: "barplot", label: "棒グラフ" },
     { value: "boxplot", label: "箱ひげ図" },
     { value: "histogram", label: "ヒストグラム" },
@@ -514,6 +532,33 @@ export default function GraphPage() {
             </div>
           )}
 
+          {/* ROC曲線 */}
+          {chartType === "roc" && (
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">スコアラベル</label>
+                <input type="text" value={rocScoreLabel} onChange={(e) => setRocScoreLabel(e.target.value)}
+                  className={`${inputCls} w-48`} placeholder="例：診断スコア" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                    診断スコア（1行1データ）
+                  </label>
+                  <textarea value={rocScoresText} onChange={(e) => setRocScoresText(e.target.value)}
+                    rows={7} className={textareaCls} placeholder={"例：\n0.9\n0.8\n0.4\n0.2\n0.1"} />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                    正解ラベル（1=陽性, 0=陰性）
+                  </label>
+                  <textarea value={rocLabelsText} onChange={(e) => setRocLabelsText(e.target.value)}
+                    rows={7} className={textareaCls} placeholder={"例：\n1\n1\n0\n0\n0"} />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 散布図 */}
           {chartType === "scatter" && (
             <div className="space-y-3">
@@ -564,7 +609,44 @@ export default function GraphPage() {
         <Card>
           <PlotlyChart figure={figure} />
 
-          {/* エクスポート */}
+          {/* ROC統計量 */}
+          {rocStats && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
+              <p className="text-[12px] font-semibold text-gray-500 dark:text-neutral-500 mb-2">ROC解析結果</p>
+              <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-[13px] mb-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-400 dark:text-neutral-600">AUC</span>
+                  <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.auc.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 dark:text-neutral-600">95%CI</span>
+                  <span className="font-medium text-gray-800 dark:text-neutral-200">
+                    {rocStats.auc_ci_lower.toFixed(3)} – {rocStats.auc_ci_upper.toFixed(3)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 dark:text-neutral-600">最適カットオフ</span>
+                  <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.optimal_threshold.toFixed(3)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 dark:text-neutral-600">感度（最適点）</span>
+                  <span className="font-medium text-gray-800 dark:text-neutral-200">{(rocStats.optimal_tpr * 100).toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 dark:text-neutral-600">特異度（最適点）</span>
+                  <span className="font-medium text-gray-800 dark:text-neutral-200">{((1 - rocStats.optimal_fpr) * 100).toFixed(1)}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400 dark:text-neutral-600">陽性例 / 陰性例</span>
+                  <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.n_pos} / {rocStats.n_neg}</span>
+                </div>
+              </div>
+              <p className="text-[12px] text-gray-500 dark:text-neutral-500 whitespace-pre-line">{rocStats.interpretation}</p>
+            </div>
+          )}
+
+          {/* エクスポート（ROC以外） */}
+          {chartType !== "roc" && (
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-3">
             {/* フォントプリセット */}
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -628,6 +710,7 @@ export default function GraphPage() {
               </Button>
             </div>
           </div>
+          )}
         </Card>
       )}
     </div>

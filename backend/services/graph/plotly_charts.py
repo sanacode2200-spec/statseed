@@ -1,7 +1,7 @@
 import math
 import statistics
 
-from backend.schemas.graph import BarplotRequest, BoxplotRequest, HistogramRequest, KaplanMeierRequest, PlotlyFigure, ScatterRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, HistogramRequest, KaplanMeierRequest, PlotlyFigure, ROCRequest, ROCResponse, ScatterRequest
 
 OKABE_ITO = ["#0072B2", "#E69F00", "#009E73", "#CC79A7"]
 
@@ -35,6 +35,92 @@ def _layout(**overrides: object) -> dict:
     layout = copy.deepcopy(_LAYOUT_BASE)
     layout.update(overrides)
     return layout
+
+
+def roc_figure(request: ROCRequest) -> tuple[PlotlyFigure, ROCResponse]:
+    from backend.services.graph.roc import compute_roc
+
+    scores = [float(s) for s in request.scores]
+    result = compute_roc(scores, request.labels)
+
+    # Interpretation
+    sens = round(result.optimal_tpr * 100, 1)
+    spec = round((1 - result.optimal_fpr) * 100, 1)
+    auc_str = f"{result.auc:.3f}"
+    ci_str = f"{result.auc_ci_lower:.3f}–{result.auc_ci_upper:.3f}"
+    interp = (
+        f"AUC = {auc_str}（95%CI: {ci_str}）。"
+        f"最適カットオフ値 = {result.optimal_threshold:.3f}（感度 {sens}%、特異度 {spec}%）。"
+        f"陽性例 {result.n_pos}件・陰性例 {result.n_neg}件。"
+    )
+
+    traces = [
+        # Diagonal (AUC=0.5)
+        {
+            "type": "scatter",
+            "x": [0, 1], "y": [0, 1],
+            "mode": "lines",
+            "name": "AUC = 0.5",
+            "line": {"color": "#aaa", "width": 1, "dash": "dot"},
+            "showlegend": False,
+        },
+        # ROC curve
+        {
+            "type": "scatter",
+            "x": result.fpr, "y": result.tpr,
+            "mode": "lines",
+            "name": f"ROC (AUC = {result.auc:.3f})",
+            "line": {"color": OKABE_ITO[0], "width": 2},
+            "fill": "tozeroy",
+            "fillcolor": _hex_to_rgba(OKABE_ITO[0], 0.08),
+        },
+        # Optimal point
+        {
+            "type": "scatter",
+            "x": [result.optimal_fpr], "y": [result.optimal_tpr],
+            "mode": "markers",
+            "name": f"最適カットオフ ({result.optimal_threshold:.3f})",
+            "marker": {"color": OKABE_ITO[1], "size": 10, "line": {"color": "white", "width": 1.5}},
+        },
+    ]
+
+    annotations = [
+        {
+            "text": f"AUC = {result.auc:.3f}<br>95%CI: {result.auc_ci_lower:.3f}–{result.auc_ci_upper:.3f}",
+            "xref": "paper", "yref": "paper",
+            "x": 0.98, "y": 0.05,
+            "xanchor": "right", "yanchor": "bottom",
+            "showarrow": False,
+            "font": {"size": 11},
+            "bgcolor": "rgba(255,255,255,0.85)",
+            "bordercolor": "#ddd", "borderwidth": 1,
+        }
+    ]
+
+    layout = _layout(
+        title={"text": request.title, "font": {"size": 13}} if request.title else {},
+        xaxis=dict(_LAYOUT_BASE["xaxis"], title="1 - 特異度（偽陽性率）", range=[-0.02, 1.02]),
+        yaxis=dict(_LAYOUT_BASE["yaxis"], title="感度（真陽性率）", range=[-0.02, 1.05]),
+        showlegend=True,
+        annotations=annotations,
+    )
+
+    response = ROCResponse(
+        fpr=result.fpr,
+        tpr=result.tpr,
+        thresholds=result.thresholds,
+        auc=result.auc,
+        auc_ci_lower=result.auc_ci_lower,
+        auc_ci_upper=result.auc_ci_upper,
+        optimal_threshold=result.optimal_threshold,
+        optimal_fpr=result.optimal_fpr,
+        optimal_tpr=result.optimal_tpr,
+        n_pos=result.n_pos,
+        n_neg=result.n_neg,
+        interpretation=interp,
+    )
+
+    return PlotlyFigure(data=traces, layout=layout), response
 
 
 def km_figure(request: KaplanMeierRequest) -> PlotlyFigure:

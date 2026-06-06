@@ -45,6 +45,36 @@ class ScatterRequest(BaseModel):
         return self
 
 
+class ROCRequest(BaseModel):
+    scores: list[FiniteFloat] = Field(min_length=4)
+    labels: list[int] = Field(min_length=4)
+    title: str = ""
+    score_label: str = "スコア"
+
+    @model_validator(mode="after")
+    def check(self) -> "ROCRequest":
+        if len(self.scores) != len(self.labels):
+            raise ValueError("scores と labels の長さが一致しません")
+        if any(lbl not in (0, 1) for lbl in self.labels):
+            raise ValueError("labels は 0（陰性）または 1（陽性）のみ入力できます")
+        return self
+
+
+class ROCResponse(BaseModel):
+    fpr: list[float]
+    tpr: list[float]
+    thresholds: list[float]
+    auc: float
+    auc_ci_lower: float
+    auc_ci_upper: float
+    optimal_threshold: float
+    optimal_fpr: float
+    optimal_tpr: float
+    n_pos: int
+    n_neg: int
+    interpretation: str
+
+
 class KaplanMeierRequest(BaseModel):
     times: list[FiniteFloat] = Field(min_length=2)
     events: list[int] = Field(min_length=2)

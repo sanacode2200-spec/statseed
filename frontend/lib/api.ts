@@ -17,6 +17,8 @@ import type {
   PlotlyFigure,
   PosthocRequest,
   PosthocResult,
+  ROCRequest,
+  ROCResult,
   ScatterRequest,
   Table1Request,
   Table1Result,
@@ -121,6 +123,9 @@ export const api = {
 
   graphScatter: (req: ScatterRequest) =>
     post<PlotlyFigure>("/api/graph/scatter", req),
+
+  graphRoc: (req: ROCRequest) =>
+    post<ROCResult>("/api/graph/roc", req),
 
   graphExportUrl: () => `${BASE}/api/graph/export`,
 
