@@ -45,13 +45,30 @@ class ScatterRequest(BaseModel):
         return self
 
 
+class BarplotRequest(BaseModel):
+    groups: list[list[FiniteFloat]] = Field(min_length=1)
+    group_names: list[str] | None = None
+    title: str = ""
+    y_label: str = ""
+    error_type: Literal["sd", "sem", "ci95"] = "sd"
+
+    @model_validator(mode="after")
+    def check_names(self) -> "BarplotRequest":
+        if self.group_names is not None and len(self.group_names) != len(self.groups):
+            raise ValueError("group_namesの数がgroupsの数と一致しません")
+        for i, group in enumerate(self.groups):
+            if len(group) < 2:
+                raise ValueError(f"群{i + 1}のデータ数が2件未満です")
+        return self
+
+
 class PlotlyFigure(BaseModel):
     data: list[dict[str, Any]]
     layout: dict[str, Any]
 
 
 class ExportRequest(BaseModel):
-    chart_type: Literal["boxplot", "histogram", "scatter"]
+    chart_type: Literal["boxplot", "histogram", "scatter", "barplot"]
     format: Literal["png", "svg", "pdf"] = "png"
     font_preset: Literal["論文標準", "日本語対応", "ポスター", "カスタム"] | None = None
     font_family: str | None = Field(default=None, max_length=80)
@@ -59,10 +76,16 @@ class ExportRequest(BaseModel):
     boxplot: BoxplotRequest | None = None
     histogram: HistogramRequest | None = None
     scatter: ScatterRequest | None = None
+    barplot: BarplotRequest | None = None
 
     @model_validator(mode="after")
     def check_chart_data(self) -> "ExportRequest":
-        required = {"boxplot": self.boxplot, "histogram": self.histogram, "scatter": self.scatter}
+        required = {
+            "boxplot": self.boxplot,
+            "histogram": self.histogram,
+            "scatter": self.scatter,
+            "barplot": self.barplot,
+        }
         if required[self.chart_type] is None:
             raise ValueError(f"chart_type='{self.chart_type}' のデータが含まれていません")
         return self

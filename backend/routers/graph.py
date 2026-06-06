@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
 from backend.schemas.graph import (
+    BarplotRequest,
     BoxplotRequest,
     ExportRequest,
     HistogramRequest,
@@ -9,12 +10,18 @@ from backend.schemas.graph import (
     ScatterRequest,
 )
 from backend.services.graph.plotly_charts import (
+    barplot_figure,
     boxplot_figure,
     histogram_figure,
     scatter_figure,
 )
 
 router = APIRouter(prefix="/graph", tags=["graph"])
+
+
+@router.post("/barplot", response_model=PlotlyFigure)
+def barplot(request: BarplotRequest) -> PlotlyFigure:
+    return barplot_figure(request)
 
 
 @router.post("/boxplot", response_model=PlotlyFigure)

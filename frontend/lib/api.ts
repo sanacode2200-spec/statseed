@@ -1,4 +1,5 @@
 import type {
+  BarplotRequest,
   BoxplotRequest,
   CategoricalRequest,
   CategoricalResponse,
@@ -104,6 +105,9 @@ export const api = {
 
   correlation: (req: CorrelationRequest) =>
     post<CorrelationResult>("/api/test/correlation", req),
+
+  graphBarplot: (req: BarplotRequest) =>
+    post<PlotlyFigure>("/api/graph/barplot", req),
 
   graphBoxplot: (req: BoxplotRequest) =>
     post<PlotlyFigure>("/api/graph/boxplot", req),

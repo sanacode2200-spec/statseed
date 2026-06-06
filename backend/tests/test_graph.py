@@ -5,7 +5,8 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 from backend.routers import graph
-from backend.schemas.graph import BoxplotRequest, ExportRequest, HistogramRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest
+from backend.services.graph.plotly_charts import barplot_figure
 
 
 def test_boxplot_requires_two_values_per_group() -> None:
@@ -16,6 +17,36 @@ def test_boxplot_requires_two_values_per_group() -> None:
 def test_graph_request_rejects_non_finite_values() -> None:
     with pytest.raises(ValidationError):
         HistogramRequest(values=[1, 2, math.inf])
+
+
+def test_barplot_figure_sd() -> None:
+    req = BarplotRequest(groups=[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], group_names=["A", "B"], error_type="sd")
+    fig = barplot_figure(req)
+    assert len(fig.data) == 2
+    bar_a = fig.data[0]
+    assert bar_a["y"][0] == pytest.approx(2.0)
+    assert bar_a["error_y"]["array"][0] > 0
+
+
+def test_barplot_figure_sem() -> None:
+    req = BarplotRequest(groups=[[10.0, 12.0, 14.0]], error_type="sem")
+    fig = barplot_figure(req)
+    assert fig.data[0]["y"][0] == pytest.approx(12.0)
+    # SEM < SD
+    req_sd = BarplotRequest(groups=[[10.0, 12.0, 14.0]], error_type="sd")
+    fig_sd = barplot_figure(req_sd)
+    assert fig.data[0]["error_y"]["array"][0] < fig_sd.data[0]["error_y"]["array"][0]
+
+
+def test_barplot_figure_ci95() -> None:
+    req = BarplotRequest(groups=[[10.0, 12.0, 14.0]], error_type="ci95")
+    fig = barplot_figure(req)
+    assert fig.data[0]["error_y"]["array"][0] > 0
+
+
+def test_barplot_requires_two_values_per_group() -> None:
+    with pytest.raises(ValidationError, match="データ数が2件未満"):
+        BarplotRequest(groups=[[1.0]])
 
 
 def test_export_returns_503_when_graph_dependency_is_missing(monkeypatch) -> None:

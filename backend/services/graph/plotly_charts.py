@@ -1,7 +1,7 @@
 import math
 import statistics
 
-from backend.schemas.graph import BoxplotRequest, HistogramRequest, PlotlyFigure, ScatterRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, HistogramRequest, PlotlyFigure, ScatterRequest
 
 OKABE_ITO = ["#0072B2", "#E69F00", "#009E73", "#CC79A7"]
 
@@ -35,6 +35,67 @@ def _layout(**overrides: object) -> dict:
     layout = copy.deepcopy(_LAYOUT_BASE)
     layout.update(overrides)
     return layout
+
+
+def barplot_figure(request: BarplotRequest) -> PlotlyFigure:
+    k = len(request.groups)
+    names = request.group_names or [f"群{i + 1}" for i in range(k)]
+    colors = [OKABE_ITO[i % len(OKABE_ITO)] for i in range(k)]
+
+    traces = []
+    for i, (group, name, color) in enumerate(zip(request.groups, names, colors)):
+        mean = statistics.fmean(group)
+        err = _error_bar_value(group, request.error_type)
+        traces.append({
+            "type": "bar",
+            "x": [name],
+            "y": [mean],
+            "name": name,
+            "marker": {"color": color, "opacity": 0.85, "line": {"color": color, "width": 1}},
+            "error_y": {
+                "type": "data",
+                "array": [err],
+                "visible": True,
+                "color": "#373737",
+                "thickness": 1.5,
+                "width": 6,
+            },
+            "showlegend": False,
+        })
+
+    error_label = {"sd": "SD", "sem": "SEM", "ci95": "95%CI"}[request.error_type]
+    layout = _layout(
+        title={"text": request.title, "font": {"size": 13}} if request.title else {},
+        yaxis=dict(_LAYOUT_BASE["yaxis"], title=request.y_label),
+        xaxis=dict(_LAYOUT_BASE["xaxis"], title=""),
+        bargap=0.4,
+        annotations=[{
+            "text": f"エラーバー: {error_label}",
+            "xref": "paper", "yref": "paper",
+            "x": 1.0, "y": -0.12,
+            "xanchor": "right", "yanchor": "top",
+            "showarrow": False,
+            "font": {"size": 9, "color": "#888"},
+        }],
+    )
+    return PlotlyFigure(data=traces, layout=layout)
+
+
+def _error_bar_value(values: list[float], error_type: str) -> float:
+    n = len(values)
+    if n < 2:
+        return 0.0
+    sd = statistics.stdev(values)
+    if error_type == "sd":
+        return sd
+    sem = sd / math.sqrt(n)
+    if error_type == "sem":
+        return sem
+    # ci95: t * SEM
+    t_crit = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571,
+              6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228,
+              20: 2.086, 30: 2.042}.get(n - 1) or (2.042 if n <= 30 else 1.96)
+    return t_crit * sem
 
 
 def boxplot_figure(request: BoxplotRequest) -> PlotlyFigure:

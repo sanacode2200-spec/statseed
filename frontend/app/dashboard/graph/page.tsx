@@ -9,7 +9,7 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { parseNumbers } from "@/lib/parse";
 
-type ChartType = "boxplot" | "histogram" | "scatter";
+type ChartType = "boxplot" | "histogram" | "scatter" | "barplot";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
 
 const inputCls =
@@ -20,6 +20,12 @@ const textareaCls =
 
 export default function GraphPage() {
   const [chartType, setChartType] = useState<ChartType>("boxplot");
+
+  // barplot
+  const [barGroupTexts, setBarGroupTexts] = useState(["", ""]);
+  const [barGroupNames, setBarGroupNames] = useState(["群A", "群B"]);
+  const [barYLabel, setBarYLabel] = useState("");
+  const [barErrorType, setBarErrorType] = useState<"sd" | "sem" | "ci95">("sd");
 
   // boxplot
   const [bpGroupTexts, setBpGroupTexts] = useState(["", ""]);
@@ -52,6 +58,22 @@ export default function GraphPage() {
   const [customFamily, setCustomFamily] = useState("");
   const [customSize, setCustomSize] = useState("9");
 
+  function updateBarGroup(i: number, v: string) {
+    setBarGroupTexts((p) => p.map((t, j) => (j === i ? v : t)));
+  }
+  function updateBarName(i: number, v: string) {
+    setBarGroupNames((p) => p.map((t, j) => (j === i ? v : t)));
+  }
+  function addBarGroup() {
+    setBarGroupTexts((p) => [...p, ""]);
+    setBarGroupNames((p) => [...p, `群${p.length + 1}`]);
+  }
+  function removeBarGroup(i: number) {
+    if (barGroupTexts.length <= 2) return;
+    setBarGroupTexts((p) => p.filter((_, j) => j !== i));
+    setBarGroupNames((p) => p.filter((_, j) => j !== i));
+  }
+
   function updateBpGroup(i: number, v: string) {
     setBpGroupTexts((p) => p.map((t, j) => (j === i ? v : t)));
   }
@@ -75,7 +97,19 @@ export default function GraphPage() {
     setLoading(true);
 
     try {
-      if (chartType === "boxplot") {
+      if (chartType === "barplot") {
+        const groups = barGroupTexts.map(parseNumbers);
+        if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
+        setFigure(
+          await api.graphBarplot({
+            groups,
+            group_names: barGroupNames,
+            title,
+            y_label: barYLabel,
+            error_type: barErrorType,
+          })
+        );
+      } else if (chartType === "boxplot") {
         const groups = bpGroupTexts.map(parseNumbers);
         if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
         setFigure(
@@ -125,7 +159,7 @@ export default function GraphPage() {
     setExporting(true);
     try {
       const body: ExportRequest = {
-        chart_type: chartType,
+        chart_type: chartType as ExportRequest["chart_type"],
         format: exportFormat,
         font_preset: fontPreset,
         font_family: fontPreset === "カスタム" && customFamily ? customFamily : null,
@@ -134,7 +168,15 @@ export default function GraphPage() {
             ? parseInt(customSize, 10) || null
             : null,
       };
-      if (chartType === "boxplot") {
+      if (chartType === "barplot") {
+        body.barplot = {
+          groups: barGroupTexts.map(parseNumbers),
+          group_names: barGroupNames,
+          title,
+          y_label: barYLabel,
+          error_type: barErrorType,
+        };
+      } else if (chartType === "boxplot") {
         body.boxplot = {
           groups: bpGroupTexts.map(parseNumbers),
           group_names: bpGroupNames,
@@ -181,6 +223,7 @@ export default function GraphPage() {
   }
 
   const CHART_OPTIONS: { value: ChartType; label: string }[] = [
+    { value: "barplot", label: "棒グラフ" },
     { value: "boxplot", label: "箱ひげ図" },
     { value: "histogram", label: "ヒストグラム" },
     { value: "scatter", label: "散布図" },
@@ -238,6 +281,51 @@ export default function GraphPage() {
               placeholder="例：介入前後の握力比較"
             />
           </div>
+
+          {/* 棒グラフ */}
+          {chartType === "barplot" && (
+            <div className="space-y-3">
+              <div className="flex gap-4 flex-wrap">
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
+                  <input type="text" value={barYLabel} onChange={(e) => setBarYLabel(e.target.value)}
+                    className={`${inputCls} w-48`} placeholder="例：握力 (kg)" />
+                </div>
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">エラーバー</label>
+                  <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
+                    {([["sd", "SD"], ["sem", "SEM"], ["ci95", "95%CI"]] as const).map(([val, label]) => (
+                      <button key={val} type="button" onClick={() => setBarErrorType(val)}
+                        className={`px-3 py-1.5 text-[12px] transition-colors ${barErrorType === val
+                          ? "bg-[#0072B2] text-white" : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {barGroupTexts.map((text, i) => (
+                  <div key={i}>
+                    <div className="flex gap-1 mb-1">
+                      <input type="text" value={barGroupNames[i]} onChange={(e) => updateBarName(i, e.target.value)}
+                        className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700" />
+                      {barGroupTexts.length > 2 && (
+                        <button type="button" onClick={() => removeBarGroup(i)}
+                          className="text-[12px] text-red-400 hover:text-red-600">✕</button>
+                      )}
+                    </div>
+                    <textarea value={text} onChange={(e) => updateBarGroup(i, e.target.value)}
+                      rows={5} className={textareaCls} placeholder="1行1データ" />
+                  </div>
+                ))}
+              </div>
+              <button type="button" onClick={addBarGroup}
+                className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors">
+                + 群を追加
+              </button>
+            </div>
+          )}
 
           {/* 箱ひげ図 */}
           {chartType === "boxplot" && (

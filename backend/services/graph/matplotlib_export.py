@@ -3,7 +3,7 @@ import math
 import random
 import statistics
 
-from backend.schemas.graph import BoxplotRequest, ExportRequest, HistogramRequest, ScatterRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, ScatterRequest
 from backend.services.graph.theme import OKABE_ITO, STATSEED_THEME
 
 _COLORS = list(OKABE_ITO.values())[:4]
@@ -46,6 +46,8 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
         fig = _boxplot_fig(request.boxplot, plt)
     elif request.chart_type == "histogram" and request.histogram:
         fig = _histogram_fig(request.histogram, plt)
+    elif request.chart_type == "barplot" and request.barplot:
+        fig = _barplot_fig(request.barplot, plt)
     else:
         fig = _scatter_fig(request.scatter, plt)  # type: ignore[arg-type]
 
@@ -143,6 +145,51 @@ def _histogram_fig(req: HistogramRequest, plt):  # type: ignore[no-untyped-def]
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     return fig
+
+
+def _barplot_fig(req: BarplotRequest, plt):  # type: ignore[no-untyped-def]
+    k = len(req.groups)
+    names = req.group_names or [f"群{i + 1}" for i in range(k)]
+    colors = [_COLORS[i % len(_COLORS)] for i in range(k)]
+
+    means = [statistics.fmean(g) for g in req.groups]
+    errors = [_error_value(g, req.error_type) for g in req.groups]
+
+    fig, ax = plt.subplots(figsize=(max(3.5, k * 1.2), 4))
+    x_pos = list(range(k))
+    bars = ax.bar(x_pos, means, color=colors, width=0.5, alpha=0.85, linewidth=0.8, edgecolor=colors)
+    ax.errorbar(
+        x_pos, means, yerr=errors,
+        fmt="none", color="#373737", linewidth=1.2, capsize=4, capthick=1.2,
+    )
+
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(names)
+    ax.set_ylabel(req.y_label or "")
+    if req.title:
+        ax.set_title(req.title)
+
+    error_label = {"sd": "SD", "sem": "SEM", "ci95": "95%CI"}[req.error_type]
+    ax.set_xlabel(f"エラーバー: {error_label}", fontsize=7, color="#888")
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    return fig
+
+
+def _error_value(values: list[float], error_type: str) -> float:
+    n = len(values)
+    if n < 2:
+        return 0.0
+    sd = statistics.stdev(values)
+    if error_type == "sd":
+        return sd
+    sem = sd / math.sqrt(n)
+    if error_type == "sem":
+        return sem
+    t_crit = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571,
+              6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228,
+              20: 2.086, 30: 2.042}.get(n - 1) or (2.042 if n <= 30 else 1.96)
+    return t_crit * sem
 
 
 def _scatter_fig(req: ScatterRequest, plt):  # type: ignore[no-untyped-def]

@@ -210,6 +210,14 @@ export interface Table1Result {
 
 // --- グラフ ---
 
+export interface BarplotRequest {
+  groups: number[][];
+  group_names?: string[];
+  title?: string;
+  y_label?: string;
+  error_type?: "sd" | "sem" | "ci95";
+}
+
 export interface BoxplotRequest {
   groups: number[][];
   group_names?: string[];
@@ -241,7 +249,7 @@ export interface PlotlyFigure {
 }
 
 export interface ExportRequest {
-  chart_type: "boxplot" | "histogram" | "scatter";
+  chart_type: "boxplot" | "histogram" | "scatter" | "barplot";
   format: "png" | "svg" | "pdf";
   font_preset?: "論文標準" | "日本語対応" | "ポスター" | "カスタム" | null;
   font_family?: string | null;
@@ -249,4 +257,5 @@ export interface ExportRequest {
   boxplot?: BoxplotRequest;
   histogram?: HistogramRequest;
   scatter?: ScatterRequest;
+  barplot?: BarplotRequest;
 }
