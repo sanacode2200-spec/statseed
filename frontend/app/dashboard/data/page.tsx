@@ -10,7 +10,7 @@ const ACCEPT = ".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedo
 
 function ColTypeBadge({ dtype }: { dtype: ColumnInfo["dtype"] }) {
   return dtype === "continuous" ? (
-    <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 dark:bg-[#0072B2]/10 text-[#0072B2] dark:text-[#56B4E9]">
+    <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 dark:bg-neutral-800 text-white dark:text-[#56B4E9]">
       連続
     </span>
   ) : (
@@ -34,7 +34,7 @@ function CopyButton({ values }: { values: (number | null)[] }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-[12px] text-[#0072B2] dark:text-[#56B4E9] hover:underline whitespace-nowrap"
+      className="text-[12px] text-white dark:text-[#56B4E9] hover:underline whitespace-nowrap"
     >
       {copied ? "コピー済み ✓" : "値をコピー"}
     </button>
@@ -104,7 +104,7 @@ export default function DataPage() {
         onClick={() => inputRef.current?.click()}
         className={`mb-5 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed cursor-pointer transition-colors px-6 py-10 ${
           dragging
-            ? "border-[#0072B2] bg-[#0072B2]/5"
+            ? "border-white/30 bg-neutral-900"
             : "border-gray-200 dark:border-neutral-800 bg-white dark:bg-[#111] hover:border-gray-300 dark:hover:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-950"
         }`}
       >

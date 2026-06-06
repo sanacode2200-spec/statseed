@@ -369,7 +369,7 @@ export default function TestPage() {
                 else if ("r" in result) exportCorrelationCsv(result as CorrelationResult);
                 else exportTestResultCsv(result as TestResult);
               }}
-              className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+              className="text-[12px] text-white hover:text-white transition-colors"
             >
               CSVダウンロード
             </button>

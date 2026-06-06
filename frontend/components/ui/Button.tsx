@@ -17,7 +17,7 @@ export function Button({
     "inline-flex items-center justify-center rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
   const styles =
     variant === "primary"
-      ? "text-white hover:opacity-90"
+      ? "bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-100"
       : "border border-gray-200 dark:border-neutral-800 text-gray-600 dark:text-neutral-400 bg-white dark:bg-[#111] hover:bg-gray-50 dark:hover:bg-neutral-900";
 
   return (
@@ -25,7 +25,6 @@ export function Button({
       {...props}
       disabled={disabled || loading}
       className={`${base} ${styles} ${className}`}
-      style={variant === "primary" ? { backgroundColor: "#0072B2" } : undefined}
     >
       {loading && (
         <svg className="mr-1.5 h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none">

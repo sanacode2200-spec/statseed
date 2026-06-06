@@ -9,23 +9,23 @@ const NAV_GROUPS = [
   {
     label: null,
     items: [
-      { href: "/dashboard", label: "概要", exact: true, icon: HomeIcon },
+      { href: "/dashboard", label: "Overview", exact: true, icon: HomeIcon },
     ],
   },
   {
-    label: "解析",
+    label: "Analysis",
     items: [
-      { href: "/dashboard/descriptive", label: "記述統計", exact: false, icon: ChartBarIcon },
-      { href: "/dashboard/test", label: "統計検定", exact: false, icon: FlaskIcon },
+      { href: "/dashboard/descriptive", label: "Descriptive", exact: false, icon: ChartBarIcon },
+      { href: "/dashboard/test", label: "Tests", exact: false, icon: FlaskIcon },
       { href: "/dashboard/table1", label: "Table 1", exact: false, icon: TableIcon },
-      { href: "/dashboard/graph", label: "グラフ", exact: false, icon: GraphIcon },
-      { href: "/dashboard/guide", label: "検定ガイド", exact: false, icon: CompassIcon },
+      { href: "/dashboard/graph", label: "Graphs", exact: false, icon: GraphIcon },
+      { href: "/dashboard/guide", label: "Guide", exact: false, icon: CompassIcon },
     ],
   },
   {
-    label: "データ",
+    label: "Data",
     items: [
-      { href: "/dashboard/data", label: "データ読み込み", exact: false, icon: FolderIcon },
+      { href: "/dashboard/data", label: "Import", exact: false, icon: FolderIcon },
     ],
   },
 ];
@@ -63,10 +63,12 @@ export function Sidebar() {
       <div className="px-3 py-3 border-b border-gray-100 dark:border-neutral-900">
         <button className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md
           hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors text-left">
-          <Image src="/sana2.png" alt="Statseed" width={20} height={20} className="rounded-sm shrink-0" />
+          <div className="w-5 h-5 rounded-sm overflow-hidden shrink-0">
+            <Image src="/sana2.png" alt="Statseed" width={20} height={20} className="w-full h-full object-cover" />
+          </div>
           <div className="min-w-0 flex-1">
             <div className="text-[13px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
-              sana&apos;s projects
+              sana&apos;s team
             </div>
             <div className="text-[11px] text-gray-400 dark:text-neutral-600 leading-tight">Statseed</div>
           </div>
@@ -80,7 +82,7 @@ export function Sidebar() {
           bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800
           text-gray-400 dark:text-neutral-600 text-[12px]">
           <SearchIcon />
-          <span>検索...</span>
+          <span>Search...</span>
         </div>
       </div>
 
@@ -102,11 +104,11 @@ export function Sidebar() {
                     href={href}
                     className={`flex items-center gap-2 px-2 py-[6px] rounded-md text-[13px] transition-colors ${
                       active
-                        ? "bg-gray-100 dark:bg-neutral-900 text-gray-900 dark:text-white font-medium"
+                        ? "bg-neutral-800 text-white font-medium"
                         : "text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-950 hover:text-gray-800 dark:hover:text-neutral-300"
                     }`}
                   >
-                    <span className={active ? "text-gray-700 dark:text-neutral-300" : "text-gray-400 dark:text-neutral-600"}>
+                    <span className={active ? "text-white" : "text-gray-400 dark:text-neutral-600"}>
                       <Icon />
                     </span>
                     {label}

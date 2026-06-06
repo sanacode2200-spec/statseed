@@ -88,7 +88,7 @@ export default function DescriptivePage() {
                 ? "text-white border-transparent"
                 : "text-gray-500 dark:text-neutral-500 border-gray-200 dark:border-neutral-800 bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-900"
             }`}
-            style={mode === opt.value ? { backgroundColor: "#0072B2" } : undefined}
+            style={mode === opt.value ? { backgroundColor: "#fff", color: "#000" } : undefined}
           >
             {opt.label}
           </button>
@@ -148,7 +148,7 @@ export default function DescriptivePage() {
                 if (mode === "continuous" && continuousResult) exportDescriptiveCsv(continuousResult);
                 if (mode === "categorical" && categoricalResult) exportCategoricalCsv(categoricalResult);
               }}
-              className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+              className="text-[12px] text-white hover:text-white transition-colors"
             >
               CSVダウンロード
             </button>

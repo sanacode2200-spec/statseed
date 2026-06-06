@@ -7,6 +7,120 @@ import type { GuideRequest, GuideResponse, SuggestedTest } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 
+// --- SVG アイコン ---
+
+function IconScale() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="3" x2="12" y2="21" />
+      <path d="M3 9l9-6 9 6" />
+      <path d="M6 12l-3 6h6l-3-6z" />
+      <path d="M18 12l-3 6h6l-3-6z" />
+    </svg>
+  );
+}
+
+function IconTrendUp() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  );
+}
+
+function IconRuler() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="10" rx="1" />
+      <line x1="7" y1="7" x2="7" y2="12" />
+      <line x1="12" y1="7" x2="12" y2="17" />
+      <line x1="17" y1="7" x2="17" y2="12" />
+    </svg>
+  );
+}
+
+function IconGrid() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+    </svg>
+  );
+}
+
+function IconTwoGroups() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="16" cy="8" r="3" />
+      <path d="M4 20c0-2.2 1.8-4 4-4s4 1.8 4 4" />
+      <path d="M12 20c0-2.2 1.8-4 4-4s4 1.8 4 4" />
+    </svg>
+  );
+}
+
+function IconThreeGroups() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="14" width="5" height="7" rx="0.5" />
+      <rect x="9.5" y="9" width="5" height="12" rx="0.5" />
+      <rect x="17" y="4" width="5" height="17" rx="0.5" />
+    </svg>
+  );
+}
+
+function IconIndependent() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="7" cy="7" r="3" />
+      <path d="M3 19c0-2.2 1.8-4 4-4s4 1.8 4 4" />
+      <circle cx="17" cy="7" r="3" />
+      <path d="M13 19c0-2.2 1.8-4 4-4s4 1.8 4 4" />
+      <line x1="11" y1="12" x2="13" y2="12" strokeDasharray="1.5 1.5" />
+    </svg>
+  );
+}
+
+function IconPaired() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
+
+function IconBell() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 17c1.5-2 2.5-5 2.5-8a6.5 6.5 0 0 1 13 0c0 3 1 6 2.5 8H3z" />
+      <line x1="9" y1="21" x2="15" y2="21" />
+    </svg>
+  );
+}
+
+function IconSkewed() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="2 17 5 7 9 13 13 9 17 11 22 17" />
+      <line x1="2" y1="17" x2="22" y2="17" />
+    </svg>
+  );
+}
+
+function IconUnknown() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <circle cx="12" cy="17" r="0.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 // --- ウィザードのステップ定義 ---
 
 type Step =
@@ -21,7 +135,7 @@ interface Choice {
   value: string;
   label: string;
   description: string;
-  icon: string;
+  icon: React.FC;
 }
 
 const STEPS: Record<
@@ -35,13 +149,13 @@ const STEPS: Record<
         value: "compare",
         label: "群間比較",
         description: "2群以上のデータを比べたい（介入前後、治療群 vs 対照群など）",
-        icon: "⚖️",
+        icon: IconScale,
       },
       {
         value: "correlate",
         label: "相関・関連",
         description: "2つの変数の関係を調べたい（身長と体重、年齢とスコアなど）",
-        icon: "📈",
+        icon: IconTrendUp,
       },
     ],
   },
@@ -52,13 +166,13 @@ const STEPS: Record<
         value: "continuous",
         label: "連続変数",
         description: "身長・体重・血圧・スコアなど数値で量を表すデータ",
-        icon: "📏",
+        icon: IconRuler,
       },
       {
         value: "categorical",
         label: "カテゴリ変数",
         description: "性別・あり/なし・分類など、グループを表すデータ",
-        icon: "🗂️",
+        icon: IconGrid,
       },
     ],
   },
@@ -69,13 +183,13 @@ const STEPS: Record<
         value: "2",
         label: "2群",
         description: "対照群と介入群、治療前後など2つのグループ",
-        icon: "2️⃣",
+        icon: IconTwoGroups,
       },
       {
         value: "3",
         label: "3群以上",
         description: "3つ以上のグループを一度に比較する",
-        icon: "3️⃣",
+        icon: IconThreeGroups,
       },
     ],
   },
@@ -86,13 +200,13 @@ const STEPS: Record<
         value: "false",
         label: "対応なし（独立した2群）",
         description: "異なる人・患者同士を比べる（治療群 vs 対照群など）",
-        icon: "👥",
+        icon: IconIndependent,
       },
       {
         value: "true",
         label: "対応あり（同一対象の前後）",
         description: "同じ人の介入前後・左右差など",
-        icon: "🔄",
+        icon: IconPaired,
       },
     ],
   },
@@ -103,19 +217,19 @@ const STEPS: Record<
         value: "yes",
         label: "従う",
         description: "Shapiro-Wilk検定でp≥0.05、またはn≥30で分布が概ね釣り鐘型",
-        icon: "🔔",
+        icon: IconBell,
       },
       {
         value: "no",
         label: "従わない",
         description: "Shapiro-Wilk検定でp<0.05、または明らかに偏った分布",
-        icon: "📊",
+        icon: IconSkewed,
       },
       {
         value: "unknown",
         label: "わからない",
         description: "確認していない場合はノンパラメトリック検定を推奨します",
-        icon: "❓",
+        icon: IconUnknown,
       },
     ],
   },
@@ -168,7 +282,7 @@ function SuggestionCard({ s }: { s: SuggestedTest }) {
     <div
       className={`rounded-lg border p-4 ${
         isRecommended
-          ? "border-[#0072B2]/30 dark:border-[#0072B2]/20 bg-[#0072B2]/5 dark:bg-[#0072B2]/5"
+          ? "border-neutral-700 dark:border-neutral-800 bg-neutral-900 dark:bg-neutral-900"
           : "border-gray-200 dark:border-neutral-800 bg-white dark:bg-[#111]"
       }`}
     >
@@ -176,7 +290,7 @@ function SuggestionCard({ s }: { s: SuggestedTest }) {
         <span
           className={`text-[11px] font-semibold rounded-full px-2 py-0.5 ${
             isRecommended
-              ? "bg-[#0072B2] text-white"
+              ? "bg-white text-black"
               : "bg-gray-100 dark:bg-neutral-900 text-gray-500 dark:text-neutral-500"
           }`}
         >
@@ -192,7 +306,7 @@ function SuggestionCard({ s }: { s: SuggestedTest }) {
       )}
       <Link
         href={ENDPOINT_LABELS[s.endpoint] ?? "/dashboard/test"}
-        className="inline-block text-[13px] font-medium text-[#0072B2] dark:text-[#56B4E9] hover:underline"
+        className="inline-block text-[13px] font-medium text-white dark:text-[#56B4E9] hover:underline"
       >
         → この検定を実行する
       </Link>
@@ -290,7 +404,7 @@ export default function GuidePage() {
               className="h-full rounded-full transition-all duration-300"
               style={{
                 width: `${(currentIndex / totalSteps) * 100}%`,
-                backgroundColor: "#0072B2",
+                backgroundColor: "#fff",
               }}
             />
           </div>
@@ -314,7 +428,9 @@ export default function GuidePage() {
                   transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-[22px]">{c.icon}</span>
+                  <span className="text-gray-400 dark:text-neutral-500 group-hover:text-white transition-colors shrink-0">
+                    <c.icon />
+                  </span>
                   <div>
                     <div className="text-[14px] font-medium text-gray-800 dark:text-neutral-200 group-hover:text-gray-900 dark:group-hover:text-white">
                       {c.label}
@@ -362,7 +478,7 @@ export default function GuidePage() {
                 </button>
                 <button
                   onClick={handleReset}
-                  className="text-[12px] text-[#0072B2] dark:text-[#56B4E9] hover:underline"
+                  className="text-[12px] text-white dark:text-[#56B4E9] hover:underline"
                 >
                   最初からやり直す
                 </button>

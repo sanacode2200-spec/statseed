@@ -12,7 +12,7 @@ const FEATURES = [
     href: "/dashboard/descriptive",
     title: "記述統計",
     desc: "平均・SD・中央値・IQR・95%CI・カテゴリ頻度",
-    color: "#0072B2",
+    color: "#888888",
     tags: ["連続変数", "カテゴリ変数"],
     icon: ChartBarIcon,
   },

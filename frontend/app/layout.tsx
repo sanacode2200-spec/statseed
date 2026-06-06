@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 const lineSeedJP = localFont({
   src: [
@@ -38,12 +45,12 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="ja" suppressHydrationWarning className={lineSeedJP.variable}>
+    <html lang="ja" suppressHydrationWarning className={`${inter.variable} ${lineSeedJP.variable}`}>
       <head>
         {/* dark mode flash prevention */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light'){return;}document.documentElement.classList.add('dark');if(!t){localStorage.setItem('theme','dark');}}catch(e){}})()`,
           }}
         />
       </head>

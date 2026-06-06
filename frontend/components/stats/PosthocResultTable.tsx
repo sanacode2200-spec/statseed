@@ -60,13 +60,13 @@ export function PosthocResultTable({ result }: { result: PosthocResult }) {
                   {formatP(pair.p_raw)}
                 </td>
                 <td className={`text-right px-4 py-2.5 tabular-nums font-medium ${
-                  pair.significant ? "text-[#0072B2]" : "text-gray-500 dark:text-neutral-500"
+                  pair.significant ? "text-white" : "text-gray-500 dark:text-neutral-500"
                 }`}>
                   {formatP(pair.p_adjusted)}
                 </td>
                 <td className="text-center px-4 py-2.5">
                   {pair.significant ? (
-                    <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-[#0072B2]/10 text-[#0072B2]">
+                    <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-neutral-800 text-white">
                       *
                     </span>
                   ) : (

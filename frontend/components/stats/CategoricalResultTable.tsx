@@ -49,7 +49,7 @@ function PercentBar({ percent }: { percent: number }) {
       style={{
         width: `${Math.max(2, percent)}px`,
         maxWidth: "80px",
-        backgroundColor: "#0072B2",
+        backgroundColor: "#fff",
       }}
     />
   );

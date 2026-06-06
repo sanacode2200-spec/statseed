@@ -318,7 +318,7 @@ export default function GraphPage() {
                     setError(null);
                   }}
                   className={toggleBtn(chartType === opt.value)}
-                  style={chartType === opt.value ? { backgroundColor: "#0072B2" } : undefined}
+                  style={chartType === opt.value ? { backgroundColor: "#fff", color: "#000" } : undefined}
                 >
                   {opt.label}
                 </button>
@@ -404,7 +404,7 @@ export default function GraphPage() {
                     {([["sd", "SD"], ["sem", "SEM"], ["ci95", "95%CI"]] as const).map(([val, label]) => (
                       <button key={val} type="button" onClick={() => setBarErrorType(val)}
                         className={`px-3 py-1.5 text-[12px] transition-colors ${barErrorType === val
-                          ? "bg-[#0072B2] text-white" : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50"}`}>
+                          ? "bg-white text-black" : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50"}`}>
                         {label}
                       </button>
                     ))}
@@ -617,7 +617,7 @@ export default function GraphPage() {
                 <p className="text-[12px] font-semibold text-gray-500 dark:text-neutral-500">ROC解析結果</p>
                 <button
                   onClick={() => exportRocCsv(rocStats, rocStats.fpr, rocStats.tpr, rocStats.thresholds)}
-                  className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+                  className="text-[12px] text-white hover:text-white transition-colors"
                 >
                   CSVダウンロード（座標データ）
                 </button>

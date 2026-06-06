@@ -119,7 +119,7 @@ export default function Table1Page() {
                     onClick={() => updateVar(v.id, { type: t })}
                     className={`px-3 py-1 text-[11px] transition-colors ${
                       v.type === t
-                        ? "bg-[#0072B2] text-white"
+                        ? "bg-white text-black"
                         : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-900"
                     }`}
                   >
@@ -136,7 +136,7 @@ export default function Table1Page() {
                       onClick={() => updateVar(v.id, { display: val })}
                       className={`px-3 py-1 text-[11px] transition-colors ${
                         v.display === val
-                          ? "bg-[#0072B2] text-white"
+                          ? "bg-white text-black"
                           : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-900"
                       }`}
                     >
@@ -167,7 +167,7 @@ export default function Table1Page() {
 
         <button
           onClick={addVar}
-          className="flex items-center gap-1.5 text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+          className="flex items-center gap-1.5 text-[12px] text-white hover:text-white transition-colors"
         >
           <span className="text-[16px] leading-none">+</span> 変数を追加
         </button>
@@ -220,13 +220,13 @@ export default function Table1Page() {
             <div className="flex items-center gap-3">
               <button
                 onClick={copyAsTsv}
-                className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+                className="text-[12px] text-white hover:text-white transition-colors"
               >
                 TSVでコピー（Excel/Word用）
               </button>
               <button
                 onClick={() => exportTable1Csv(result)}
-                className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+                className="text-[12px] text-white hover:text-white transition-colors"
               >
                 CSVダウンロード
               </button>
@@ -287,7 +287,7 @@ function Table1View({ result }: { result: Table1Result }) {
                 <>
                   <td className={`text-center px-4 py-2 tabular-nums ${
                     row.p_value && parseFloat(row.p_value) < 0.05
-                      ? "font-semibold text-[#0072B2]"
+                      ? "font-semibold text-white"
                       : "text-gray-500 dark:text-neutral-500"
                   }`}>
                     {row.p_value ?? (row.indent ? "" : "—")}

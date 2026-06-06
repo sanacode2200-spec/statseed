@@ -285,7 +285,7 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] **ROC曲線** — AUC + 95%CI（Hanley & McNeil 1982）・最適カットオフ（Youden指数）・感度/特異度表示
 
 ### 残候補
-- [ ] Supabase Auth 認証
+- [ ] Supabase Auth 認証（ログインページ UI は完成済み、Auth 接続が未実装）
 - [ ] データ保存（セッション管理）
 - [ ] CSV エクスポート（解析結果）
 
@@ -353,7 +353,7 @@ STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/pytest backend/tests/ 
 
 ---
 
-## UI デザイン方針（2026-06-05 確定）
+## UI デザイン方針（2026-06-06 更新）
 
 ### レイアウト
 - **Vercel 風サイドバー** — 200px 固定、黒背景（dark）/ 白（light）、グループ付きナビ
@@ -361,9 +361,11 @@ STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/pytest backend/tests/ 
 - **ブレッドクラム** — トップバーに `Statseed / ページ名`
 
 ### フォント
-- **LINESeed JP** — `next/font/local` でローカル読み込み（woff2 × 4ウェイト）
+- **Inter** — `next/font/google` で読み込み（UI クロム・ラテン文字担当）
+- **LINESeed JP** — `next/font/local` でローカル読み込み（日本語コンテンツ担当、woff2 × 4ウェイト）
+- フォントスタック: `Inter → LINESeed JP → Noto Sans JP`
 - フォントファイル: `frontend/public/fonts/line-seed-jp/`
-- CSS 変数: `--font-line-seed-jp`
+- CSS 変数: `--font-inter` / `--font-line-seed-jp`
 
 ### フォントサイズ体系（px）
 | 用途 | サイズ |
@@ -377,14 +379,31 @@ STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/pytest backend/tests/ 
 
 ### カラー・ダークモード
 - ダークモード: `darkMode: "class"` + `localStorage` 永続化 + フラッシュ防止スクリプト
+- **デフォルトはダーク**（未設定時も dark クラスを付与）
 - ダーク背景: `#0a0a0a`（ページ）/ `#111`（カード・入力）
 - ボーダー: `gray-200` / `neutral-800`（dark）
+- アクセントカラー: **なし**（Vercel スタイル — 黒/白/グレー階層のみ）
 
 ### ボタン・フォーム
-- **Button**: `px-3 py-1.5 text-[12px]`、primary は `#0072B2`
-- **切り替えボタン**: `text-[11px] px-3 py-1`、active は brand color
+- **Button primary**: `bg-black text-white dark:bg-white dark:text-black`（Vercel スタイル）
+- **Button secondary**: `border border-gray-200 dark:border-neutral-800`
+- **切り替えトグル**: active = `bg-white text-black`（ダーク時）
 - **input / textarea / select**: `border-gray-200 dark:border-neutral-800 dark:bg-[#111]`
+- **フォーカスリング**: `focus:ring-neutral-400/30`
+
+### サイドバーナビゲーション
+- ラベルは**英語**（Overview / Analysis / Tests / Guide / Import など）
+- アクティブ項目: `bg-neutral-800 text-white`
+- セクションラベル: `text-[11px] uppercase tracking-wider text-neutral-600`
+- アイコン: 13px SVG ストローク（`stroke="currentColor"` `strokeWidth={1.75}`）
+
+### ログインページ
+- `/login` — Vercel 風センタードカード
+- OAuth: "Continue with GitHub" / "Continue with Google"
+- メール magic link 対応（Supabase Auth 未接続、UI のみ）
 
 ### アイコン
 - **sana2.png** — クラゲ猫ロゴ（757×757px、余白トリミング済み）
-- サイドバートップ・ランディングページで使用
+- 表示時は `overflow-hidden` + `object-cover` でフレームいっぱいに
+- サイドバートップ・ランディング・ログインページで使用
+- ガイドページの選択肢: SVG ストロークアイコン（絵文字ではない）

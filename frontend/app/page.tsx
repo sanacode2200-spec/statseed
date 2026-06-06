@@ -30,15 +30,16 @@ export default function LandingPage() {
       {/* Header */}
       <header className="border-b border-gray-200 dark:border-neutral-800 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Image src="/sana2.png" alt="Statseed" width={30} height={30} className="rounded-md" />
+          <div className="w-[30px] h-[30px] rounded-md overflow-hidden shrink-0">
+            <Image src="/sana2.png" alt="Statseed" width={30} height={30} className="w-full h-full object-cover" />
+          </div>
           <span className="text-[20px] font-semibold tracking-tight text-gray-900 dark:text-white">
             Statseed
           </span>
         </div>
         <Link
           href="/dashboard"
-          className="text-[15px] px-4 py-2 rounded-md text-white font-medium transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "#0072B2" }}
+          className="text-[13px] px-3 py-1.5 rounded-md font-medium transition-colors bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-100"
         >
           解析をはじめる
         </Link>
@@ -47,9 +48,11 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center text-center px-6 py-24">
         <div className="mb-6">
-          <Image src="/sana2.png" alt="Statseed" width={72} height={72} className="mx-auto rounded-2xl shadow-md" />
+          <div className="w-[72px] h-[72px] rounded-2xl overflow-hidden mx-auto shadow-md">
+            <Image src="/sana2.png" alt="Statseed" width={72} height={72} className="w-full h-full object-cover" />
+          </div>
         </div>
-        <p className="text-[15px] font-medium mb-3 tracking-wide" style={{ color: "#0072B2" }}>
+        <p className="text-[15px] font-medium mb-3 tracking-wide text-gray-500 dark:text-neutral-400">
           PT / OT / ST / 看護師 / 臨床検査技師 向け
         </p>
         <h1 className="text-[40px] font-bold mb-5 text-gray-900 dark:text-white">
@@ -60,8 +63,7 @@ export default function LandingPage() {
         </p>
         <Link
           href="/dashboard"
-          className="px-8 py-3 rounded-lg text-white text-[18px] font-semibold shadow-sm transition-opacity hover:opacity-90"
-          style={{ backgroundColor: "#0072B2" }}
+          className="px-8 py-3 rounded-lg text-[18px] font-semibold transition-colors bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-100"
         >
           無料で使ってみる
         </Link>
