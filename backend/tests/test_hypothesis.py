@@ -84,7 +84,16 @@ def test_mannwhitney_significant() -> None:
     result = run_mannwhitney(req)
 
     assert result.p_value < 0.05
+    assert result.effect_size is not None and result.effect_size < 0
     assert "有意差が認められました" in result.interpretation
+
+
+def test_mannwhitney_effect_direction_matches_group_order() -> None:
+    lower_a = run_mannwhitney(TwoGroupRequest(group_a=[1, 2, 3], group_b=[4, 5, 6]))
+    higher_a = run_mannwhitney(TwoGroupRequest(group_a=[4, 5, 6], group_b=[1, 2, 3]))
+
+    assert lower_a.effect_size == pytest.approx(-1.0)
+    assert higher_a.effect_size == pytest.approx(1.0)
 
 
 # --- 対応t検定 ---

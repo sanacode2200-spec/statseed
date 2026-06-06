@@ -148,8 +148,19 @@ def parse_groups(
     events: list[int],
     group_labels: list[str | None] | None,
 ) -> list[KMCurve]:
+    return [
+        km_fit(group_times, group_events, name=name)
+        for name, group_times, group_events in split_groups(times, events, group_labels)
+    ]
+
+
+def split_groups(
+    times: list[float],
+    events: list[int],
+    group_labels: list[str | None] | None,
+) -> list[tuple[str, list[float], list[int]]]:
     if not group_labels:
-        return [km_fit(times, events)]
+        return [("全体", times, events)]
 
     groups: dict[str, tuple[list[float], list[int]]] = {}
     for t, e, g in zip(times, events, group_labels):
@@ -159,4 +170,4 @@ def parse_groups(
         groups[key][0].append(t)
         groups[key][1].append(e)
 
-    return [km_fit(gt, ge, name=gn) for gn, (gt, ge) in sorted(groups.items())]
+    return [(name, group_times, group_events) for name, (group_times, group_events) in sorted(groups.items())]

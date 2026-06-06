@@ -122,7 +122,8 @@ def run_mannwhitney(request: TwoGroupRequest) -> TestResult:
     p = float(p)
 
     na, nb = len(request.group_a), len(request.group_b)
-    r = 1 - 2 * u / (na * nb)
+    # Rank-biserial correlation: positive when group A tends to be larger.
+    r = 2 * u / (na * nb) - 1
 
     median_a = statistics.median(request.group_a)
     median_b = statistics.median(request.group_b)

@@ -35,29 +35,27 @@ def compute_roc(scores: list[float], labels: list[int]) -> ROCResult:
     # Sort by score descending
     pairs = sorted(zip(scores, labels), key=lambda x: -x[0])
 
-    # Compute ROC points
+    # Compute ROC points. Each point represents predictions where score >= threshold.
     fpr_pts: list[float] = [0.0]
     tpr_pts: list[float] = [0.0]
-    thresh_pts: list[float] = [pairs[0][0] + 1.0]  # sentinel above max
+    sentinel = math.nextafter(pairs[0][0], math.inf)
+    thresh_pts: list[float] = [sentinel if math.isfinite(sentinel) else pairs[0][0]]
 
     tp = 0
     fp = 0
-    prev_score = None
+    i = 0
+    while i < n:
+        threshold = pairs[i][0]
+        while i < n and pairs[i][0] == threshold:
+            if pairs[i][1] == 1:
+                tp += 1
+            else:
+                fp += 1
+            i += 1
 
-    for score, label in pairs:
-        if score != prev_score and prev_score is not None:
-            fpr_pts.append(fp / n_neg)
-            tpr_pts.append(tp / n_pos)
-            thresh_pts.append(score)
-        if label == 1:
-            tp += 1
-        else:
-            fp += 1
-        prev_score = score
-
-    fpr_pts.append(fp / n_neg)
-    tpr_pts.append(tp / n_pos)
-    thresh_pts.append(pairs[-1][0] - 1.0)
+        fpr_pts.append(fp / n_neg)
+        tpr_pts.append(tp / n_pos)
+        thresh_pts.append(threshold)
 
     # AUC via trapezoidal rule
     auc = _trapz(fpr_pts, tpr_pts)

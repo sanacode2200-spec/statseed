@@ -12,6 +12,7 @@ import {
   parseCategoricalValues,
   parseNullableNumbers,
 } from "@/lib/parse";
+import { exportCategoricalCsv, exportDescriptiveCsv } from "@/lib/exportCsv";
 
 type Mode = "continuous" | "categorical";
 
@@ -141,6 +142,17 @@ export default function DescriptivePage() {
 
       {result && (
         <div className="space-y-4">
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                if (mode === "continuous" && continuousResult) exportDescriptiveCsv(continuousResult);
+                if (mode === "categorical" && categoricalResult) exportCategoricalCsv(categoricalResult);
+              }}
+              className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+            >
+              CSVダウンロード
+            </button>
+          </div>
           {mode === "continuous" && continuousResult && (
             <DescriptiveResultTable result={continuousResult} />
           )}

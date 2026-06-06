@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { parseNullableNumbers, parseCategoricalValues } from "@/lib/parse";
 import type { Table1Result, Table1Variable } from "@/lib/types";
+import { exportTable1Csv } from "@/lib/exportCsv";
 
 type VarState = {
   id: number;
@@ -216,12 +217,20 @@ export default function Table1Page() {
         <div className="mt-6">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-[15px] font-semibold text-gray-800 dark:text-neutral-200">Table 1</h2>
-            <button
-              onClick={copyAsTsv}
-              className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
-            >
-              TSVでコピー（Excel/Word用）
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={copyAsTsv}
+                className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+              >
+                TSVでコピー（Excel/Word用）
+              </button>
+              <button
+                onClick={() => exportTable1Csv(result)}
+                className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+              >
+                CSVダウンロード
+              </button>
+            </div>
           </div>
           <Table1View result={result} />
         </div>

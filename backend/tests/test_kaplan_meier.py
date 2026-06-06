@@ -110,6 +110,19 @@ def test_km_figure_two_groups_has_logrank_annotation() -> None:
     assert any("ログランク" in t for t in texts)
 
 
+def test_km_figure_two_groups_has_risk_table_for_each_group() -> None:
+    req = KaplanMeierRequest(
+        times=[1, 2, 3, 4],
+        events=[1, 0, 1, 0],
+        group_labels=["A", "A", "B", "B"],
+    )
+    fig = km_figure(req)
+    texts = [a.get("text", "") for a in fig.layout.get("annotations", [])]
+
+    assert "A" in texts
+    assert "B" in texts
+
+
 # ── schema validation ─────────────────────────────────────────────────────────
 
 def test_km_schema_rejects_length_mismatch() -> None:

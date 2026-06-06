@@ -39,9 +39,27 @@ def test_roc_optimal_threshold_maximizes_youden() -> None:
     scores = [0.9, 0.8, 0.4, 0.2, 0.1]
     labels = [1, 1, 0, 0, 0]
     result = compute_roc(scores, labels)
-    # Optimal: cutoff between 0.8 and 0.4 → TPR=1.0, FPR=0.0 → Youden=1.0
+    # score >= 0.8 を陽性とすると TPR=1.0, FPR=0.0 → Youden=1.0
+    assert result.optimal_threshold == pytest.approx(0.8)
     assert result.optimal_tpr == pytest.approx(1.0)
     assert result.optimal_fpr == pytest.approx(0.0)
+
+
+def test_roc_coordinates_match_each_threshold() -> None:
+    scores = [0.9, 0.8, 0.8, 0.2]
+    labels = [1, 0, 1, 0]
+    result = compute_roc(scores, labels)
+
+    for threshold, fpr, tpr in zip(
+        result.thresholds[1:], result.fpr[1:], result.tpr[1:]
+    ):
+        predicted = [score >= threshold for score in scores]
+        assert tpr == pytest.approx(
+            sum(pred and label == 1 for pred, label in zip(predicted, labels)) / 2
+        )
+        assert fpr == pytest.approx(
+            sum(pred and label == 0 for pred, label in zip(predicted, labels)) / 2
+        )
 
 
 def test_roc_ci_within_bounds() -> None:

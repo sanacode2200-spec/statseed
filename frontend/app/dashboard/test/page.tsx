@@ -10,6 +10,7 @@ import { CorrelationResultCard, TestResultCard } from "@/components/stats/TestRe
 import { PosthocResultTable } from "@/components/stats/PosthocResultTable";
 import { parseIntegerMatrix, parseNumbers } from "@/lib/parse";
 import type { PosthocResult } from "@/lib/types";
+import { exportCorrelationCsv, exportPosthocCsv, exportTestResultCsv } from "@/lib/exportCsv";
 
 type TestType =
   | "ttest"
@@ -360,13 +361,27 @@ export default function TestPage() {
       {error && <ErrorMessage message={error} />}
 
       {result && (
-        "pairs" in result ? (
-          <PosthocResultTable result={result as PosthocResult} />
-        ) : "r" in result ? (
-          <CorrelationResultCard result={result as CorrelationResult} />
-        ) : (
-          <TestResultCard result={result as TestResult} />
-        )
+        <div className="space-y-3">
+          <div className="flex justify-end">
+            <button
+              onClick={() => {
+                if ("pairs" in result) exportPosthocCsv(result as PosthocResult);
+                else if ("r" in result) exportCorrelationCsv(result as CorrelationResult);
+                else exportTestResultCsv(result as TestResult);
+              }}
+              className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+            >
+              CSVダウンロード
+            </button>
+          </div>
+          {"pairs" in result ? (
+            <PosthocResultTable result={result as PosthocResult} />
+          ) : "r" in result ? (
+            <CorrelationResultCard result={result as CorrelationResult} />
+          ) : (
+            <TestResultCard result={result as TestResult} />
+          )}
+        </div>
       )}
     </div>
   );

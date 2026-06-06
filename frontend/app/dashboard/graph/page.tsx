@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import type { ExportRequest, PlotlyFigure, ROCResponse } from "@/lib/types";
+import { exportRocCsv } from "@/lib/exportCsv";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
@@ -612,7 +613,15 @@ export default function GraphPage() {
           {/* ROC統計量 */}
           {rocStats && (
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
-              <p className="text-[12px] font-semibold text-gray-500 dark:text-neutral-500 mb-2">ROC解析結果</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[12px] font-semibold text-gray-500 dark:text-neutral-500">ROC解析結果</p>
+                <button
+                  onClick={() => exportRocCsv(rocStats, rocStats.fpr, rocStats.tpr, rocStats.thresholds)}
+                  className="text-[12px] text-[#0072B2] hover:text-[#005a8e] transition-colors"
+                >
+                  CSVダウンロード（座標データ）
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-[13px] mb-3">
                 <div className="flex justify-between">
                   <span className="text-gray-400 dark:text-neutral-600">AUC</span>

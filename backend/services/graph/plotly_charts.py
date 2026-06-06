@@ -124,10 +124,11 @@ def roc_figure(request: ROCRequest) -> tuple[PlotlyFigure, ROCResponse]:
 
 
 def km_figure(request: KaplanMeierRequest) -> PlotlyFigure:
-    from backend.services.graph.kaplan_meier import logrank_p, parse_groups
+    from backend.services.graph.kaplan_meier import logrank_p, parse_groups, split_groups
 
     times = [float(t) for t in request.times]
     curves = parse_groups(times, request.events, request.group_labels)
+    group_data = split_groups(times, request.events, request.group_labels)
     colors = [OKABE_ITO[i % len(OKABE_ITO)] for i in range(len(curves))]
     multi = len(curves) > 1
 
@@ -183,22 +184,7 @@ def km_figure(request: KaplanMeierRequest) -> PlotlyFigure:
     # Log-rank p-value annotation
     annotations = []
     if multi:
-        group_pairs = []
-        for curve in curves:
-            idx = [i for i, (t, e) in enumerate(zip(times, request.events)) if (request.group_labels or [None] * len(times))[i] == curve.name.split(" ")[0]]
-            # Rebuild from parse_groups result
-            pass
-        # Re-compute p-value
-        p = None
-        if request.group_labels:
-            from backend.services.graph.kaplan_meier import parse_groups as _pg
-            from collections import defaultdict
-            grps: dict[str, tuple[list, list]] = defaultdict(lambda: ([], []))
-            for t, e, g in zip(times, request.events, request.group_labels):
-                key = g if g is not None else "不明"
-                grps[key][0].append(t)
-                grps[key][1].append(e)
-            p = logrank_p(list(grps.values()))
+        p = logrank_p([(group_times, group_events) for _, group_times, group_events in group_data])
 
         if p is not None:
             p_text = f"ログランク検定: p{'<0.001' if p < 0.001 else f'={p:.3f}'}"
@@ -215,27 +201,29 @@ def km_figure(request: KaplanMeierRequest) -> PlotlyFigure:
             })
 
     # Risk table annotation
-    if request.show_risk_table and curves:
-        curve0 = curves[0]
-        risk_texts = [f"N at risk: {c}" for c in curve0.risk_counts]
-        risk_labels = [f"{t:.0f}" for t in curve0.risk_times]
-        for i, (rt, rn) in enumerate(zip(curve0.risk_times, curve0.risk_counts)):
+    if request.show_risk_table and group_data:
+        max_time = max(times)
+        risk_times = [max_time * i / 4 for i in range(5)]
+        for row, (name, group_times, _) in enumerate(group_data):
+            y = -0.10 - row * 0.07
+            for risk_time in risk_times:
+                n_at_risk = sum(time >= risk_time for time in group_times)
+                annotations.append({
+                    "text": str(n_at_risk),
+                    "xref": "x", "yref": "paper",
+                    "x": risk_time, "y": y,
+                    "xanchor": "center", "yanchor": "top",
+                    "showarrow": False,
+                    "font": {"size": 10, "color": "#555"},
+                })
             annotations.append({
-                "text": str(rn),
-                "xref": "x", "yref": "paper",
-                "x": rt, "y": -0.10,
-                "xanchor": "center", "yanchor": "top",
+                "text": name if multi else "N at risk",
+                "xref": "paper", "yref": "paper",
+                "x": -0.02, "y": y,
+                "xanchor": "right", "yanchor": "top",
                 "showarrow": False,
                 "font": {"size": 10, "color": "#555"},
             })
-        annotations.append({
-            "text": "N at risk",
-            "xref": "paper", "yref": "paper",
-            "x": -0.02, "y": -0.10,
-            "xanchor": "right", "yanchor": "top",
-            "showarrow": False,
-            "font": {"size": 10, "color": "#555"},
-        })
 
     layout = _layout(
         title={"text": request.title, "font": {"size": 13}} if request.title else {},
@@ -243,7 +231,7 @@ def km_figure(request: KaplanMeierRequest) -> PlotlyFigure:
         yaxis=dict(_LAYOUT_BASE["yaxis"], title=request.survival_label, range=[0, 1.05]),
         showlegend=multi,
         annotations=annotations,
-        margin={"l": 60, "r": 30, "t": 50, "b": 80},
+        margin={"l": 60, "r": 30, "t": 50, "b": 80 + max(0, len(group_data) - 1) * 20},
     )
 
     return PlotlyFigure(data=traces, layout=layout)
