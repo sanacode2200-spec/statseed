@@ -130,6 +130,7 @@ export interface ColumnInfo {
   n_valid: number;
   n_missing: number;
   values: (number | null)[];
+  cat_values: (string | null)[];
   preview: (string | null)[];
 }
 

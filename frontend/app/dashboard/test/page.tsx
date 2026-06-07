@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { CorrelationResult, TestResult } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
@@ -9,8 +9,21 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { CorrelationResultCard, TestResultCard } from "@/components/stats/TestResultCard";
 import { PosthocResultTable } from "@/components/stats/PosthocResultTable";
 import { parseIntegerMatrix, parseNumbers } from "@/lib/parse";
-import type { PosthocResult } from "@/lib/types";
+import type { ColumnInfo, PosthocResult } from "@/lib/types";
 import { exportCorrelationCsv, exportPosthocCsv, exportTestResultCsv } from "@/lib/exportCsv";
+import { useDataset } from "@/contexts/DataContext";
+import {
+  categoricalColumns,
+  continuousColumns,
+  crossTabulate,
+  extractTwoGroups,
+  findColumn,
+  pairColumns,
+  splitByGroup,
+  uniqueCategories,
+} from "@/lib/dataUtils";
+
+type InputMode = "csv" | "manual";
 
 type TestType =
   | "ttest"
@@ -51,7 +64,52 @@ const inputCls =
 const textareaCls =
   "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
 
+function ColSelect({
+  label,
+  columns,
+  value,
+  onChange,
+}: {
+  label: string;
+  columns: ColumnInfo[];
+  value: string;
+  onChange: (name: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">{label}</label>
+      {columns.length === 0 ? (
+        <p className="text-[12px] text-orange-500 dark:text-orange-400">該当する列が見つかりません。</p>
+      ) : (
+        <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+          {columns.map((c) => (
+            <option key={c.name} value={c.name}>{c.name}</option>
+          ))}
+        </select>
+      )}
+    </div>
+  );
+}
+
 export default function TestPage() {
+  const { dataset } = useDataset();
+  const [inputMode, setInputMode] = useState<InputMode>("manual");
+
+  // CSVモード: 2群・多群・事後検定
+  const [csvValueCol, setCsvValueCol] = useState("");
+  const [csvGroupCol, setCsvGroupCol] = useState("");
+  const [csvGroupA, setCsvGroupA] = useState("");
+  const [csvGroupB, setCsvGroupB] = useState("");
+  // CSVモード: 対応あり
+  const [csvBeforeCol, setCsvBeforeCol] = useState("");
+  const [csvAfterCol, setCsvAfterCol] = useState("");
+  // CSVモード: 相関
+  const [csvXCol, setCsvXCol] = useState("");
+  const [csvYCol, setCsvYCol] = useState("");
+  // CSVモード: クロス集計
+  const [csvRowCol, setCsvRowCol] = useState("");
+  const [csvColCol, setCsvColCol] = useState("");
+
   const [testType, setTestType] = useState<TestType>("ttest");
   const [variableName, setVariableName] = useState("変数");
   const [groupAName, setGroupAName] = useState("群A");
@@ -79,6 +137,45 @@ export default function TestPage() {
   const isPosthoc = testType === "tukey" || testType === "bonferroni" || testType === "holm" || testType === "steel_dwass";
   const isTable = testType === "chisquare" || testType === "fisher";
 
+  const csvCont = dataset ? continuousColumns(dataset.columns) : [];
+  const csvCat = dataset ? categoricalColumns(dataset.columns) : [];
+  const csvGroupColInfo = dataset ? findColumn(dataset.columns, csvGroupCol) : undefined;
+  const csvGroupOptions = csvGroupColInfo ? uniqueCategories(csvGroupColInfo) : [];
+
+  // データ読み込み済みなら自動的にCSVモードへ
+  useEffect(() => {
+    if (dataset) setInputMode("csv");
+  }, [dataset]);
+
+  // 検定タイプ・データ変更時に列選択をリセット
+  useEffect(() => {
+    if (!dataset) return;
+    const cont = continuousColumns(dataset.columns);
+    const cat = categoricalColumns(dataset.columns);
+    if (isTwoGroup || isMultiGroup || isPosthoc) {
+      setCsvValueCol((prev) => (cont.some((c) => c.name === prev) ? prev : cont[0]?.name ?? ""));
+      setCsvGroupCol((prev) => (cat.some((c) => c.name === prev) ? prev : cat[0]?.name ?? ""));
+    } else if (isPaired) {
+      setCsvBeforeCol((prev) => (cont.some((c) => c.name === prev) ? prev : cont[0]?.name ?? ""));
+      setCsvAfterCol((prev) => (cont.some((c) => c.name === prev) ? prev : cont[1]?.name ?? cont[0]?.name ?? ""));
+    } else if (isCorrelation) {
+      setCsvXCol((prev) => (cont.some((c) => c.name === prev) ? prev : cont[0]?.name ?? ""));
+      setCsvYCol((prev) => (cont.some((c) => c.name === prev) ? prev : cont[1]?.name ?? cont[0]?.name ?? ""));
+    } else if (isTable) {
+      setCsvRowCol((prev) => (cat.some((c) => c.name === prev) ? prev : cat[0]?.name ?? ""));
+      setCsvColCol((prev) => (cat.some((c) => c.name === prev) ? prev : cat[1]?.name ?? cat[0]?.name ?? ""));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataset, testType]);
+
+  // 群の選択肢が変わったら群A/群Bを選び直す
+  useEffect(() => {
+    if (csvGroupOptions.length === 0) return;
+    setCsvGroupA((prev) => (csvGroupOptions.includes(prev) ? prev : csvGroupOptions[0]));
+    setCsvGroupB((prev) => (csvGroupOptions.includes(prev) && prev !== csvGroupOptions[0] ? prev : csvGroupOptions[1] ?? csvGroupOptions[0]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [csvGroupCol, csvGroupOptions.join("|")]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -86,7 +183,71 @@ export default function TestPage() {
     setLoading(true);
 
     try {
-      if (isTwoGroup) {
+      if (inputMode === "csv" && dataset) {
+        if (isTwoGroup) {
+          const valueCol = findColumn(dataset.columns, csvValueCol);
+          const groupCol = findColumn(dataset.columns, csvGroupCol);
+          if (!valueCol || !groupCol) throw new Error("列を選択してください。");
+          if (!csvGroupA || !csvGroupB || csvGroupA === csvGroupB) throw new Error("異なる2つの群を選択してください。");
+          const { a, b } = extractTwoGroups(valueCol, groupCol, csvGroupA, csvGroupB);
+          if (a.length < 2 || b.length < 2) throw new Error("各群に2件以上のデータが必要です。");
+          const req = {
+            variable_name: valueCol.name,
+            group_a: a,
+            group_b: b,
+            group_a_name: csvGroupA,
+            group_b_name: csvGroupB,
+          };
+          setResult(testType === "ttest" ? await api.ttestInd(req) : await api.mannwhitney(req));
+        } else if (isPaired) {
+          const beforeCol = findColumn(dataset.columns, csvBeforeCol);
+          const afterCol = findColumn(dataset.columns, csvAfterCol);
+          if (!beforeCol || !afterCol) throw new Error("列を選択してください。");
+          const { a: before, b: after } = pairColumns(beforeCol, afterCol);
+          if (before.length < 2) throw new Error("2件以上のデータが必要です。");
+          const req = { variable_name: `${beforeCol.name} → ${afterCol.name}`, before, after };
+          setResult(testType === "ttest-paired" ? await api.ttestPaired(req) : await api.wilcoxon(req));
+        } else if (isMultiGroup || isPosthoc) {
+          const valueCol = findColumn(dataset.columns, csvValueCol);
+          const groupCol = findColumn(dataset.columns, csvGroupCol);
+          if (!valueCol || !groupCol) throw new Error("列を選択してください。");
+          const { groupNames, groups } = splitByGroup(valueCol, groupCol);
+          if (groups.length < 2) throw new Error("2群以上のデータが必要です。");
+          if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
+          const req = { variable_name: valueCol.name, groups, group_names: groupNames };
+          if (isPosthoc) {
+            setResult(await api.posthoc({
+              ...req,
+              method: testType as "tukey" | "bonferroni" | "holm" | "steel_dwass",
+            }));
+          } else {
+            setResult(testType === "anova" ? await api.anova(req) : await api.kruskal(req));
+          }
+        } else if (isTable) {
+          const rowCol = findColumn(dataset.columns, csvRowCol);
+          const colCol = findColumn(dataset.columns, csvColCol);
+          if (!rowCol || !colCol) throw new Error("列を選択してください。");
+          const { table } = crossTabulate(rowCol, colCol);
+          if (table.length < 2) throw new Error("2行以上のデータが必要です。");
+          const req = { observed: table };
+          setResult(testType === "chisquare" ? await api.chisquare(req) : await api.fisher(req));
+        } else if (isCorrelation) {
+          const xCol = findColumn(dataset.columns, csvXCol);
+          const yCol = findColumn(dataset.columns, csvYCol);
+          if (!xCol || !yCol) throw new Error("列を選択してください。");
+          const { a: x, b: y } = pairColumns(xCol, yCol);
+          if (x.length < 3) throw new Error("3件以上のデータが必要です。");
+          setResult(
+            await api.correlation({
+              variable_x_name: xCol.name,
+              variable_y_name: yCol.name,
+              x,
+              y,
+              method: testType === "pearson" ? "pearson" : "spearman",
+            })
+          );
+        }
+      } else if (isTwoGroup) {
         const ga = parseNumbers(groupAText);
         const gb = parseNumbers(groupBText);
         if (ga.length < 2 || gb.length < 2) throw new Error("各群に2件以上のデータが必要です。");
@@ -202,8 +363,31 @@ export default function TestPage() {
             </select>
           </div>
 
-          {/* 変数名（テーブル系以外） */}
-          {!isTable && (
+          {/* 入力モード切替 */}
+          {dataset && (
+            <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-neutral-900 rounded-md w-fit">
+              {([
+                { value: "csv", label: "CSVから選択" },
+                { value: "manual", label: "手入力" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setInputMode(opt.value)}
+                  className={`px-3 py-1 rounded text-[12px] font-medium transition-colors ${
+                    inputMode === opt.value
+                      ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
+                      : "text-gray-500 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-neutral-300"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 変数名（テーブル系以外・手入力時のみ） */}
+          {!isTable && !(inputMode === "csv" && dataset) && (
             <div>
               <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
               <input
@@ -218,53 +402,96 @@ export default function TestPage() {
 
           {/* 2群 */}
           {isTwoGroup && (
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { name: groupAName, setName: setGroupAName, text: groupAText, setText: setGroupAText },
-                { name: groupBName, setName: setGroupBName, text: groupBText, setText: setGroupBText },
-              ].map(({ name, setName, text, setText }, i) => (
-                <div key={i}>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className={`${inputCls} mb-1.5`}
-                  />
-                  <textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    rows={6}
-                    className={textareaCls}
-                    placeholder="数値を1行1つ入力"
-                  />
+            inputMode === "csv" && dataset ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <ColSelect label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
+                  <ColSelect label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
                 </div>
-              ))}
-            </div>
+                {csvGroupOptions.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群A</label>
+                      <select value={csvGroupA} onChange={(e) => setCsvGroupA(e.target.value)} className={inputCls}>
+                        {csvGroupOptions.map((g) => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群B</label>
+                      <select value={csvGroupB} onChange={(e) => setCsvGroupB(e.target.value)} className={inputCls}>
+                        {csvGroupOptions.map((g) => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { name: groupAName, setName: setGroupAName, text: groupAText, setText: setGroupAText },
+                  { name: groupBName, setName: setGroupBName, text: groupBText, setText: setGroupBText },
+                ].map(({ name, setName, text, setText }, i) => (
+                  <div key={i}>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className={`${inputCls} mb-1.5`}
+                    />
+                    <textarea
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      rows={6}
+                      className={textareaCls}
+                      placeholder="数値を1行1つ入力"
+                    />
+                  </div>
+                ))}
+              </div>
+            )
           )}
 
           {/* 対応あり */}
           {isPaired && (
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: "介入前", text: beforeText, setText: setBeforeText },
-                { label: "介入後", text: afterText, setText: setAfterText },
-              ].map(({ label, text, setText }) => (
-                <div key={label}>
-                  <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</p>
-                  <textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    rows={6}
-                    className={textareaCls}
-                    placeholder="1行1データ"
-                  />
-                </div>
-              ))}
-            </div>
+            inputMode === "csv" && dataset ? (
+              <div className="grid grid-cols-2 gap-4">
+                <ColSelect label="介入前の列" columns={csvCont} value={csvBeforeCol} onChange={setCsvBeforeCol} />
+                <ColSelect label="介入後の列" columns={csvCont} value={csvAfterCol} onChange={setCsvAfterCol} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: "介入前", text: beforeText, setText: setBeforeText },
+                  { label: "介入後", text: afterText, setText: setAfterText },
+                ].map(({ label, text, setText }) => (
+                  <div key={label}>
+                    <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</p>
+                    <textarea
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      rows={6}
+                      className={textareaCls}
+                      placeholder="1行1データ"
+                    />
+                  </div>
+                ))}
+              </div>
+            )
           )}
 
           {/* 多群・多重比較（同じ入力UI） */}
           {(isMultiGroup || isPosthoc) && (
+            inputMode === "csv" && dataset ? (
+              <div className="grid grid-cols-2 gap-4">
+                <ColSelect label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
+                <ColSelect label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
+                {csvGroupOptions.length > 0 && (
+                  <p className="col-span-2 text-[12px] text-gray-400 dark:text-neutral-600">
+                    検出されたグループ: {csvGroupOptions.join(" / ")}
+                  </p>
+                )}
+              </div>
+            ) : (
             <div className="space-y-3">
               {multiGroupTexts.map((text, i) => (
                 <div key={i} className="flex gap-2 items-start">
@@ -304,52 +531,67 @@ export default function TestPage() {
                 + 群を追加
               </button>
             </div>
+            )
           )}
 
           {/* クロス集計表 */}
           {isTable && (
-            <div>
-              <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                クロス集計表
-              </label>
-              <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-1.5">
-                行を改行で、列をスペース/タブ/カンマで区切って入力してください。
-              </p>
-              <textarea
-                value={tableText}
-                onChange={(e) => setTableText(e.target.value)}
-                rows={5}
-                className={textareaCls}
-                placeholder={"例（2×2）：\n10 5\n3 12"}
-              />
-            </div>
+            inputMode === "csv" && dataset ? (
+              <div className="grid grid-cols-2 gap-4">
+                <ColSelect label="行変数（カテゴリ）" columns={csvCat} value={csvRowCol} onChange={setCsvRowCol} />
+                <ColSelect label="列変数（カテゴリ）" columns={csvCat} value={csvColCol} onChange={setCsvColCol} />
+              </div>
+            ) : (
+              <div>
+                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                  クロス集計表
+                </label>
+                <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-1.5">
+                  行を改行で、列をスペース/タブ/カンマで区切って入力してください。
+                </p>
+                <textarea
+                  value={tableText}
+                  onChange={(e) => setTableText(e.target.value)}
+                  rows={5}
+                  className={textareaCls}
+                  placeholder={"例（2×2）：\n10 5\n3 12"}
+                />
+              </div>
+            )
           )}
 
           {/* 相関 */}
           {isCorrelation && (
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { name: xName, setName: setXName, text: xText, setText: setXText },
-                { name: yName, setName: setYName, text: yText, setText: setYText },
-              ].map(({ name, setName, text, setText }, i) => (
-                <div key={i}>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className={`${inputCls} mb-1.5`}
-                    placeholder={i === 0 ? "X 変数名" : "Y 変数名"}
-                  />
-                  <textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    rows={6}
-                    className={textareaCls}
-                    placeholder="1行1データ"
-                  />
-                </div>
-              ))}
-            </div>
+            inputMode === "csv" && dataset ? (
+              <div className="grid grid-cols-2 gap-4">
+                <ColSelect label="X列（連続変数）" columns={csvCont} value={csvXCol} onChange={setCsvXCol} />
+                <ColSelect label="Y列（連続変数）" columns={csvCont} value={csvYCol} onChange={setCsvYCol} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { name: xName, setName: setXName, text: xText, setText: setXText },
+                  { name: yName, setName: setYName, text: yText, setText: setYText },
+                ].map(({ name, setName, text, setText }, i) => (
+                  <div key={i}>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className={`${inputCls} mb-1.5`}
+                      placeholder={i === 0 ? "X 変数名" : "Y 変数名"}
+                    />
+                    <textarea
+                      value={text}
+                      onChange={(e) => setText(e.target.value)}
+                      rows={6}
+                      className={textareaCls}
+                      placeholder="1行1データ"
+                    />
+                  </div>
+                ))}
+              </div>
+            )
           )}
 
           <Button type="submit" loading={loading}>

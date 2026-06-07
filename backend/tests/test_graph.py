@@ -7,6 +7,7 @@ from pydantic import ValidationError
 from backend.routers import graph
 from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest
 from backend.services.graph.plotly_charts import barplot_figure
+from backend.services.graph.theme import FONT_PRESETS
 
 
 def test_boxplot_requires_two_values_per_group() -> None:
@@ -66,3 +67,20 @@ def test_export_returns_503_when_graph_dependency_is_missing(monkeypatch) -> Non
         graph.export(request)
 
     assert exc_info.value.status_code == 503
+
+
+@pytest.mark.parametrize("preset", list(FONT_PRESETS.keys()))
+def test_export_bytes_applies_each_font_preset(preset: str) -> None:
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    request = ExportRequest(
+        chart_type="histogram",
+        format="png",
+        font_preset=preset,
+        font_family="Arial" if preset == "カスタム" else None,
+        font_size=10 if preset == "カスタム" else None,
+        histogram=HistogramRequest(values=[1, 2, 3, 4, 5]),
+    )
+    data, mime = export_bytes(request)
+    assert mime == "image/png"
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"

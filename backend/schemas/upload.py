@@ -9,6 +9,7 @@ class ColumnInfo(BaseModel):
     n_valid: int
     n_missing: int
     values: list[float | None]
+    cat_values: list[str | None]
     preview: list[str | None]
 
 

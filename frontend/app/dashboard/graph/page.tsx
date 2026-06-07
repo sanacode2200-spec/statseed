@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ExportRequest, PlotlyFigure, ROCResponse } from "@/lib/types";
 import { exportRocCsv } from "@/lib/exportCsv";
@@ -9,9 +9,20 @@ import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
+import { useDataset } from "@/contexts/DataContext";
+import {
+  alignRocColumns,
+  alignSurvivalColumns,
+  categoricalColumns,
+  continuousColumns,
+  findColumn,
+  pairColumns,
+  splitByGroup,
+} from "@/lib/dataUtils";
 
 type ChartType = "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier" | "roc";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
+type InputMode = "csv" | "manual";
 
 const inputCls =
   "rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
@@ -20,7 +31,21 @@ const textareaCls =
   "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
 
 export default function GraphPage() {
+  const { dataset } = useDataset();
   const [chartType, setChartType] = useState<ChartType>("boxplot");
+  const [inputMode, setInputMode] = useState<InputMode>("manual");
+
+  // CSV列選択（チャート種別ごと）
+  const [csvGroupedValueCol, setCsvGroupedValueCol] = useState("");
+  const [csvGroupedGroupCol, setCsvGroupedGroupCol] = useState("");
+  const [csvHistCol, setCsvHistCol] = useState("");
+  const [csvScatterXCol, setCsvScatterXCol] = useState("");
+  const [csvScatterYCol, setCsvScatterYCol] = useState("");
+  const [csvKmTimeCol, setCsvKmTimeCol] = useState("");
+  const [csvKmEventCol, setCsvKmEventCol] = useState("");
+  const [csvKmGroupCol, setCsvKmGroupCol] = useState("");
+  const [csvRocScoreCol, setCsvRocScoreCol] = useState("");
+  const [csvRocLabelCol, setCsvRocLabelCol] = useState("");
 
   // kaplan-meier
   const [kmTimesText, setKmTimesText] = useState("");
@@ -74,6 +99,38 @@ export default function GraphPage() {
   const [customFamily, setCustomFamily] = useState("");
   const [customSize, setCustomSize] = useState("9");
 
+  const csvCont = dataset ? continuousColumns(dataset.columns) : [];
+  const csvCat = dataset ? categoricalColumns(dataset.columns) : [];
+
+  // データ読み込み済みなら自動的にCSVモードへ
+  useEffect(() => {
+    if (dataset) setInputMode("csv");
+  }, [dataset]);
+
+  // モード・グラフ種別切替時、選択中の列が無効なら選び直す
+  useEffect(() => {
+    if (!dataset || inputMode !== "csv") return;
+    const firstCont = csvCont[0]?.name ?? "";
+    const firstCat = csvCat[0]?.name ?? "";
+    if (chartType === "boxplot" || chartType === "barplot") {
+      if (!csvCont.some((c) => c.name === csvGroupedValueCol)) setCsvGroupedValueCol(firstCont);
+      if (!csvCat.some((c) => c.name === csvGroupedGroupCol)) setCsvGroupedGroupCol(firstCat);
+    } else if (chartType === "histogram") {
+      if (!csvCont.some((c) => c.name === csvHistCol)) setCsvHistCol(firstCont);
+    } else if (chartType === "scatter") {
+      if (!csvCont.some((c) => c.name === csvScatterXCol)) setCsvScatterXCol(firstCont);
+      if (!csvCont.some((c) => c.name === csvScatterYCol)) setCsvScatterYCol(csvCont[1]?.name ?? firstCont);
+    } else if (chartType === "kaplan_meier") {
+      if (!csvCont.some((c) => c.name === csvKmTimeCol)) setCsvKmTimeCol(firstCont);
+      if (!csvCont.some((c) => c.name === csvKmEventCol)) setCsvKmEventCol(csvCont[1]?.name ?? firstCont);
+      if (csvKmGroupCol && !csvCat.some((c) => c.name === csvKmGroupCol)) setCsvKmGroupCol("");
+    } else if (chartType === "roc") {
+      if (!csvCont.some((c) => c.name === csvRocScoreCol)) setCsvRocScoreCol(firstCont);
+      if (!csvCont.some((c) => c.name === csvRocLabelCol)) setCsvRocLabelCol(csvCont[1]?.name ?? firstCont);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataset, inputMode, chartType]);
+
   function updateBarGroup(i: number, v: string) {
     setBarGroupTexts((p) => p.map((t, j) => (j === i ? v : t)));
   }
@@ -106,6 +163,59 @@ export default function GraphPage() {
     setBpGroupNames((p) => p.filter((_, j) => j !== i));
   }
 
+  function csvGroupedData() {
+    if (!dataset) throw new Error("データが読み込まれていません。");
+    const valueCol = findColumn(dataset.columns, csvGroupedValueCol);
+    const groupCol = findColumn(dataset.columns, csvGroupedGroupCol);
+    if (!valueCol || !groupCol) throw new Error("列を選択してください。");
+    const { groupNames, groups } = splitByGroup(valueCol, groupCol);
+    if (groups.length < 2) throw new Error("2群以上のデータが必要です。");
+    if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
+    return { groups, groupNames };
+  }
+
+  function csvHistogramData() {
+    if (!dataset) throw new Error("データが読み込まれていません。");
+    const col = findColumn(dataset.columns, csvHistCol);
+    if (!col) throw new Error("列を選択してください。");
+    const values = col.values.filter((v): v is number => v !== null);
+    if (values.length < 3) throw new Error("3件以上のデータが必要です。");
+    return { values };
+  }
+
+  function csvScatterData() {
+    if (!dataset) throw new Error("データが読み込まれていません。");
+    const xCol = findColumn(dataset.columns, csvScatterXCol);
+    const yCol = findColumn(dataset.columns, csvScatterYCol);
+    if (!xCol || !yCol) throw new Error("列を選択してください。");
+    const { a: x, b: y } = pairColumns(xCol, yCol);
+    if (x.length < 3) throw new Error("3件以上のデータが必要です。");
+    return { x, y };
+  }
+
+  function csvKmData() {
+    if (!dataset) throw new Error("データが読み込まれていません。");
+    const timeCol = findColumn(dataset.columns, csvKmTimeCol);
+    const eventCol = findColumn(dataset.columns, csvKmEventCol);
+    if (!timeCol || !eventCol) throw new Error("列を選択してください。");
+    const groupCol = csvKmGroupCol ? findColumn(dataset.columns, csvKmGroupCol) ?? null : null;
+    const { times, events, groups } = alignSurvivalColumns(timeCol, eventCol, groupCol);
+    if (times.length < 2) throw new Error("2件以上の生存時間が必要です。");
+    if (events.some((ev) => ev !== 0 && ev !== 1)) throw new Error("イベント列は 0（打ち切り）または 1（イベント）の値である必要があります。");
+    return { times, events, group_labels: groups };
+  }
+
+  function csvRocData() {
+    if (!dataset) throw new Error("データが読み込まれていません。");
+    const scoreCol = findColumn(dataset.columns, csvRocScoreCol);
+    const labelCol = findColumn(dataset.columns, csvRocLabelCol);
+    if (!scoreCol || !labelCol) throw new Error("列を選択してください。");
+    const { scores, labels } = alignRocColumns(scoreCol, labelCol);
+    if (scores.length < 4) throw new Error("4件以上のデータが必要です。");
+    if (labels.some((l) => l !== 0 && l !== 1)) throw new Error("ラベル列は 0（陰性）または 1（陽性）の値である必要があります。");
+    return { scores, labels };
+  }
+
   async function handleDraw(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -113,27 +223,42 @@ export default function GraphPage() {
     setRocStats(null);
     setLoading(true);
 
+    const useCsv = inputMode === "csv" && !!dataset;
+
     try {
       if (chartType === "roc") {
-        const scores = parseNumbers(rocScoresText);
-        const labelsRaw = parseNumbers(rocLabelsText);
-        if (scores.length < 4) throw new Error("4件以上のスコアが必要です。");
-        if (scores.length !== labelsRaw.length) throw new Error("スコアとラベルのデータ数が一致しません。");
-        const labels = labelsRaw.map(Math.round);
-        if (labels.some((l) => l !== 0 && l !== 1)) throw new Error("ラベルは 0（陰性）または 1（陽性）を入力してください。");
+        let scores: number[];
+        let labels: number[];
+        if (useCsv) {
+          ({ scores, labels } = csvRocData());
+        } else {
+          scores = parseNumbers(rocScoresText);
+          const labelsRaw = parseNumbers(rocLabelsText);
+          if (scores.length < 4) throw new Error("4件以上のスコアが必要です。");
+          if (scores.length !== labelsRaw.length) throw new Error("スコアとラベルのデータ数が一致しません。");
+          labels = labelsRaw.map(Math.round);
+          if (labels.some((l) => l !== 0 && l !== 1)) throw new Error("ラベルは 0（陰性）または 1（陽性）を入力してください。");
+        }
         const result = await api.graphRoc({ scores, labels, title, score_label: rocScoreLabel });
         setFigure(result.figure);
         setRocStats(result.stats);
       } else if (chartType === "kaplan_meier") {
-        const times = parseNumbers(kmTimesText);
-        const eventsRaw = parseNumbers(kmEventsText);
-        if (times.length < 2) throw new Error("2件以上の生存時間が必要です。");
-        if (times.length !== eventsRaw.length) throw new Error("生存時間とイベントのデータ数が一致しません。");
-        const events = eventsRaw.map((v) => Math.round(v));
-        if (events.some((e) => e !== 0 && e !== 1)) throw new Error("イベントは 0（打ち切り）または 1（イベント）を入力してください。");
-        const group_labels = kmGroupText.trim()
-          ? (parseCategoricalValues(kmGroupText) as (string | null)[])
-          : null;
+        let times: number[];
+        let events: number[];
+        let group_labels: (string | null)[] | null;
+        if (useCsv) {
+          ({ times, events, group_labels } = csvKmData());
+        } else {
+          times = parseNumbers(kmTimesText);
+          const eventsRaw = parseNumbers(kmEventsText);
+          if (times.length < 2) throw new Error("2件以上の生存時間が必要です。");
+          if (times.length !== eventsRaw.length) throw new Error("生存時間とイベントのデータ数が一致しません。");
+          events = eventsRaw.map((v) => Math.round(v));
+          if (events.some((e) => e !== 0 && e !== 1)) throw new Error("イベントは 0（打ち切り）または 1（イベント）を入力してください。");
+          group_labels = kmGroupText.trim()
+            ? (parseCategoricalValues(kmGroupText) as (string | null)[])
+            : null;
+        }
         setFigure(
           await api.graphKaplanMeier({
             times, events, group_labels,
@@ -145,32 +270,51 @@ export default function GraphPage() {
           })
         );
       } else if (chartType === "barplot") {
-        const groups = barGroupTexts.map(parseNumbers);
-        if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
+        let groups: number[][];
+        let group_names: string[];
+        if (useCsv) {
+          ({ groups, groupNames: group_names } = csvGroupedData());
+        } else {
+          groups = barGroupTexts.map(parseNumbers);
+          if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
+          group_names = barGroupNames;
+        }
         setFigure(
           await api.graphBarplot({
             groups,
-            group_names: barGroupNames,
+            group_names,
             title,
             y_label: barYLabel,
             error_type: barErrorType,
           })
         );
       } else if (chartType === "boxplot") {
-        const groups = bpGroupTexts.map(parseNumbers);
-        if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
+        let groups: number[][];
+        let group_names: string[];
+        if (useCsv) {
+          ({ groups, groupNames: group_names } = csvGroupedData());
+        } else {
+          groups = bpGroupTexts.map(parseNumbers);
+          if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
+          group_names = bpGroupNames;
+        }
         setFigure(
           await api.graphBoxplot({
             groups,
-            group_names: bpGroupNames,
+            group_names,
             title,
             y_label: bpYLabel,
             show_jitter: bpShowJitter,
           })
         );
       } else if (chartType === "histogram") {
-        const values = parseNumbers(histText);
-        if (values.length < 3) throw new Error("3件以上のデータが必要です。");
+        let values: number[];
+        if (useCsv) {
+          ({ values } = csvHistogramData());
+        } else {
+          values = parseNumbers(histText);
+          if (values.length < 3) throw new Error("3件以上のデータが必要です。");
+        }
         setFigure(
           await api.graphHistogram({
             values,
@@ -180,10 +324,16 @@ export default function GraphPage() {
           })
         );
       } else {
-        const x = parseNumbers(scXText);
-        const y = parseNumbers(scYText);
-        if (x.length < 3) throw new Error("3件以上のデータが必要です。");
-        if (x.length !== y.length) throw new Error("XとYのデータ数が一致しません。");
+        let x: number[];
+        let y: number[];
+        if (useCsv) {
+          ({ x, y } = csvScatterData());
+        } else {
+          x = parseNumbers(scXText);
+          y = parseNumbers(scYText);
+          if (x.length < 3) throw new Error("3件以上のデータが必要です。");
+          if (x.length !== y.length) throw new Error("XとYのデータ数が一致しません。");
+        }
         setFigure(
           await api.graphScatter({
             x,
@@ -204,6 +354,7 @@ export default function GraphPage() {
 
   async function handleExport() {
     setExporting(true);
+    const useCsv = inputMode === "csv" && !!dataset;
     try {
       const body: ExportRequest = {
         chart_type: chartType as ExportRequest["chart_type"],
@@ -216,44 +367,52 @@ export default function GraphPage() {
             : null,
       };
       if (chartType === "kaplan_meier") {
-        const times = parseNumbers(kmTimesText);
-        const events = parseNumbers(kmEventsText).map(Math.round);
-        const group_labels = kmGroupText.trim()
-          ? (parseCategoricalValues(kmGroupText) as (string | null)[])
-          : null;
+        let times: number[];
+        let events: number[];
+        let group_labels: (string | null)[] | null;
+        if (useCsv) {
+          ({ times, events, group_labels } = csvKmData());
+        } else {
+          times = parseNumbers(kmTimesText);
+          events = parseNumbers(kmEventsText).map(Math.round);
+          group_labels = kmGroupText.trim()
+            ? (parseCategoricalValues(kmGroupText) as (string | null)[])
+            : null;
+        }
         body.kaplan_meier = { times, events, group_labels, title, time_label: kmTimeLabel, survival_label: kmSurvLabel, show_ci: kmShowCi, show_risk_table: kmShowRisk };
       } else if (chartType === "barplot") {
-        body.barplot = {
-          groups: barGroupTexts.map(parseNumbers),
-          group_names: barGroupNames,
-          title,
-          y_label: barYLabel,
-          error_type: barErrorType,
-        };
+        let groups: number[][];
+        let group_names: string[];
+        if (useCsv) {
+          ({ groups, groupNames: group_names } = csvGroupedData());
+        } else {
+          groups = barGroupTexts.map(parseNumbers);
+          group_names = barGroupNames;
+        }
+        body.barplot = { groups, group_names, title, y_label: barYLabel, error_type: barErrorType };
       } else if (chartType === "boxplot") {
-        body.boxplot = {
-          groups: bpGroupTexts.map(parseNumbers),
-          group_names: bpGroupNames,
-          title,
-          y_label: bpYLabel,
-          show_jitter: bpShowJitter,
-        };
+        let groups: number[][];
+        let group_names: string[];
+        if (useCsv) {
+          ({ groups, groupNames: group_names } = csvGroupedData());
+        } else {
+          groups = bpGroupTexts.map(parseNumbers);
+          group_names = bpGroupNames;
+        }
+        body.boxplot = { groups, group_names, title, y_label: bpYLabel, show_jitter: bpShowJitter };
       } else if (chartType === "histogram") {
-        body.histogram = {
-          values: parseNumbers(histText),
-          title,
-          x_label: histXLabel,
-          show_normal_curve: histShowNormal,
-        };
+        const values = useCsv ? csvHistogramData().values : parseNumbers(histText);
+        body.histogram = { values, title, x_label: histXLabel, show_normal_curve: histShowNormal };
       } else {
-        body.scatter = {
-          x: parseNumbers(scXText),
-          y: parseNumbers(scYText),
-          title,
-          x_label: scXLabel,
-          y_label: scYLabel,
-          show_regression: scShowReg,
-        };
+        let x: number[];
+        let y: number[];
+        if (useCsv) {
+          ({ x, y } = csvScatterData());
+        } else {
+          x = parseNumbers(scXText);
+          y = parseNumbers(scYText);
+        }
+        body.scatter = { x, y, title, x_label: scXLabel, y_label: scYLabel, show_regression: scShowReg };
       }
 
       const res = await fetch(api.graphExportUrl(), {
@@ -338,32 +497,86 @@ export default function GraphPage() {
             />
           </div>
 
+          {dataset && (
+            <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-neutral-900 rounded-md w-fit">
+              {([
+                { value: "csv", label: "CSVから選択" },
+                { value: "manual", label: "手入力" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setInputMode(opt.value)}
+                  className={`px-3 py-1 rounded text-[12px] font-medium transition-colors ${
+                    inputMode === opt.value
+                      ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
+                      : "text-gray-500 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-neutral-300"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* カプランマイヤー */}
           {chartType === "kaplan_meier" && (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                    生存時間（1行1データ）
-                  </label>
-                  <textarea value={kmTimesText} onChange={(e) => setKmTimesText(e.target.value)}
-                    rows={7} className={textareaCls} placeholder={"例：\n12\n18\n24\n30\n6"} />
+              {inputMode === "csv" && dataset ? (
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">生存時間の列</label>
+                    <select value={csvKmTimeCol} onChange={(e) => setCsvKmTimeCol(e.target.value)} className={`${inputCls} w-full`}>
+                      {csvCont.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">イベントの列（1=発生, 0=打ち切り）</label>
+                    <select value={csvKmEventCol} onChange={(e) => setCsvKmEventCol(e.target.value)} className={`${inputCls} w-full`}>
+                      {csvCont.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群ラベルの列（任意）</label>
+                    <select value={csvKmGroupCol} onChange={(e) => setCsvKmGroupCol(e.target.value)} className={`${inputCls} w-full`}>
+                      <option value="">（指定なし）</option>
+                      {csvCat.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                    イベント（1=発生, 0=打ち切り）
-                  </label>
-                  <textarea value={kmEventsText} onChange={(e) => setKmEventsText(e.target.value)}
-                    rows={7} className={textareaCls} placeholder={"例：\n1\n0\n1\n1\n0"} />
-                </div>
-              </div>
-              <div>
-                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                  群ラベル（任意・複数群比較）
-                </label>
-                <textarea value={kmGroupText} onChange={(e) => setKmGroupText(e.target.value)}
-                  rows={3} className={textareaCls} placeholder={"例：\n治療群\n治療群\n対照群\n対照群\n治療群"} />
-              </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                        生存時間（1行1データ）
+                      </label>
+                      <textarea value={kmTimesText} onChange={(e) => setKmTimesText(e.target.value)}
+                        rows={7} className={textareaCls} placeholder={"例：\n12\n18\n24\n30\n6"} />
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                        イベント（1=発生, 0=打ち切り）
+                      </label>
+                      <textarea value={kmEventsText} onChange={(e) => setKmEventsText(e.target.value)}
+                        rows={7} className={textareaCls} placeholder={"例：\n1\n0\n1\n1\n0"} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                      群ラベル（任意・複数群比較）
+                    </label>
+                    <textarea value={kmGroupText} onChange={(e) => setKmGroupText(e.target.value)}
+                      rows={3} className={textareaCls} placeholder={"例：\n治療群\n治療群\n対照群\n対照群\n治療群"} />
+                  </div>
+                </>
+              )}
               <div className="flex gap-4 flex-wrap">
                 <div>
                   <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
@@ -411,26 +624,49 @@ export default function GraphPage() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {barGroupTexts.map((text, i) => (
-                  <div key={i}>
-                    <div className="flex gap-1 mb-1">
-                      <input type="text" value={barGroupNames[i]} onChange={(e) => updateBarName(i, e.target.value)}
-                        className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700" />
-                      {barGroupTexts.length > 2 && (
-                        <button type="button" onClick={() => removeBarGroup(i)}
-                          className="text-[12px] text-red-400 hover:text-red-600">✕</button>
-                      )}
-                    </div>
-                    <textarea value={text} onChange={(e) => updateBarGroup(i, e.target.value)}
-                      rows={5} className={textareaCls} placeholder="1行1データ" />
+              {inputMode === "csv" && dataset ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
+                    <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
+                      {csvCont.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
-              </div>
-              <button type="button" onClick={addBarGroup}
-                className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors">
-                + 群を追加
-              </button>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
+                    <select value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
+                      {csvCat.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {barGroupTexts.map((text, i) => (
+                      <div key={i}>
+                        <div className="flex gap-1 mb-1">
+                          <input type="text" value={barGroupNames[i]} onChange={(e) => updateBarName(i, e.target.value)}
+                            className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700" />
+                          {barGroupTexts.length > 2 && (
+                            <button type="button" onClick={() => removeBarGroup(i)}
+                              className="text-[12px] text-red-400 hover:text-red-600">✕</button>
+                          )}
+                        </div>
+                        <textarea value={text} onChange={(e) => updateBarGroup(i, e.target.value)}
+                          rows={5} className={textareaCls} placeholder="1行1データ" />
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" onClick={addBarGroup}
+                    className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors">
+                    + 群を追加
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -447,44 +683,67 @@ export default function GraphPage() {
                   placeholder="例：握力 (kg)"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {bpGroupTexts.map((text, i) => (
-                  <div key={i}>
-                    <div className="flex gap-1 mb-1">
-                      <input
-                        type="text"
-                        value={bpGroupNames[i]}
-                        onChange={(e) => updateBpName(i, e.target.value)}
-                        className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
-                      />
-                      {bpGroupTexts.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={() => removeBpGroup(i)}
-                          className="text-[12px] text-red-400 dark:text-red-500 hover:text-red-600"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                    <textarea
-                      value={text}
-                      onChange={(e) => updateBpGroup(i, e.target.value)}
-                      rows={5}
-                      className={textareaCls}
-                      placeholder="1行1データ"
-                    />
+              {inputMode === "csv" && dataset ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
+                    <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
+                      {csvCont.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
+                    <select value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
+                      {csvCat.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {bpGroupTexts.map((text, i) => (
+                    <div key={i}>
+                      <div className="flex gap-1 mb-1">
+                        <input
+                          type="text"
+                          value={bpGroupNames[i]}
+                          onChange={(e) => updateBpName(i, e.target.value)}
+                          className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
+                        />
+                        {bpGroupTexts.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => removeBpGroup(i)}
+                            className="text-[12px] text-red-400 dark:text-red-500 hover:text-red-600"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        value={text}
+                        onChange={(e) => updateBpGroup(i, e.target.value)}
+                        rows={5}
+                        className={textareaCls}
+                        placeholder="1行1データ"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={addBpGroup}
-                  className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
-                >
-                  + 群を追加
-                </button>
+                {!(inputMode === "csv" && dataset) && (
+                  <button
+                    type="button"
+                    onClick={addBpGroup}
+                    className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
+                  >
+                    + 群を追加
+                  </button>
+                )}
                 <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                   <input
                     type="checkbox"
@@ -511,16 +770,27 @@ export default function GraphPage() {
                   placeholder="例：年齢 (歳)"
                 />
               </div>
-              <div>
-                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
-                <textarea
-                  value={histText}
-                  onChange={(e) => setHistText(e.target.value)}
-                  rows={7}
-                  className={textareaCls}
-                  placeholder="1行1データ（またはスペース/カンマ区切り）"
-                />
-              </div>
+              {inputMode === "csv" && dataset ? (
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データの列</label>
+                  <select value={csvHistCol} onChange={(e) => setCsvHistCol(e.target.value)} className={`${inputCls} w-full`}>
+                    {csvCont.map((c) => (
+                      <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
+                  <textarea
+                    value={histText}
+                    onChange={(e) => setHistText(e.target.value)}
+                    rows={7}
+                    className={textareaCls}
+                    placeholder="1行1データ（またはスペース/カンマ区切り）"
+                  />
+                </div>
+              )}
               <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                 <input
                   type="checkbox"
@@ -541,51 +811,97 @@ export default function GraphPage() {
                 <input type="text" value={rocScoreLabel} onChange={(e) => setRocScoreLabel(e.target.value)}
                   className={`${inputCls} w-48`} placeholder="例：診断スコア" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                    診断スコア（1行1データ）
-                  </label>
-                  <textarea value={rocScoresText} onChange={(e) => setRocScoresText(e.target.value)}
-                    rows={7} className={textareaCls} placeholder={"例：\n0.9\n0.8\n0.4\n0.2\n0.1"} />
+              {inputMode === "csv" && dataset ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">診断スコアの列</label>
+                    <select value={csvRocScoreCol} onChange={(e) => setCsvRocScoreCol(e.target.value)} className={`${inputCls} w-full`}>
+                      {csvCont.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">正解ラベルの列（1=陽性, 0=陰性）</label>
+                    <select value={csvRocLabelCol} onChange={(e) => setCsvRocLabelCol(e.target.value)} className={`${inputCls} w-full`}>
+                      {csvCont.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                    正解ラベル（1=陽性, 0=陰性）
-                  </label>
-                  <textarea value={rocLabelsText} onChange={(e) => setRocLabelsText(e.target.value)}
-                    rows={7} className={textareaCls} placeholder={"例：\n1\n1\n0\n0\n0"} />
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                      診断スコア（1行1データ）
+                    </label>
+                    <textarea value={rocScoresText} onChange={(e) => setRocScoresText(e.target.value)}
+                      rows={7} className={textareaCls} placeholder={"例：\n0.9\n0.8\n0.4\n0.2\n0.1"} />
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                      正解ラベル（1=陽性, 0=陰性）
+                    </label>
+                    <textarea value={rocLabelsText} onChange={(e) => setRocLabelsText(e.target.value)}
+                      rows={7} className={textareaCls} placeholder={"例：\n1\n1\n0\n0\n0"} />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {/* 散布図 */}
           {chartType === "scatter" && (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "X", name: scXLabel, setName: setScXLabel, text: scXText, setText: setScXText },
-                  { label: "Y", name: scYLabel, setName: setScYLabel, text: scYText, setText: setScYText },
-                ].map(({ label, name, setName, text, setText }) => (
-                  <div key={label}>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder={`${label}軸ラベル`}
-                      className={`${inputCls} w-full mb-1.5`}
-                    />
-                    <textarea
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      rows={6}
-                      className={textareaCls}
-                      placeholder="1行1データ"
-                    />
+              {inputMode === "csv" && dataset ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸の列</label>
+                    <select value={csvScatterXCol} onChange={(e) => setCsvScatterXCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
+                      {csvCont.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                    <input type="text" value={scXLabel} onChange={(e) => setScXLabel(e.target.value)}
+                      placeholder="X軸ラベル" className={`${inputCls} w-full`} />
                   </div>
-                ))}
-              </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸の列</label>
+                    <select value={csvScatterYCol} onChange={(e) => setCsvScatterYCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
+                      {csvCont.map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                      ))}
+                    </select>
+                    <input type="text" value={scYLabel} onChange={(e) => setScYLabel(e.target.value)}
+                      placeholder="Y軸ラベル" className={`${inputCls} w-full`} />
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: "X", name: scXLabel, setName: setScXLabel, text: scXText, setText: setScXText },
+                    { label: "Y", name: scYLabel, setName: setScYLabel, text: scYText, setText: setScYText },
+                  ].map(({ label, name, setName, text, setText }) => (
+                    <div key={label}>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder={`${label}軸ラベル`}
+                        className={`${inputCls} w-full mb-1.5`}
+                      />
+                      <textarea
+                        value={text}
+                        onChange={(e) => setText(e.target.value)}
+                        rows={6}
+                        className={textareaCls}
+                        placeholder="1行1データ"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
               <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
                 <input
                   type="checkbox"

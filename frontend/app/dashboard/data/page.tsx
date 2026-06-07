@@ -1,10 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import { api } from "@/lib/api";
 import type { ColumnInfo, UploadResponse } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { useDataset } from "@/contexts/DataContext";
 
 const ACCEPT = ".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -43,6 +45,7 @@ function CopyButton({ values }: { values: (number | null)[] }) {
 
 export default function DataPage() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const { dataset, setDataset, clearDataset } = useDataset();
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +64,7 @@ export default function DataPage() {
         ? await api.uploadCsv(file)
         : await api.uploadExcel(file);
       setResult(res);
+      setDataset(res);
       const firstContinuous = res.columns.find((c) => c.dtype === "continuous");
       if (firstContinuous) setActiveCol(firstContinuous.name);
     } catch (err) {
@@ -68,6 +72,12 @@ export default function DataPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleClear() {
+    clearDataset();
+    setResult(null);
+    setActiveCol(null);
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -93,8 +103,28 @@ export default function DataPage() {
       <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">データ読み込み</h1>
       <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">
         CSV または Excel ファイルをアップロードすると、列ごとの概要を確認できます。
-        連続変数の値は「値をコピー」で記述統計・検定ページに貼り付けて使えます。
+        読み込んだデータは記述統計・検定・グラフ・Table 1 の各ページで列を選ぶだけで使えます。
       </p>
+
+      {dataset && !result && (
+        <Card className="mb-5 flex items-center justify-between">
+          <div className="min-w-0">
+            <p className="text-[13px] font-medium text-gray-700 dark:text-neutral-300 truncate">
+              読み込み済み: {dataset.filename}
+            </p>
+            <p className="text-[12px] text-gray-400 dark:text-neutral-600">
+              {dataset.n_rows} 行 × {dataset.n_cols} 列 — 各解析ページで「CSVから選択」が使えます
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="shrink-0 ml-4 text-[12px] text-gray-400 dark:text-neutral-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+          >
+            データをクリア
+          </button>
+        </Card>
+      )}
 
       {/* Drop zone */}
       <div
@@ -136,10 +166,31 @@ export default function DataPage() {
               <h2 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">
                 {result.filename}
               </h2>
-              <span className="text-[12px] text-gray-400 dark:text-neutral-600">
-                {result.n_rows} 行 × {result.n_cols} 列
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-[12px] text-gray-400 dark:text-neutral-600">
+                  {result.n_rows} 行 × {result.n_cols} 列
+                </span>
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                >
+                  クリア
+                </button>
+              </div>
             </div>
+            <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-4">
+              このデータは保存されました。
+              {" "}
+              <Link href="/dashboard/descriptive" className="text-white hover:underline">記述統計</Link>
+              {" / "}
+              <Link href="/dashboard/test" className="text-white hover:underline">検定</Link>
+              {" / "}
+              <Link href="/dashboard/graph" className="text-white hover:underline">グラフ</Link>
+              {" / "}
+              <Link href="/dashboard/table1" className="text-white hover:underline">Table 1</Link>
+              {" "}ページで「CSVから選択」を使って解析できます。
+            </p>
 
             {/* 列一覧 */}
             <div className="overflow-x-auto">

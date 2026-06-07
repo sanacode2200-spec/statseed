@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -8,6 +8,8 @@ import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { parseNullableNumbers, parseCategoricalValues } from "@/lib/parse";
 import type { Table1Result, Table1Variable } from "@/lib/types";
 import { exportTable1Csv } from "@/lib/exportCsv";
+import { useDataset } from "@/contexts/DataContext";
+import { categoricalColumns, findColumn } from "@/lib/dataUtils";
 
 type VarState = {
   id: number;
@@ -16,6 +18,8 @@ type VarState = {
   rawText: string;
   display: "mean_sd" | "median_iqr";
 };
+
+type InputMode = "csv" | "manual";
 
 const inputCls =
   "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
@@ -30,6 +34,8 @@ function makeVar(): VarState {
 }
 
 export default function Table1Page() {
+  const { dataset } = useDataset();
+  const [inputMode, setInputMode] = useState<InputMode>("manual");
   const [vars, setVars] = useState<VarState[]>([makeVar()]);
   const [useGroup, setUseGroup] = useState(false);
   const [groupName, setGroupName] = useState("群");
@@ -38,6 +44,30 @@ export default function Table1Page() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Table1Result | null>(null);
 
+  // CSVモード用の選択状態
+  const [csvSelectedCols, setCsvSelectedCols] = useState<Record<string, boolean>>({});
+  const [csvDisplayByCol, setCsvDisplayByCol] = useState<Record<string, "mean_sd" | "median_iqr">>({});
+  const [csvGroupCol, setCsvGroupCol] = useState("");
+
+  // データ読み込み済みなら自動的にCSVモードへ、列の選択状態を初期化
+  useEffect(() => {
+    if (!dataset) return;
+    setInputMode("csv");
+    setCsvSelectedCols((prev) => {
+      const next: Record<string, boolean> = {};
+      for (const c of dataset.columns) next[c.name] = prev[c.name] ?? true;
+      return next;
+    });
+    setCsvDisplayByCol((prev) => {
+      const next: Record<string, "mean_sd" | "median_iqr"> = {};
+      for (const c of dataset.columns) {
+        if (c.dtype === "continuous") next[c.name] = prev[c.name] ?? "mean_sd";
+      }
+      return next;
+    });
+    setCsvGroupCol((prev) => (dataset.columns.some((c) => c.name === prev) ? prev : ""));
+  }, [dataset]);
+
   const updateVar = useCallback((id: number, patch: Partial<VarState>) => {
     setVars((prev) => prev.map((v) => (v.id === id ? { ...v, ...patch } : v)));
   }, []);
@@ -45,23 +75,44 @@ export default function Table1Page() {
   const addVar = () => setVars((prev) => [...prev, makeVar()]);
   const removeVar = (id: number) => setVars((prev) => prev.filter((v) => v.id !== id));
 
+  function toggleCsvCol(name: string) {
+    setCsvSelectedCols((prev) => ({ ...prev, [name]: !prev[name] }));
+  }
+
   async function run() {
     setError(null);
     setLoading(true);
     try {
-      const variables: Table1Variable[] = vars.map((v) => {
-        if (v.type === "continuous") {
-          return { name: v.name || "変数", type: "continuous", values: parseNullableNumbers(v.rawText), display: v.display };
-        } else {
-          return { name: v.name || "変数", type: "categorical", values: parseCategoricalValues(v.rawText) };
-        }
-      });
+      let variables: Table1Variable[];
+      let group_values: (string | null)[] | undefined;
+      let group_name: string;
 
-      const group_values = useGroup && groupText.trim()
-        ? parseCategoricalValues(groupText) as (string | null)[]
-        : undefined;
+      if (inputMode === "csv" && dataset) {
+        const selected = dataset.columns.filter((c) => csvSelectedCols[c.name] && c.name !== csvGroupCol);
+        if (selected.length === 0) throw new Error("変数として使う列を選択してください。");
+        variables = selected.map((c) =>
+          c.dtype === "continuous"
+            ? { name: c.name, type: "continuous", values: c.values, display: csvDisplayByCol[c.name] ?? "mean_sd" }
+            : { name: c.name, type: "categorical", values: c.cat_values }
+        );
+        const groupCol = csvGroupCol ? findColumn(dataset.columns, csvGroupCol) : undefined;
+        group_values = groupCol ? groupCol.cat_values : undefined;
+        group_name = groupCol ? groupCol.name : (groupName || "群");
+      } else {
+        variables = vars.map((v) => {
+          if (v.type === "continuous") {
+            return { name: v.name || "変数", type: "continuous", values: parseNullableNumbers(v.rawText), display: v.display };
+          } else {
+            return { name: v.name || "変数", type: "categorical", values: parseCategoricalValues(v.rawText) };
+          }
+        });
+        group_values = useGroup && groupText.trim()
+          ? parseCategoricalValues(groupText) as (string | null)[]
+          : undefined;
+        group_name = groupName || "群";
+      }
 
-      const res = await api.table1({ variables, group_values, group_name: groupName || "群" });
+      const res = await api.table1({ variables, group_values, group_name });
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "エラーが発生しました");
@@ -99,6 +150,93 @@ export default function Table1Page() {
         </p>
       </div>
 
+      {dataset && (
+        <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-neutral-900 rounded-md w-fit mb-4">
+          {([
+            { value: "csv", label: "CSVから選択" },
+            { value: "manual", label: "手入力" },
+          ] as const).map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => setInputMode(opt.value)}
+              className={`px-3 py-1 rounded text-[12px] font-medium transition-colors ${
+                inputMode === opt.value
+                  ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
+                  : "text-gray-500 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-neutral-300"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {inputMode === "csv" && dataset ? (
+        <div className="space-y-3">
+          <Card className="p-4">
+            <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-3">
+              Table 1 に含める列を選択してください。連続変数は表示形式（平均±SD / 中央値(IQR)）を切り替えられます。
+            </p>
+            <div className="space-y-1.5">
+              {dataset.columns.map((c) => (
+                <div key={c.name} className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={!!csvSelectedCols[c.name] && c.name !== csvGroupCol}
+                      disabled={c.name === csvGroupCol}
+                      onChange={() => toggleCsvCol(c.name)}
+                      className="rounded shrink-0"
+                    />
+                    <span className="text-[13px] text-gray-700 dark:text-neutral-300 truncate">{c.name}</span>
+                    <span className="text-[11px] text-gray-400 dark:text-neutral-600 shrink-0">
+                      （{c.dtype === "continuous" ? "連続" : "カテゴリ"} / 有効 {c.n_valid} / 欠損 {c.n_missing}）
+                    </span>
+                    {c.name === csvGroupCol && (
+                      <span className="text-[11px] text-gray-400 dark:text-neutral-600 shrink-0">— 群変数として使用中</span>
+                    )}
+                  </label>
+                  {c.dtype === "continuous" && c.name !== csvGroupCol && (
+                    <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden shrink-0">
+                      {([["mean_sd", "平均±SD"], ["median_iqr", "中央値(IQR)"]] as const).map(([val, label]) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setCsvDisplayByCol((prev) => ({ ...prev, [c.name]: val }))}
+                          className={`px-3 py-1 text-[11px] transition-colors ${
+                            (csvDisplayByCol[c.name] ?? "mean_sd") === val
+                              ? "bg-white text-black"
+                              : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-900"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
+              群分け（任意・p値を計算）
+            </label>
+            <select
+              value={csvGroupCol}
+              onChange={(e) => setCsvGroupCol(e.target.value)}
+              className={inputCls + " w-64"}
+            >
+              <option value="">（群分けしない）</option>
+              {categoricalColumns(dataset.columns).map((c) => (
+                <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+              ))}
+            </select>
+          </Card>
+        </div>
+      ) : (
       <div className="space-y-3">
         {/* 変数リスト */}
         {vars.map((v, idx) => (
@@ -204,6 +342,7 @@ export default function Table1Page() {
           )}
         </Card>
       </div>
+      )}
 
       <div className="mt-4">
         <Button onClick={run} disabled={loading}>

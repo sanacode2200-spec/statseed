@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useDataset } from "@/contexts/DataContext";
 
 const NAV_GROUPS = [
   {
@@ -32,6 +33,7 @@ const NAV_GROUPS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { dataset } = useDataset();
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -85,6 +87,23 @@ export function Sidebar() {
           <span>Search...</span>
         </div>
       </div>
+
+      {/* 読み込み中データ */}
+      {dataset && (
+        <Link
+          href="/dashboard/data"
+          className="mx-3 mt-2 flex items-center gap-1.5 px-2 py-1.5 rounded-md
+            bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800
+            text-[11px] hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
+          title={dataset.filename}
+        >
+          <span className="text-emerald-500 dark:text-emerald-400 shrink-0">
+            <DotIcon />
+          </span>
+          <span className="truncate text-gray-600 dark:text-neutral-400">{dataset.filename}</span>
+          <span className="ml-auto shrink-0 text-gray-400 dark:text-neutral-600">{dataset.n_rows}行</span>
+        </Link>
+      )}
 
       {/* ナビゲーション */}
       <nav className="flex-1 overflow-y-auto py-2 px-2">
@@ -195,6 +214,14 @@ function FolderIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
+function DotIcon() {
+  return (
+    <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="12" r="12" />
     </svg>
   );
 }

@@ -4,7 +4,7 @@ import random
 import statistics
 
 from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, KaplanMeierRequest, ScatterRequest
-from backend.services.graph.theme import OKABE_ITO, STATSEED_THEME
+from backend.services.graph.theme import FONT_PRESETS, OKABE_ITO, STATSEED_THEME
 
 _COLORS = list(OKABE_ITO.values())[:4]
 

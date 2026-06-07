@@ -55,6 +55,7 @@ def _build_response(df, filename: str) -> UploadResponse:
         numeric = pd.to_numeric(series, errors="coerce")
         is_numeric = numeric.notna().sum() >= series.notna().sum() * 0.8
 
+        cat_values: list[str | None] = []
         if is_numeric:
             dtype: Literal["continuous", "categorical"] = "continuous"
             n_missing = int(numeric.isna().sum())
@@ -67,6 +68,7 @@ def _build_response(df, filename: str) -> UploadResponse:
             n_missing = int(series.isna().sum())
             n_valid = n_rows - n_missing
             values = []
+            cat_values = [None if pd.isna(v) else str(v) for v in series.tolist()]
 
         preview = [None if pd.isna(v) else str(v) for v in series.head(_PREVIEW_ROWS).tolist()]
 
@@ -77,6 +79,7 @@ def _build_response(df, filename: str) -> UploadResponse:
                 n_valid=n_valid,
                 n_missing=n_missing,
                 values=values,
+                cat_values=cat_values,
                 preview=preview,
             )
         )
