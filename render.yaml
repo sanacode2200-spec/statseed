@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: statseed-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: STATSEED_ENABLE_SCIPY
+        value: "1"
+      - key: STATSEED_ENABLE_DOCS
+        value: "0"
+      - key: STATSEED_CORS_ORIGINS
+        sync: false
