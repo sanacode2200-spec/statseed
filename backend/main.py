@@ -14,6 +14,9 @@ cors_origins = [
     ).split(",")
     if origin.strip()
 ]
+# Vercelのプレビューデプロイはデプロイごとにサブドメインが変わるため、
+# 固定オリジンの一覧に加えて *.vercel.app を正規表現で許可する
+cors_origin_regex = os.getenv("STATSEED_CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
 
 app = FastAPI(
     title="Statseed API",
@@ -27,6 +30,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=cors_origin_regex or None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
