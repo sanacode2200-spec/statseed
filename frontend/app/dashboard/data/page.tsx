@@ -148,7 +148,7 @@ export default function DataPage() {
           type="file"
           accept={ACCEPT}
           onChange={onInputChange}
-          className="hidden"
+          className="sr-only"
         />
       </div>
 
