@@ -30,6 +30,32 @@ const inputCls =
 const textareaCls =
   "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
 
+// PNG/SVG/PDF出力時のmatplotlib figsizeに合わせた画面表示の縦横比
+function getAspectRatio(chartType: ChartType, figure: PlotlyFigure): number {
+  switch (chartType) {
+    case "boxplot": {
+      const k = figure.data.filter((t) => (t as { type?: string }).type === "box").length || 1;
+      return Math.max(3.5, k * 1.4) / 4;
+    }
+    case "barplot": {
+      const k = figure.data.filter((t) => (t as { type?: string }).type === "bar").length || 1;
+      return Math.max(3.5, k * 1.2) / 4;
+    }
+    case "histogram":
+      return 5 / 4;
+    case "scatter":
+      return 4.5 / 4;
+    case "kaplan_meier": {
+      const marginB = (figure.layout as { margin?: { b?: number } })?.margin?.b ?? 60;
+      return marginB >= 80 ? 5 / 5.5 : 5 / 4.5;
+    }
+    case "roc":
+      return 1;
+    default:
+      return 1.25;
+  }
+}
+
 export default function GraphPage() {
   const { dataset } = useDataset();
   const [chartType, setChartType] = useState<ChartType>("boxplot");
@@ -924,7 +950,7 @@ export default function GraphPage() {
 
       {figure && (
         <Card>
-          <PlotlyChart figure={figure} />
+          <PlotlyChart figure={figure} aspectRatio={getAspectRatio(chartType, figure)} />
 
           {/* ROC統計量 */}
           {rocStats && (

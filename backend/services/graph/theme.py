@@ -36,7 +36,11 @@ STATSEED_THEME = {
 
 FONT_PRESETS = {
     "論文標準": {"family": "Arial", "size": 9},
-    "日本語対応": {"family": "Noto Sans JP", "size": 9},
+    "日本語対応": {"family": "Noto Sans CJK JP", "size": 9},
     "ポスター": {"family": "Helvetica Neue", "size": 11},
     "カスタム": None,
 }
+
+# プリセットで指定したフォントがサーバーに無い場合のフォールバック先
+# Liberation SansはArial/Helveticaと metrics 互換、Noto Sans CJK JPは日本語グリフ用
+FONT_FALLBACK_CHAIN = ["Liberation Sans", "Noto Sans CJK JP", "DejaVu Sans"]

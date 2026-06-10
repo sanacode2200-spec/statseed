@@ -4,7 +4,7 @@ import random
 import statistics
 
 from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, KaplanMeierRequest, ScatterRequest
-from backend.services.graph.theme import FONT_PRESETS, OKABE_ITO, STATSEED_THEME
+from backend.services.graph.theme import FONT_FALLBACK_CHAIN, FONT_PRESETS, OKABE_ITO, STATSEED_THEME
 
 _COLORS = list(OKABE_ITO.values())[:4]
 
@@ -19,14 +19,14 @@ def _apply_theme(request: ExportRequest | None = None) -> None:
     preset = request.font_preset
     if preset == "カスタム":
         if request.font_family:
-            mpl.rcParams["font.sans-serif"] = [request.font_family, "DejaVu Sans"]
+            mpl.rcParams["font.family"] = [request.font_family, *FONT_FALLBACK_CHAIN]
         if request.font_size:
             mpl.rcParams["font.size"] = request.font_size
             mpl.rcParams["axes.labelsize"] = request.font_size
             mpl.rcParams["axes.titlesize"] = request.font_size + 1
     elif preset and preset in FONT_PRESETS and FONT_PRESETS[preset]:
         p = FONT_PRESETS[preset]
-        mpl.rcParams["font.sans-serif"] = [p["family"], "DejaVu Sans"]
+        mpl.rcParams["font.family"] = [p["family"], *FONT_FALLBACK_CHAIN]
         mpl.rcParams["font.size"] = p["size"]
         mpl.rcParams["axes.labelsize"] = p["size"]
         mpl.rcParams["axes.titlesize"] = p["size"] + 1
@@ -205,11 +205,11 @@ def _km_fig(req: KaplanMeierRequest, plt):  # type: ignore[no-untyped-def]
 
     if req.show_risk_table:
         fig, (ax, ax_risk) = plt.subplots(
-            2, 1, figsize=(6, 5),
+            2, 1, figsize=(5, 5.5),
             gridspec_kw={"height_ratios": [4, 1], "hspace": 0.05},
         )
     else:
-        fig, ax = plt.subplots(figsize=(6, 4))
+        fig, ax = plt.subplots(figsize=(5, 4.5))
         ax_risk = None
 
     for curve, color in zip(curves, colors):
