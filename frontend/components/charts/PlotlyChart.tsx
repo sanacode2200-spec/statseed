@@ -1,27 +1,58 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useEffect, useState } from "react";
 import type { PlotlyFigure } from "@/lib/types";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center w-full h-full bg-gray-50 rounded-lg text-[15px] text-gray-400">
+    <div className="flex items-center justify-center w-full h-full bg-gray-50 dark:bg-neutral-950 rounded-lg text-[15px] text-gray-400">
       グラフを読み込み中...
     </div>
   ),
 });
 
+function useIsDarkMode(): boolean {
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    setDark(root.classList.contains("dark"));
+
+    const observer = new MutationObserver(() => {
+      setDark(root.classList.contains("dark"));
+    });
+    observer.observe(root, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
+  return dark;
+}
+
 export function PlotlyChart({ figure, aspectRatio = 1.25 }: { figure: PlotlyFigure; aspectRatio?: number }) {
+  const dark = useIsDarkMode();
+
+  const lineColor = dark ? "#737373" : "#373737";
+  const textColor = dark ? "#d4d4d4" : "#373737";
+
+  const baseLayout = figure.layout as Record<string, unknown>;
+  const layout: Partial<Plotly.Layout> = {
+    ...baseLayout,
+    autosize: true,
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    font: { ...(baseLayout.font as object), color: textColor },
+    xaxis: { ...(baseLayout.xaxis as object), linecolor: lineColor, tickcolor: lineColor },
+    yaxis: { ...(baseLayout.yaxis as object), linecolor: lineColor, tickcolor: lineColor },
+  };
+
   return (
     <div className="mx-auto w-full" style={{ maxWidth: "640px" }}>
       <div style={{ aspectRatio: String(aspectRatio), width: "100%" }}>
         <Plot
           data={figure.data as Plotly.Data[]}
-          layout={{
-            ...(figure.layout as Partial<Plotly.Layout>),
-            autosize: true,
-          }}
+          layout={layout}
           config={{
             displaylogo: false,
             modeBarButtonsToRemove: ["sendDataToCloud", "lasso2d", "select2d"],

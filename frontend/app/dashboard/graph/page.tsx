@@ -119,6 +119,7 @@ export default function GraphPage() {
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<"png" | "svg" | "pdf">("png");
+  const [exportTransparent, setExportTransparent] = useState(true);
 
   // font preset
   const [fontPreset, setFontPreset] = useState<FontPreset>("論文標準");
@@ -385,6 +386,7 @@ export default function GraphPage() {
       const body: ExportRequest = {
         chart_type: chartType as ExportRequest["chart_type"],
         format: exportFormat,
+        transparent: exportTransparent,
         font_preset: fontPreset,
         font_family: fontPreset === "カスタム" && customFamily ? customFamily : null,
         font_size:
@@ -429,6 +431,20 @@ export default function GraphPage() {
       } else if (chartType === "histogram") {
         const values = useCsv ? csvHistogramData().values : parseNumbers(histText);
         body.histogram = { values, title, x_label: histXLabel, show_normal_curve: histShowNormal };
+      } else if (chartType === "roc") {
+        let scores: number[];
+        let labels: number[];
+        if (useCsv) {
+          ({ scores, labels } = csvRocData());
+        } else {
+          scores = parseNumbers(rocScoresText);
+          const labelsRaw = parseNumbers(rocLabelsText);
+          if (scores.length < 4) throw new Error("4件以上のスコアが必要です。");
+          if (scores.length !== labelsRaw.length) throw new Error("スコアとラベルのデータ数が一致しません。");
+          labels = labelsRaw.map(Math.round);
+          if (labels.some((l) => l !== 0 && l !== 1)) throw new Error("ラベルは 0（陰性）または 1（陽性）を入力してください。");
+        }
+        body.roc = { scores, labels, title, score_label: rocScoreLabel };
       } else {
         let x: number[];
         let y: number[];
@@ -996,8 +1012,7 @@ export default function GraphPage() {
             </div>
           )}
 
-          {/* エクスポート（ROC以外） */}
-          {chartType !== "roc" && (
+          {/* エクスポート */}
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-3">
             {/* フォントプリセット */}
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -1037,6 +1052,27 @@ export default function GraphPage() {
               </div>
             )}
 
+            {/* 背景 */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">背景：</span>
+              <button
+                type="button"
+                onClick={() => setExportTransparent(true)}
+                className={toggleBtn(exportTransparent)}
+                style={exportTransparent ? { backgroundColor: "#CC79A7" } : undefined}
+              >
+                透明
+              </button>
+              <button
+                type="button"
+                onClick={() => setExportTransparent(false)}
+                className={toggleBtn(!exportTransparent)}
+                style={!exportTransparent ? { backgroundColor: "#CC79A7" } : undefined}
+              >
+                白
+              </button>
+            </div>
+
             {/* フォーマット & ダウンロード */}
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">形式：</span>
@@ -1061,7 +1097,6 @@ export default function GraphPage() {
               </Button>
             </div>
           </div>
-          )}
         </Card>
       )}
     </div>

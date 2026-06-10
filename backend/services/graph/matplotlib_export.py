@@ -3,7 +3,7 @@ import math
 import random
 import statistics
 
-from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, KaplanMeierRequest, ScatterRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, KaplanMeierRequest, ROCRequest, ScatterRequest
 from backend.services.graph.theme import FONT_FALLBACK_CHAIN, FONT_PRESETS, OKABE_ITO, STATSEED_THEME
 
 _COLORS = list(OKABE_ITO.values())[:4]
@@ -50,11 +50,13 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
         fig = _barplot_fig(request.barplot, plt)
     elif request.chart_type == "kaplan_meier" and request.kaplan_meier:
         fig = _km_fig(request.kaplan_meier, plt)
+    elif request.chart_type == "roc" and request.roc:
+        fig = _roc_fig(request.roc, plt)
     else:
         fig = _scatter_fig(request.scatter, plt)  # type: ignore[arg-type]
 
     buf = io.BytesIO()
-    fig.savefig(buf, format=fmt, bbox_inches="tight")
+    fig.savefig(buf, format=fmt, bbox_inches="tight", transparent=request.transparent)
     plt.close(fig)
     buf.seek(0)
     return buf.read(), mime
@@ -300,6 +302,44 @@ def _scatter_fig(req: ScatterRequest, plt):  # type: ignore[no-untyped-def]
 
     ax.set_xlabel(req.x_label or "")
     ax.set_ylabel(req.y_label or "")
+    if req.title:
+        ax.set_title(req.title)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    return fig
+
+
+def _roc_fig(req: ROCRequest, plt):  # type: ignore[no-untyped-def]
+    import numpy as np
+    from backend.services.graph.roc import compute_roc
+
+    scores = [float(s) for s in req.scores]
+    result = compute_roc(scores, req.labels)
+
+    fig, ax = plt.subplots(figsize=(4.5, 4.5))
+
+    ax.plot([0, 1], [0, 1], color="#aaa", linewidth=1, linestyle=":")
+    ax.plot(result.fpr, result.tpr, color=_COLORS[0], linewidth=1.5)
+    ax.fill_between(result.fpr, result.tpr, 0, color=_COLORS[0], alpha=0.08)
+    ax.scatter(
+        [result.optimal_fpr], [result.optimal_tpr],
+        color=_COLORS[1], s=40, zorder=3,
+        linewidths=1, edgecolors="white",
+    )
+
+    ax.text(
+        0.98, 0.04,
+        f"AUC = {result.auc:.3f}\n95%CI: {result.auc_ci_lower:.3f}–{result.auc_ci_upper:.3f}",
+        transform=ax.transAxes, ha="right", va="bottom", fontsize=8,
+        bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "edgecolor": "#ddd", "alpha": 0.8},
+    )
+
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1.02)
+    ax.set_xticks(np.arange(0, 1.01, 0.2))
+    ax.set_yticks(np.arange(0, 1.01, 0.2))
+    ax.set_xlabel("1 - 特異度（偽陽性率）")
+    ax.set_ylabel("感度（真陽性率）")
     if req.title:
         ax.set_title(req.title)
     ax.spines["top"].set_visible(False)

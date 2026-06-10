@@ -288,8 +288,9 @@ export interface ROCResult {
 }
 
 export interface ExportRequest {
-  chart_type: "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier";
+  chart_type: "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier" | "roc";
   format: "png" | "svg" | "pdf";
+  transparent?: boolean;
   font_preset?: "論文標準" | "日本語対応" | "ポスター" | "カスタム" | null;
   font_family?: string | null;
   font_size?: number | null;
@@ -298,4 +299,5 @@ export interface ExportRequest {
   scatter?: ScatterRequest;
   barplot?: BarplotRequest;
   kaplan_meier?: KaplanMeierRequest;
+  roc?: ROCRequest;
 }

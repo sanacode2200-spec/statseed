@@ -7,8 +7,8 @@ OKABE_ITO = ["#0072B2", "#E69F00", "#009E73", "#CC79A7"]
 
 _LAYOUT_BASE: dict = {
     "font": {"family": "Arial, Helvetica, sans-serif", "size": 11, "color": "#373737"},
-    "paper_bgcolor": "white",
-    "plot_bgcolor": "white",
+    "paper_bgcolor": "rgba(0,0,0,0)",
+    "plot_bgcolor": "rgba(0,0,0,0)",
     "margin": {"l": 60, "r": 30, "t": 50, "b": 60},
     "xaxis": {
         "linecolor": "#373737",

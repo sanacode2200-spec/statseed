@@ -121,8 +121,9 @@ class PlotlyFigure(BaseModel):
 
 
 class ExportRequest(BaseModel):
-    chart_type: Literal["boxplot", "histogram", "scatter", "barplot", "kaplan_meier"]
+    chart_type: Literal["boxplot", "histogram", "scatter", "barplot", "kaplan_meier", "roc"]
     format: Literal["png", "svg", "pdf"] = "png"
+    transparent: bool = True
     font_preset: Literal["論文標準", "日本語対応", "ポスター", "カスタム"] | None = None
     font_family: str | None = Field(default=None, max_length=80)
     font_size: int | None = Field(default=None, ge=6, le=24)
@@ -131,6 +132,7 @@ class ExportRequest(BaseModel):
     scatter: ScatterRequest | None = None
     barplot: BarplotRequest | None = None
     kaplan_meier: KaplanMeierRequest | None = None
+    roc: ROCRequest | None = None
 
     @model_validator(mode="after")
     def check_chart_data(self) -> "ExportRequest":
@@ -140,6 +142,7 @@ class ExportRequest(BaseModel):
             "scatter": self.scatter,
             "barplot": self.barplot,
             "kaplan_meier": self.kaplan_meier,
+            "roc": self.roc,
         }
         if required[self.chart_type] is None:
             raise ValueError(f"chart_type='{self.chart_type}' のデータが含まれていません")
