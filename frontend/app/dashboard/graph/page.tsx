@@ -981,29 +981,29 @@ export default function GraphPage() {
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-[13px] mb-3">
-                <div className="flex justify-between">
+                <div className="grid grid-cols-[minmax(8rem,12rem)_auto] gap-x-4">
                   <span className="text-gray-400 dark:text-neutral-600">AUC</span>
                   <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.auc.toFixed(3)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="grid grid-cols-[minmax(8rem,12rem)_auto] gap-x-4">
                   <span className="text-gray-400 dark:text-neutral-600">95%CI</span>
                   <span className="font-medium text-gray-800 dark:text-neutral-200">
                     {rocStats.auc_ci_lower.toFixed(3)} – {rocStats.auc_ci_upper.toFixed(3)}
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="grid grid-cols-[minmax(8rem,12rem)_auto] gap-x-4">
                   <span className="text-gray-400 dark:text-neutral-600">最適カットオフ</span>
                   <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.optimal_threshold.toFixed(3)}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="grid grid-cols-[minmax(8rem,12rem)_auto] gap-x-4">
                   <span className="text-gray-400 dark:text-neutral-600">感度（最適点）</span>
                   <span className="font-medium text-gray-800 dark:text-neutral-200">{(rocStats.optimal_tpr * 100).toFixed(1)}%</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="grid grid-cols-[minmax(8rem,12rem)_auto] gap-x-4">
                   <span className="text-gray-400 dark:text-neutral-600">特異度（最適点）</span>
                   <span className="font-medium text-gray-800 dark:text-neutral-200">{((1 - rocStats.optimal_fpr) * 100).toFixed(1)}%</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="grid grid-cols-[minmax(8rem,12rem)_auto] gap-x-4">
                   <span className="text-gray-400 dark:text-neutral-600">陽性例 / 陰性例</span>
                   <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.n_pos} / {rocStats.n_neg}</span>
                 </div>

@@ -43,12 +43,12 @@ export function TestResultCard({ result }: { result: TestResult }) {
         {pBadge(result.p_value)}
       </div>
 
-      <table className="w-full text-[13px] mb-4">
+      <table className="w-full table-fixed text-[13px] mb-4">
         <tbody>
           {rows.map(([label, value]) => (
             <tr key={label} className="border-b border-gray-100 dark:border-neutral-800 last:border-0">
-              <td className="py-1.5 text-gray-500 dark:text-neutral-500 pr-4">{label}</td>
-              <td className="py-1.5 font-mono text-right text-gray-800 dark:text-neutral-200">{value}</td>
+              <td className="w-[55%] sm:w-64 py-1.5 text-gray-500 dark:text-neutral-500 pr-4">{label}</td>
+              <td className="py-1.5 font-mono text-left text-gray-800 dark:text-neutral-200">{value}</td>
             </tr>
           ))}
         </tbody>
@@ -82,12 +82,12 @@ export function CorrelationResultCard({ result }: { result: CorrelationResult })
         {pBadge(result.p_value)}
       </div>
 
-      <table className="w-full text-[13px] mb-4">
+      <table className="w-full table-fixed text-[13px] mb-4">
         <tbody>
           {rows.map(([label, value]) => (
             <tr key={label} className="border-b border-gray-100 dark:border-neutral-800 last:border-0">
-              <td className="py-1.5 text-gray-500 dark:text-neutral-500 pr-4">{label}</td>
-              <td className="py-1.5 font-mono text-right text-gray-800 dark:text-neutral-200">{value}</td>
+              <td className="w-[55%] sm:w-64 py-1.5 text-gray-500 dark:text-neutral-500 pr-4">{label}</td>
+              <td className="py-1.5 font-mono text-left text-gray-800 dark:text-neutral-200">{value}</td>
             </tr>
           ))}
         </tbody>

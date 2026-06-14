@@ -33,20 +33,20 @@ export function DescriptiveResultTable({ result }: { result: DescriptiveResponse
 
   return (
     <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-neutral-800">
-      <table className="w-full text-[15px]">
+      <table className="w-full table-fixed text-[15px]">
         <thead>
           <tr className="bg-gray-50 dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
-            <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-neutral-400 w-1/2">
+            <th className="w-[55%] sm:w-64 text-left px-4 py-2 font-medium text-gray-600 dark:text-neutral-400">
               {result.variable_name}
             </th>
-            <th className="text-right px-4 py-2 font-medium text-gray-600 dark:text-neutral-400">値</th>
+            <th className="text-left px-4 py-2 font-medium text-gray-600 dark:text-neutral-400">値</th>
           </tr>
         </thead>
         <tbody>
           {rows.map(([label, value], i) => (
             <tr key={label} className={i % 2 === 0 ? "bg-white dark:bg-[#111]" : "bg-gray-50 dark:bg-neutral-900/50"}>
               <td className="px-4 py-2 text-gray-600 dark:text-neutral-400">{label}</td>
-              <td className="px-4 py-2 text-right font-mono text-gray-800 dark:text-neutral-200">{value}</td>
+              <td className="px-4 py-2 text-left font-mono text-gray-800 dark:text-neutral-200">{value}</td>
             </tr>
           ))}
         </tbody>
