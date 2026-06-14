@@ -9,7 +9,9 @@ import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { inputAutoCls as inputCls, textareaCls } from "@/components/ui/formStyles";
+import { TextCopyBlock } from "@/components/ui/TextCopyBlock";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
+import { type ChartType, getAspectRatio, formatGraphP } from "@/lib/graphConfig";
 import { AnalysisSampleInfoCard } from "@/components/stats/TestResultCard";
 import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
 import { useDataset } from "@/contexts/DataContext";
@@ -25,56 +27,8 @@ import {
   splitByGroup,
 } from "@/lib/dataUtils";
 
-type ChartType = "boxplot" | "histogram" | "scatter" | "paired" | "barplot" | "kaplan_meier" | "roc";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
 type InputMode = "csv" | "manual";
-
-// PNG/SVG/PDF出力時のmatplotlib figsizeに合わせた画面表示の縦横比
-function getAspectRatio(chartType: ChartType, figure: PlotlyFigure): number {
-  switch (chartType) {
-    case "boxplot": {
-      const k = figure.data.filter((t) => (t as { type?: string }).type === "box").length || 1;
-      return Math.max(3.5, k * 1.4) / 4;
-    }
-    case "barplot": {
-      const k = figure.data.filter((t) => (t as { type?: string }).type === "bar").length || 1;
-      return Math.max(3.5, k * 1.2) / 4;
-    }
-    case "histogram":
-      return 5 / 4;
-    case "scatter":
-      return 4.5 / 4;
-    case "paired":
-      return 1;
-    case "kaplan_meier": {
-      const marginB = (figure.layout as { margin?: { b?: number } })?.margin?.b ?? 60;
-      return marginB >= 80 ? 5 / 5.5 : 5 / 4.5;
-    }
-    case "roc":
-      return 1;
-    default:
-      return 1.25;
-  }
-}
-
-function formatGraphP(p: number): string {
-  return p < 0.001 ? "p < 0.001" : `p = ${p.toFixed(3)}`;
-}
-
-function TextCopyBlock({ title, text }: { title: string; text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 p-3">
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] font-semibold text-gray-600 dark:text-neutral-400">{title}</p>
-        <button type="button" onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1200); })} className="text-[11px] text-gray-500 hover:underline">
-          {copied ? "コピー済み" : "コピー"}
-        </button>
-      </div>
-      <p className="text-[12px] leading-relaxed text-gray-600 dark:text-neutral-400">{text}</p>
-    </div>
-  );
-}
 
 export default function GraphPage() {
   const { dataset } = useDataset();
