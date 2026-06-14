@@ -124,21 +124,31 @@ export function exportPosthocCsv(result: PosthocResult) {
 }
 
 export function exportTable1Csv(result: Table1Result) {
-  const cols = result.group_names
-    ? ["変数", "全体", "欠損", ...result.group_names, "p値", "検定"]
-    : ["変数", "全体", "欠損"];
+  const hasGroups = !!result.group_names;
+  const hasSmd = result.rows.some((r) => r.smd !== null);
+  const hasPvalue = result.rows.some((r) => r.p_value !== null);
 
-  const headerN = result.group_names
-    ? ["", `n = ${result.n_overall}`, "", ...result.group_names.map((g) => `n = ${result.n_by_group?.[g] ?? ""}`), "", ""]
-    : ["", `n = ${result.n_overall}`, ""];
+  const cols = ["変数", "全体", "欠損"];
+  const headerN = ["", `n = ${result.n_overall}`, ""];
+  if (hasGroups && result.group_names) {
+    for (const g of result.group_names) {
+      cols.push(g);
+      headerN.push(`n = ${result.n_by_group?.[g] ?? ""}`);
+    }
+    if (hasSmd) { cols.push("SMD"); headerN.push(""); }
+    if (hasPvalue) { cols.push("p値", "検定"); headerN.push("", ""); }
+  }
 
   const dataRows = result.rows.map((r) => {
     const label = r.indent ? `  ${r.variable}` : r.variable;
     const cells: (string | null)[] = [label, r.overall, r.indent ? "" : String(r.missing)];
-    if (result.group_names) {
+    if (hasGroups && result.group_names) {
       for (const g of result.group_names) cells.push(r.groups?.[g] ?? "");
-      cells.push(r.indent ? "" : (r.p_value ?? ""));
-      cells.push(r.indent ? "" : (r.test_name ?? ""));
+      if (hasSmd) cells.push(r.indent ? "" : (r.smd ?? ""));
+      if (hasPvalue) {
+        cells.push(r.indent ? "" : (r.p_value ?? ""));
+        cells.push(r.indent ? "" : (r.test_name ?? ""));
+      }
     }
     return cells.map(esc).join(",");
   });

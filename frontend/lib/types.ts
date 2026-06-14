@@ -208,6 +208,8 @@ export interface Table1Request {
   variables: Table1Variable[];
   group_values?: (string | null)[] | null;
   group_name?: string;
+  show_pvalue?: boolean;
+  show_smd?: boolean;
 }
 
 export interface Table1Row {
@@ -217,6 +219,7 @@ export interface Table1Row {
   groups: Record<string, string> | null;
   p_value: string | null;
   test_name: string | null;
+  smd: string | null;
   missing: number;
   missing_by_group: Record<string, number> | null;
 }
@@ -227,6 +230,45 @@ export interface Table1Result {
   n_overall: number;
   n_by_group: Record<string, number> | null;
   group_missing: number;
+}
+
+// --- 回帰分析 ---
+
+export interface RegressionPredictor {
+  name: string;
+  values: (number | null)[];
+}
+
+export interface LinearRegressionRequest {
+  outcome_name?: string;
+  outcome: (number | null)[];
+  predictors: RegressionPredictor[];
+}
+
+export interface RegressionCoefficient {
+  name: string;
+  coef: number;
+  std_err: number;
+  t_value: number;
+  p_value: number;
+  ci95_low: number;
+  ci95_high: number;
+  std_coef: number | null;
+}
+
+export interface LinearRegressionResult {
+  outcome_name: string;
+  coefficients: RegressionCoefficient[];
+  n_total: number;
+  n_used: number;
+  n_excluded: number;
+  df_model: number;
+  df_resid: number;
+  r_squared: number;
+  adj_r_squared: number;
+  f_statistic: number;
+  f_pvalue: number;
+  interpretation: string;
 }
 
 // --- グラフ ---

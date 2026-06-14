@@ -13,6 +13,8 @@ import type {
   GuideRequest,
   GuideResponse,
   HistogramRequest,
+  LinearRegressionRequest,
+  LinearRegressionResult,
   MultiGroupRequest,
   PairedRequest,
   PairedPlotRequest,
@@ -145,4 +147,7 @@ export const api = {
 
   table1: (req: Table1Request) =>
     post<Table1Result>("/api/table1", req),
+
+  regressionLinear: (req: LinearRegressionRequest) =>
+    post<LinearRegressionResult>("/api/regression/linear", req),
 };

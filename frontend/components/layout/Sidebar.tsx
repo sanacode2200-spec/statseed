@@ -18,6 +18,7 @@ const NAV_GROUPS = [
     items: [
       { href: "/dashboard/descriptive", label: "Descriptive", exact: false, icon: ChartBarIcon },
       { href: "/dashboard/test", label: "Tests", exact: false, icon: FlaskIcon },
+      { href: "/dashboard/regression", label: "Regression", exact: false, icon: RegressionIcon },
       { href: "/dashboard/table1", label: "Table 1", exact: false, icon: TableIcon },
       { href: "/dashboard/graph", label: "Graphs", exact: false, icon: GraphIcon },
       { href: "/dashboard/guide", label: "Guide", exact: false, icon: CompassIcon },
@@ -281,6 +282,15 @@ function CompassIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </svg>
+  );
+}
+
+function RegressionIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="21" x2="21" y2="3" />
+      <circle cx="6" cy="17" r="1.4" /><circle cx="10" cy="15" r="1.4" /><circle cx="14" cy="9" r="1.4" /><circle cx="18" cy="8" r="1.4" />
     </svg>
   );
 }

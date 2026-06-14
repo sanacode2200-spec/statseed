@@ -41,6 +41,9 @@ export default function Table1Page() {
   const [useGroup, setUseGroup] = useState(false);
   const [groupName, setGroupName] = useState("群");
   const [groupText, setGroupText] = useState("");
+  // Table 1 では群間p値は推奨されないため既定オフ。SMD（効果量）は既定オン。
+  const [showPvalue, setShowPvalue] = useState(false);
+  const [showSmd, setShowSmd] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Table1Result | null>(null);
@@ -113,7 +116,7 @@ export default function Table1Page() {
         group_name = groupName || "群";
       }
 
-      const res = await api.table1({ variables, group_values, group_name });
+      const res = await api.table1({ variables, group_values, group_name, show_pvalue: showPvalue, show_smd: showSmd });
       setResult(res);
     } catch (e) {
       setError(e instanceof Error ? e.message : "エラーが発生しました");
@@ -124,18 +127,30 @@ export default function Table1Page() {
 
   function copyAsTsv() {
     if (!result) return;
-    const cols = result.group_names ? ["変数", "全体", "欠損", ...result.group_names, "p値", "検定"] : ["変数", "全体", "欠損"];
-    const headerN = result.group_names
-      ? ["", `n = ${result.n_overall}`, "", ...result.group_names.map((g) => `n = ${result.n_by_group?.[g] ?? ""}`), "", ""]
-      : ["", `n = ${result.n_overall}`, ""];
+    const hasGroups = !!result.group_names;
+    const hasSmd = result.rows.some((r) => r.smd !== null);
+    const hasPvalue = result.rows.some((r) => r.p_value !== null);
+    const cols = ["変数", "全体", "欠損"];
+    const headerN = ["", `n = ${result.n_overall}`, ""];
+    if (hasGroups && result.group_names) {
+      for (const g of result.group_names) {
+        cols.push(g);
+        headerN.push(`n = ${result.n_by_group?.[g] ?? ""}`);
+      }
+      if (hasSmd) { cols.push("SMD"); headerN.push(""); }
+      if (hasPvalue) { cols.push("p値", "検定"); headerN.push("", ""); }
+    }
     const lines = [cols.join("\t"), headerN.join("\t")];
     for (const row of result.rows) {
       const label = row.indent ? `  ${row.variable}` : row.variable;
       const cells = [label, row.overall, row.indent ? "" : String(row.missing)];
-      if (result.group_names) {
+      if (hasGroups && result.group_names) {
         for (const g of result.group_names) cells.push(row.groups?.[g] ?? "");
-        cells.push(row.indent ? "" : (row.p_value ?? ""));
-        cells.push(row.indent ? "" : (row.test_name ?? ""));
+        if (hasSmd) cells.push(row.indent ? "" : (row.smd ?? ""));
+        if (hasPvalue) {
+          cells.push(row.indent ? "" : (row.p_value ?? ""));
+          cells.push(row.indent ? "" : (row.test_name ?? ""));
+        }
       }
       lines.push(cells.join("\t"));
     }
@@ -336,6 +351,25 @@ export default function Table1Page() {
       </div>
       )}
 
+      {((inputMode === "csv" && dataset && !!csvGroupCol) || (inputMode === "manual" && useGroup)) && (
+        <Card className="mt-3 p-4">
+          <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-2.5">群間比較の指標</p>
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={showSmd} onChange={(e) => setShowSmd(e.target.checked)} className="rounded" />
+              <span className="text-[13px] text-gray-700 dark:text-neutral-300">標準化平均差（SMD）を表示</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={showPvalue} onChange={(e) => setShowPvalue(e.target.checked)} className="rounded" />
+              <span className="text-[13px] text-gray-700 dark:text-neutral-300">p値を表示</span>
+            </label>
+          </div>
+          <p className="mt-2.5 text-[11px] text-gray-400 dark:text-neutral-600">
+            背景特性表（Table 1）では検出力に依存するp値より、サンプルサイズに依存しない効果量であるSMDが推奨されます（|SMD| &gt; 0.1 で群間の偏りの目安）。SMDは2群比較時のみ算出されます。
+          </p>
+        </Card>
+      )}
+
       <div className="mt-4">
         <Button onClick={run} disabled={loading}>
           {loading ? "生成中..." : "Table 1を生成"}
@@ -376,6 +410,8 @@ export default function Table1Page() {
 
 function Table1View({ result }: { result: Table1Result }) {
   const hasGroups = result.group_names !== null && result.group_names.length > 0;
+  const hasSmd = hasGroups && result.rows.some((r) => r.smd !== null);
+  const hasPvalue = hasGroups && result.rows.some((r) => r.p_value !== null);
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800">
@@ -392,7 +428,10 @@ function Table1View({ result }: { result: Table1Result }) {
                 {g}<br /><span className="font-normal text-[11px]">n = {result.n_by_group?.[g] ?? ""}</span>
               </th>
             ))}
-            {hasGroups && (
+            {hasSmd && (
+              <th className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">SMD</th>
+            )}
+            {hasPvalue && (
               <>
                 <th className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">p値</th>
                 <th className="text-left px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500 text-[11px]">検定</th>
@@ -422,7 +461,16 @@ function Table1View({ result }: { result: Table1Result }) {
                   {row.groups?.[g] ?? ""}
                 </td>
               ))}
-              {hasGroups && (
+              {hasSmd && (
+                <td className={`text-center px-4 py-2 tabular-nums ${
+                  row.smd && Math.abs(parseFloat(row.smd)) > 0.1
+                    ? "font-semibold text-white"
+                    : "text-gray-500 dark:text-neutral-500"
+                }`}>
+                  {row.smd ?? (row.indent ? "" : "—")}
+                </td>
+              )}
+              {hasPvalue && (
                 <>
                   <td className={`text-center px-4 py-2 tabular-nums ${
                     row.p_value && parseFloat(row.p_value) < 0.05
