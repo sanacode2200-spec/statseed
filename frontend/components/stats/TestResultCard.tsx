@@ -23,7 +23,7 @@ function pBadge(p: number) {
 export function AnalysisSampleInfoCard({ info }: { info: AnalysisSampleInfo }) {
   return (
     <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 px-4 py-3">
-      <div className="grid grid-cols-3 gap-3 text-[12px]">
+      <div className="grid grid-cols-1 gap-3 text-[12px] sm:grid-cols-3">
         <div>
           <p className="text-gray-400 dark:text-neutral-600">元データ</p>
           <p className="mt-0.5 font-mono text-gray-800 dark:text-neutral-200">{info.total} 件</p>
@@ -67,7 +67,7 @@ export function TestResultCard({ result }: { result: TestResult }) {
 
   return (
     <Card>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">{result.test_name}</h3>
         {pBadge(result.p_value)}
       </div>
@@ -106,7 +106,7 @@ export function CorrelationResultCard({ result }: { result: CorrelationResult })
 
   return (
     <Card>
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">{result.method}</h3>
         {pBadge(result.p_value)}
       </div>

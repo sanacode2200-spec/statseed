@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { parseNullableNumbers, parseCategoricalValues } from "@/lib/parse";
 import type { Table1Result, Table1Variable } from "@/lib/types";
 import { exportTable1Csv } from "@/lib/exportCsv";
@@ -142,7 +143,7 @@ export default function Table1Page() {
   }
 
   return (
-    <div className="p-6 max-w-5xl">
+    <div className="max-w-5xl">
       <div className="mb-5">
         <h1 className="text-[20px] font-semibold text-gray-900 dark:text-white">Table 1 自動生成</h1>
         <p className="text-[13px] text-gray-400 dark:text-neutral-500 mt-1">
@@ -151,25 +152,16 @@ export default function Table1Page() {
       </div>
 
       {dataset && (
-        <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-neutral-900 rounded-md w-fit mb-4">
-          {([
+        <SegmentedControl
+          value={inputMode}
+          options={[
             { value: "csv", label: "CSVから選択" },
             { value: "manual", label: "手入力" },
-          ] as const).map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => setInputMode(opt.value)}
-              className={`px-3 py-1 rounded text-[12px] font-medium transition-colors ${
-                inputMode === opt.value
-                  ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
-                  : "text-gray-500 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-neutral-300"
-              }`}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
+          ]}
+          onChange={setInputMode}
+          ariaLabel="入力方法"
+          className="mb-4"
+        />
       )}
 
       {inputMode === "csv" && dataset ? (
@@ -180,7 +172,7 @@ export default function Table1Page() {
             </p>
             <div className="space-y-1.5">
               {analysisColumns(dataset.columns).map((c) => (
-                <div key={c.name} className="flex items-center gap-2">
+                <div key={c.name} className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
                     <input
                       type="checkbox"
@@ -227,7 +219,7 @@ export default function Table1Page() {
             <select
               value={csvGroupCol}
               onChange={(e) => setCsvGroupCol(e.target.value)}
-              className={inputCls + " w-64"}
+              className={inputCls + " w-full sm:w-64"}
             >
               <option value="">（群分けしない）</option>
               {categoricalColumns(dataset.columns).map((c) => (
@@ -241,7 +233,7 @@ export default function Table1Page() {
         {/* 変数リスト */}
         {vars.map((v, idx) => (
           <Card key={v.id} className="p-4">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="text-[11px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</span>
               <input
                 className={inputCls + " flex-1"}
@@ -354,9 +346,9 @@ export default function Table1Page() {
 
       {result && (
         <div className="mt-6">
-          <div className="flex items-center justify-between mb-3">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-[15px] font-semibold text-gray-800 dark:text-neutral-200">Table 1</h2>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={copyAsTsv}
                 className="text-[12px] text-white hover:text-white transition-colors"

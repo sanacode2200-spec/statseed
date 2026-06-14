@@ -35,10 +35,32 @@ export function Sidebar() {
   const pathname = usePathname();
   const { dataset, storageMode, clearDataset } = useDataset();
   const [dark, setDark] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
   }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [mobileOpen]);
 
   function toggleTheme() {
     const next = !dark;
@@ -56,8 +78,8 @@ export function Sidebar() {
     return exact ? pathname === href : pathname.startsWith(href);
   }
 
-  return (
-    <aside className="w-[200px] shrink-0 flex flex-col h-screen sticky top-0
+  const renderSidebar = () => (
+    <aside className="w-[240px] md:w-[200px] shrink-0 flex flex-col h-full md:h-screen md:sticky md:top-0
       bg-white dark:bg-black
       border-r border-gray-200 dark:border-neutral-900">
 
@@ -169,6 +191,55 @@ export function Sidebar() {
       </div>
     </aside>
   );
+
+  return (
+    <>
+      <div className="hidden md:block">{renderSidebar()}</div>
+      <div className="fixed inset-x-0 top-0 z-30 flex h-12 items-center justify-between border-b border-gray-200 bg-white px-3 dark:border-neutral-900 dark:bg-black md:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-gray-600 dark:text-neutral-400"
+          aria-label="メニューを開く"
+        >
+          <MenuIcon />
+        </button>
+        <Link href="/dashboard" className="flex items-center gap-2 text-[13px] font-semibold text-gray-900 dark:text-white">
+          <Image src="/sana2.png" alt="" width={22} height={22} className="h-[22px] w-[22px] rounded-sm object-cover" />
+          Statseed
+        </Link>
+        <span className="min-w-11 text-right text-[10px] text-gray-400 dark:text-neutral-600">
+          {dataset ? (storageMode === "persistent" ? "端末保存" : "タブ内") : ""}
+        </span>
+      </div>
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setMobileOpen(false)}
+            aria-label="メニューを閉じる"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="ナビゲーション"
+            className="relative h-full w-[min(82vw,280px)] shadow-xl"
+          >
+            {renderSidebar()}
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              className="absolute right-2 top-2 flex min-h-11 min-w-11 items-center justify-center rounded-md text-gray-500 dark:text-neutral-500"
+              aria-label="メニューを閉じる"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 /* ── SVG アイコン ── */
@@ -274,6 +345,16 @@ function MoonIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+      <line x1="4" y1="7" x2="20" y2="7" />
+      <line x1="4" y1="12" x2="20" y2="12" />
+      <line x1="4" y1="17" x2="20" y2="17" />
     </svg>
   );
 }

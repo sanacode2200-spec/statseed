@@ -494,7 +494,7 @@ export default function GuidePage() {
               {result.suggestions.map((s) => (
                 <SuggestionCard key={s.test_name} s={s} />
               ))}
-              <div className="flex gap-4 pt-1">
+              <div className="flex flex-wrap gap-4 pt-1">
                 <button
                   onClick={handleBack}
                   className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"

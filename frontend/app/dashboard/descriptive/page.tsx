@@ -6,6 +6,7 @@ import type { CategoricalResponse, DescriptiveResponse } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { DescriptiveResultTable } from "@/components/stats/DescriptiveResultTable";
 import { CategoricalResultTable } from "@/components/stats/CategoricalResultTable";
 import {
@@ -136,25 +137,15 @@ export default function DescriptivePage() {
       <Card className="mb-5">
         <form onSubmit={handleSubmit} className="space-y-4">
           {dataset && (
-            <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-neutral-900 rounded-md w-fit">
-              {([
+            <SegmentedControl
+              value={inputMode}
+              options={[
                 { value: "csv", label: "CSVから選択" },
                 { value: "manual", label: "手入力" },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setInputMode(opt.value)}
-                  className={`px-3 py-1 rounded text-[12px] font-medium transition-colors ${
-                    inputMode === opt.value
-                      ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
-                      : "text-gray-500 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-neutral-300"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+              ]}
+              onChange={setInputMode}
+              ariaLabel="入力方法"
+            />
           )}
 
           {inputMode === "csv" && dataset ? (

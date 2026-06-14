@@ -59,7 +59,7 @@ const FLOW = [
 
 export default function DashboardHome() {
   return (
-    <div className="flex gap-6 items-start">
+    <div className="flex flex-col gap-6 items-stretch lg:flex-row lg:items-start">
 
       {/* ── 左カラム: 概要 ── */}
       <div className="flex-1 min-w-0 space-y-5">
@@ -84,7 +84,7 @@ export default function DashboardHome() {
         </div>
 
         {/* ステータスカード */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {STATS.map(({ label, value, sub }) => (
             <div key={label}
               className="bg-white dark:bg-[#111] border border-gray-200 dark:border-neutral-900 rounded-lg px-4 py-3">
@@ -136,7 +136,7 @@ export default function DashboardHome() {
       </div>
 
       {/* ── 右カラム: 機能 ── */}
-      <div className="w-[300px] shrink-0 space-y-3">
+      <div className="w-full shrink-0 space-y-3 lg:w-[300px]">
         <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
           機能
         </div>

@@ -5,7 +5,7 @@ export function PosthocResultTable({ result }: { result: PosthocResult }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <span className="text-[12px] text-gray-400 dark:text-neutral-500">検定法: </span>
           <span className="text-[13px] font-medium text-gray-700 dark:text-neutral-300">{result.method}</span>

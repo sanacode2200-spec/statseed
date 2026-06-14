@@ -7,6 +7,7 @@ import { exportRocCsv } from "@/lib/exportCsv";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { AnalysisSampleInfoCard } from "@/components/stats/TestResultCard";
 import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
@@ -69,7 +70,7 @@ function TextCopyBlock({ title, text }: { title: string; text: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 p-3">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p className="text-[12px] font-semibold text-gray-600 dark:text-neutral-400">{title}</p>
         <button type="button" onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1200); })} className="text-[11px] text-gray-500 hover:underline">
           {copied ? "コピー済み" : "コピー"}
@@ -666,7 +667,7 @@ export default function GraphPage() {
           {/* グラフ種別 */}
           <div>
             <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">グラフの種類</label>
-            <div className="flex gap-1.5">
+            <div className="flex flex-wrap gap-1.5">
               {CHART_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -706,32 +707,22 @@ export default function GraphPage() {
           </div>
 
           {dataset && (
-            <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-neutral-900 rounded-md w-fit">
-              {([
+            <SegmentedControl
+              value={inputMode}
+              options={[
                 { value: "csv", label: "CSVから選択" },
                 { value: "manual", label: "手入力" },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setInputMode(opt.value)}
-                  className={`px-3 py-1 rounded text-[12px] font-medium transition-colors ${
-                    inputMode === opt.value
-                      ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
-                      : "text-gray-500 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-neutral-300"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+              ]}
+              onChange={setInputMode}
+              ariaLabel="入力方法"
+            />
           )}
 
           {/* カプランマイヤー */}
           {chartType === "kaplan_meier" && (
             <div className="space-y-3">
               {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">生存時間の列</label>
                     <select value={csvKmTimeCol} onChange={(e) => setCsvKmTimeCol(e.target.value)} className={`${inputCls} w-full`}>
@@ -760,7 +751,7 @@ export default function GraphPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                         生存時間（1行1データ）
@@ -817,7 +808,7 @@ export default function GraphPage() {
                 <div>
                   <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
                   <input type="text" value={barYLabel} onChange={(e) => setBarYLabel(e.target.value)}
-                    className={`${inputCls} w-48`} placeholder="例：握力 (kg)" />
+                    className={`${inputCls} w-full sm:w-48`} placeholder="例：握力 (kg)" />
                 </div>
                 <div>
                   <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">エラーバー</label>
@@ -833,7 +824,7 @@ export default function GraphPage() {
                 </div>
               </div>
               {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
                     <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
@@ -853,7 +844,7 @@ export default function GraphPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {barGroupTexts.map((text, i) => (
                       <div key={i}>
                         <div className="flex gap-1 mb-1">
@@ -887,12 +878,12 @@ export default function GraphPage() {
                   type="text"
                   value={bpYLabel}
                   onChange={(e) => setBpYLabel(e.target.value)}
-                  className={`${inputCls} w-48`}
+                  className={`${inputCls} w-full sm:w-48`}
                   placeholder="例：握力 (kg)"
                 />
               </div>
               {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
                     <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
@@ -911,7 +902,7 @@ export default function GraphPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {bpGroupTexts.map((text, i) => (
                     <div key={i}>
                       <div className="flex gap-1 mb-1">
@@ -1010,7 +1001,7 @@ export default function GraphPage() {
                     <input type="checkbox" checked={bpShowGrid} onChange={(e) => setBpShowGrid(e.target.checked)} className="rounded" />
                     補助線を表示
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <div>
                       <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最小</label>
                       <input type="number" value={bpYMin} onChange={(e) => setBpYMin(e.target.value)}
@@ -1078,7 +1069,7 @@ export default function GraphPage() {
                   type="text"
                   value={histXLabel}
                   onChange={(e) => setHistXLabel(e.target.value)}
-                  className={`${inputCls} w-48`}
+                  className={`${inputCls} w-full sm:w-48`}
                   placeholder="例：年齢 (歳)"
                 />
               </div>
@@ -1121,10 +1112,10 @@ export default function GraphPage() {
               <div>
                 <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">スコアラベル</label>
                 <input type="text" value={rocScoreLabel} onChange={(e) => setRocScoreLabel(e.target.value)}
-                  className={`${inputCls} w-48`} placeholder="例：診断スコア" />
+                  className={`${inputCls} w-full sm:w-48`} placeholder="例：診断スコア" />
               </div>
               {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">診断スコアの列</label>
                     <select value={csvRocScoreCol} onChange={(e) => setCsvRocScoreCol(e.target.value)} className={`${inputCls} w-full`}>
@@ -1143,7 +1134,7 @@ export default function GraphPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                       診断スコア（1行1データ）
@@ -1167,7 +1158,7 @@ export default function GraphPage() {
           {chartType === "scatter" && (
             <div className="space-y-3">
               {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸の列</label>
                     <select value={csvScatterXCol} onChange={(e) => setCsvScatterXCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
@@ -1190,7 +1181,7 @@ export default function GraphPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {[
                     { label: "X", name: scXLabel, setName: setScXLabel, text: scXText, setText: setScXText },
                     { label: "Y", name: scYLabel, setName: setScYLabel, text: scYText, setText: setScYText },
@@ -1230,7 +1221,7 @@ export default function GraphPage() {
           {chartType === "paired" && (
             <div className="space-y-3">
               {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入前・1時点目</label>
                     <select value={csvPairedBeforeCol} onChange={(e) => { setCsvPairedBeforeCol(e.target.value); setPairedBeforeLabel(e.target.value); }} className={`${inputCls} w-full`}>
@@ -1245,12 +1236,12 @@ export default function GraphPage() {
                   </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <textarea value={pairedBeforeText} onChange={(e) => setPairedBeforeText(e.target.value)} rows={6} className={textareaCls} placeholder="介入前（1行1データ）" />
                   <textarea value={pairedAfterText} onChange={(e) => setPairedAfterText(e.target.value)} rows={6} className={textareaCls} placeholder="介入後（1行1データ）" />
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <input value={pairedBeforeLabel} onChange={(e) => setPairedBeforeLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="前ラベル" />
                 <input value={pairedAfterLabel} onChange={(e) => setPairedAfterLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="後ラベル" />
                 <input value={pairedYLabel} onChange={(e) => setPairedYLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="Y軸ラベル" />
@@ -1278,7 +1269,7 @@ export default function GraphPage() {
                   <p className="text-[12px] font-semibold text-gray-600 dark:text-neutral-400">群間比較結果</p>
                   <p className="text-[11px] text-gray-400 dark:text-neutral-600 mt-0.5">{bpComparison.method}</p>
                 </div>
-                <div className="flex gap-3 text-[11px] text-gray-500 dark:text-neutral-500">
+                <div className="flex flex-wrap gap-3 text-[11px] text-gray-500 dark:text-neutral-500">
                   {bpComparison.omnibus_p_value !== null && (
                     <span>全体: {formatGraphP(bpComparison.omnibus_p_value)}</span>
                   )}
@@ -1316,7 +1307,7 @@ export default function GraphPage() {
           {/* ROC統計量 */}
           {rocStats && (
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
-              <div className="flex items-center justify-between mb-2">
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[12px] font-semibold text-gray-500 dark:text-neutral-500">ROC解析結果</p>
                 <button
                   onClick={() => exportRocCsv(rocStats, rocStats.fpr, rocStats.tpr, rocStats.thresholds)}
@@ -1325,7 +1316,7 @@ export default function GraphPage() {
                   CSVダウンロード（座標データ）
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-x-8 gap-y-1 text-[13px] mb-3">
+              <div className="mb-3 grid grid-cols-1 gap-x-8 gap-y-1 text-[13px] sm:grid-cols-2">
                 <div className="grid grid-cols-[minmax(8rem,12rem)_auto] gap-x-4">
                   <span className="text-gray-400 dark:text-neutral-600">AUC</span>
                   <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.auc.toFixed(3)}</span>
@@ -1389,7 +1380,7 @@ export default function GraphPage() {
                   value={customFamily}
                   onChange={(e) => setCustomFamily(e.target.value)}
                   placeholder="フォント名（例：Helvetica）"
-                  className={`${inputCls} w-52`}
+                  className={`${inputCls} w-full sm:w-52`}
                 />
                 <input
                   type="number"

@@ -7,6 +7,7 @@ import type { AnalysisSampleInfo, CorrelationResult, TestResult } from "@/lib/ty
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { AnalysisSampleInfoCard, CorrelationResultCard, TestResultCard } from "@/components/stats/TestResultCard";
 import { PosthocResultTable } from "@/components/stats/PosthocResultTable";
 import { parseIntegerMatrix, parseNumbers } from "@/lib/parse";
@@ -442,30 +443,20 @@ export default function TestPage() {
 
           {/* 入力モード切替 */}
           {dataset && (
-            <div className="flex gap-1 p-0.5 bg-gray-100 dark:bg-neutral-900 rounded-md w-fit">
-              {([
+            <SegmentedControl
+              value={inputMode}
+              options={[
                 { value: "csv", label: "CSVから選択" },
                 { value: "manual", label: "手入力" },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    setInputMode(opt.value);
-                    setResult(null);
-                    setSampleInfo(null);
-                    setError(null);
-                  }}
-                  className={`px-3 py-1 rounded text-[12px] font-medium transition-colors ${
-                    inputMode === opt.value
-                      ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
-                      : "text-gray-500 dark:text-neutral-500 hover:text-gray-700 dark:hover:text-neutral-300"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
+              ]}
+              onChange={(next) => {
+                setInputMode(next);
+                setResult(null);
+                setSampleInfo(null);
+                setError(null);
+              }}
+              ariaLabel="入力方法"
+            />
           )}
 
           {/* 変数名（テーブル系以外・手入力時のみ） */}
@@ -486,12 +477,12 @@ export default function TestPage() {
           {isTwoGroup && (
             inputMode === "csv" && dataset ? (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <ColSelect label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
                   <ColSelect label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
                 </div>
                 {csvGroupOptions.length > 0 && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                       <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群A</label>
                       <select value={csvGroupA} onChange={(e) => setCsvGroupA(e.target.value)} className={inputCls}>
@@ -508,7 +499,7 @@ export default function TestPage() {
                 )}
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {[
                   { name: groupAName, setName: setGroupAName, text: groupAText, setText: setGroupAText },
                   { name: groupBName, setName: setGroupBName, text: groupBText, setText: setGroupBText },
@@ -536,12 +527,12 @@ export default function TestPage() {
           {/* 対応あり */}
           {isPaired && (
             inputMode === "csv" && dataset ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <ColSelect label="介入前の列" columns={csvCont} value={csvBeforeCol} onChange={setCsvBeforeCol} />
                 <ColSelect label="介入後の列" columns={csvCont} value={csvAfterCol} onChange={setCsvAfterCol} />
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {[
                   { label: "介入前", text: beforeText, setText: setBeforeText },
                   { label: "介入後", text: afterText, setText: setAfterText },
@@ -564,7 +555,7 @@ export default function TestPage() {
           {/* 多群・多重比較（同じ入力UI） */}
           {(isMultiGroup || isPosthoc) && (
             inputMode === "csv" && dataset ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <ColSelect label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
                 <ColSelect label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
                 {csvGroupOptions.length > 0 && (
@@ -576,9 +567,9 @@ export default function TestPage() {
             ) : (
             <div className="space-y-3">
               {multiGroupTexts.map((text, i) => (
-                <div key={i} className="flex gap-2 items-start">
+                <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-start">
                   <div className="flex-1">
-                    <div className="flex gap-2 mb-1">
+                    <div className="mb-1 flex flex-wrap gap-2">
                       <input
                         type="text"
                         value={multiGroupNames[i]}
@@ -619,7 +610,7 @@ export default function TestPage() {
           {/* クロス集計表 */}
           {isTable && (
             inputMode === "csv" && dataset ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <ColSelect label="行変数（カテゴリ）" columns={csvCat} value={csvRowCol} onChange={setCsvRowCol} />
                 <ColSelect label="列変数（カテゴリ）" columns={csvCat} value={csvColCol} onChange={setCsvColCol} />
               </div>
@@ -645,12 +636,12 @@ export default function TestPage() {
           {/* 相関 */}
           {isCorrelation && (
             inputMode === "csv" && dataset ? (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <ColSelect label="X列（連続変数）" columns={csvCont} value={csvXCol} onChange={setCsvXCol} />
                 <ColSelect label="Y列（連続変数）" columns={csvCont} value={csvYCol} onChange={setCsvYCol} />
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {[
                   { name: xName, setName: setXName, text: xText, setText: setXText },
                   { name: yName, setName: setYName, text: yText, setText: setYText },

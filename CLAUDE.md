@@ -82,7 +82,7 @@ statseed/
 │   │       ├── guide/         # 検定選択ガイド（ウィザード）
 │   │       └── data/          # データ読み込み（CSV/Excel）
 │   ├── components/
-│   │   ├── ui/                # Button / Card / ErrorMessage
+│   │   ├── ui/                # Button / Card / ErrorMessage / SegmentedControl
 │   │   ├── charts/            # PlotlyChart（動的import）
 │   │   └── stats/             # DescriptiveResultTable / TestResultCard
 │   ├── contexts/
@@ -304,6 +304,7 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] **カプランマイヤー曲線** — 打ち切りマーク・95%CIバンド・リスクテーブル・ログランク検定p値
 - [x] **ROC曲線** — AUC + 95%CI（Hanley & McNeil 1982）・最適カットオフ（Youden指数）・感度/特異度表示
 - [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・グラフ（全7種）・Table 1 の各ページで「CSVから選択」⇄「手入力」を切り替え可能
+- [x] **レスポンシブUI** — モバイルヘッダー・ドロワーナビ、フォーム縦積み、結果カード・操作行の折り返し、表の横スクロール対応
 
 ## 次の開発候補
 
@@ -380,12 +381,16 @@ STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/pytest backend/tests/ 
 
 ---
 
-## UI デザイン方針（2026-06-06 更新）
+## UI デザイン方針（2026-06-14 更新）
 
 ### レイアウト
-- **Vercel 風サイドバー** — 200px 固定、黒背景（dark）/ 白（light）、グループ付きナビ
-- **ダッシュボード** — 左カラム（概要・Quick Start・Stack）+ 右カラム（機能一覧）
-- **ブレッドクラム** — トップバーに `Statseed / ページ名`
+- **デスクトップ** — Vercel 風200px固定サイドバー、グループ付きナビ、トップバーに `Statseed / Dashboard`
+- **モバイル** — 48px固定ヘッダー + 左ドロワーナビ。ドロワー表示中は背景スクロールを止め、Escape・背景タップ・ページ遷移で閉じる
+- **ダッシュボード** — `lg` 未満は縦積み、`lg` 以上は左カラム（概要・Quick Start・Stack）+ 右カラム（機能一覧）
+- **ページ余白** — モバイル `px-3 py-5`、`sm` `px-5`、`md` 以上 `px-8 py-7`
+- **フォーム** — モバイルは1列、`sm` 以上で必要に応じて2列、3項目フォームは `md` 以上で3列
+- **表** — 列情報を省略せず、狭い画面では表コンテナ内だけ横スクロールを許可する
+- **操作行** — ボタン・トグル・結果ヘッダーは `flex-wrap` を基本とし、ページ全体の横スクロールを発生させない
 
 ### フォント
 - **Inter** — `next/font/google` で読み込み（UI クロム・ラテン文字担当）
@@ -414,9 +419,10 @@ STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/pytest backend/tests/ 
 ### ボタン・フォーム
 - **Button primary**: `bg-black text-white dark:bg-white dark:text-black`（Vercel スタイル）
 - **Button secondary**: `border border-gray-200 dark:border-neutral-800`
-- **切り替えトグル**: active = `bg-white text-black`（ダーク時）
+- **切り替えトグル**: 共通の `SegmentedControl` を使い、active = `bg-white text-black`（ダーク時）
 - **input / textarea / select**: `border-gray-200 dark:border-neutral-800 dark:bg-[#111]`
 - **フォーカスリング**: `focus:ring-neutral-400/30`
+- **タップ領域**: 共通ボタンはモバイルで高さ44px以上を確保する
 
 ### サイドバーナビゲーション
 - ラベルは**英語**（Overview / Analysis / Tests / Guide / Import など）
