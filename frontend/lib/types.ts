@@ -236,6 +236,35 @@ export interface BoxplotRequest {
   title?: string;
   y_label?: string;
   show_jitter?: boolean;
+  display_style?: "auto" | "simple" | "distribution" | "individual";
+  color_mode?: "color" | "monochrome";
+  show_n?: boolean;
+  show_grid?: boolean;
+  y_min?: number | null;
+  y_max?: number | null;
+  show_comparison?: boolean;
+  comparison_method?: "parametric" | "nonparametric";
+}
+
+export interface BoxplotPairComparison {
+  group_a: string;
+  group_b: string;
+  p_value: number;
+  significant: boolean;
+}
+
+export interface BoxplotComparisonResult {
+  method: string;
+  omnibus_p_value: number | null;
+  effect_size: number | null;
+  effect_size_label: string | null;
+  pairs: BoxplotPairComparison[];
+  note: string;
+}
+
+export interface BoxplotResult {
+  figure: PlotlyFigure;
+  comparison: BoxplotComparisonResult | null;
 }
 
 export interface HistogramRequest {

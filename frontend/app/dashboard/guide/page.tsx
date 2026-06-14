@@ -216,19 +216,19 @@ const STEPS: Record<
       {
         value: "yes",
         label: "従う",
-        description: "Shapiro-Wilk検定でp≥0.05、またはn≥30で分布が概ね釣り鐘型",
+        description: "分布図・外れ値・研究デザインを確認し、平均値の比較が妥当",
         icon: IconBell,
       },
       {
         value: "no",
         label: "従わない",
-        description: "Shapiro-Wilk検定でp<0.05、または明らかに偏った分布",
+        description: "強い歪み・外れ値がある、または順位・順序尺度を比較したい",
         icon: IconSkewed,
       },
       {
         value: "unknown",
         label: "わからない",
-        description: "確認していない場合はノンパラメトリック検定を推奨します",
+        description: "分布図や解析前提をまだ確認していない",
         icon: IconUnknown,
       },
     ],

@@ -6,13 +6,85 @@ from pydantic import ValidationError
 
 from backend.routers import graph
 from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest
-from backend.services.graph.plotly_charts import barplot_figure
+from backend.services.graph.plotly_charts import barplot_figure, boxplot_figure
 from backend.services.graph.theme import FONT_PRESETS
 
 
 def test_boxplot_requires_two_values_per_group() -> None:
     with pytest.raises(ValidationError, match="データ数が2件未満"):
         BoxplotRequest(groups=[[1], [2, 3]])
+
+
+def test_boxplot_auto_style_shows_individual_values_for_small_groups() -> None:
+    fig = boxplot_figure(BoxplotRequest(groups=[[1, 2, 3], [4, 5, 6]]))
+
+    assert [trace["type"] for trace in fig.data] == ["scatter", "box", "scatter", "box"]
+    assert fig.data[1]["fillcolor"] == "rgba(115,115,115,0.12)"
+    assert fig.layout["yaxis"]["showgrid"] is True
+    assert fig.layout["xaxis"]["ticktext"] == ["群1<br>(n = 3)", "群2<br>(n = 3)"]
+
+
+def test_boxplot_auto_style_shows_individual_values_for_large_groups() -> None:
+    groups = [list(range(50)), list(range(50, 100))]
+    fig = boxplot_figure(BoxplotRequest(groups=groups))
+
+    assert [trace["type"] for trace in fig.data] == ["scatter", "box", "scatter", "box"]
+    assert fig.data[0]["marker"]["size"] == 5
+
+
+def test_boxplot_style_options_are_applied() -> None:
+    request = BoxplotRequest(
+        groups=[[1, 2, 3], [4, 5, 6]],
+        display_style="simple",
+        color_mode="monochrome",
+        show_n=False,
+        show_grid=False,
+        y_min=0,
+        y_max=10,
+    )
+    fig = boxplot_figure(request)
+
+    assert [trace["type"] for trace in fig.data] == ["box", "box"]
+    assert fig.data[0]["fillcolor"] == "rgba(115,115,115,0.12)"
+    assert fig.layout["xaxis"]["ticktext"] == ["群1", "群2"]
+    assert fig.layout["yaxis"]["showgrid"] is False
+    assert fig.layout["yaxis"]["range"] == [0.0, 10.0]
+
+
+def test_boxplot_rejects_invalid_y_axis_range() -> None:
+    with pytest.raises(ValidationError, match="最大値は最小値より大きく"):
+        BoxplotRequest(groups=[[1, 2]], y_min=10, y_max=0)
+
+
+def test_boxplot_two_group_comparison_adds_p_value_annotation() -> None:
+    request = BoxplotRequest(
+        groups=[[1, 2, 3, 4], [10, 11, 12, 13]],
+        group_names=["対照群", "介入群"],
+        show_comparison=True,
+        comparison_method="parametric",
+    )
+    fig = boxplot_figure(request)
+
+    assert len(fig.layout["shapes"]) == 3
+    assert fig.layout["annotations"][0]["text"].startswith("p ")
+
+
+def test_boxplot_multigroup_comparison_uses_adjusted_pairwise_results() -> None:
+    from backend.services.graph.boxplot_comparison import compute_boxplot_comparison
+
+    result = compute_boxplot_comparison(
+        BoxplotRequest(
+            groups=[[1, 2, 3, 4], [10, 11, 12, 13], [20, 21, 22, 23]],
+            group_names=["A", "B", "C"],
+            show_comparison=True,
+            comparison_method="nonparametric",
+        )
+    )
+
+    assert result is not None
+    assert "Kruskal-Wallis" in result.method
+    assert len(result.pairs) == 3
+    assert result.omnibus_p_value is not None
 
 
 def test_graph_request_rejects_non_finite_values() -> None:

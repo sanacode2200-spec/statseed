@@ -1,5 +1,6 @@
 import type {
   BarplotRequest,
+  BoxplotResult,
   BoxplotRequest,
   KaplanMeierRequest,
   CategoricalRequest,
@@ -116,7 +117,7 @@ export const api = {
     post<PlotlyFigure>("/api/graph/barplot", req),
 
   graphBoxplot: (req: BoxplotRequest) =>
-    post<PlotlyFigure>("/api/graph/boxplot", req),
+    post<BoxplotResult>("/api/graph/boxplot", req),
 
   graphHistogram: (req: HistogramRequest) =>
     post<PlotlyFigure>("/api/graph/histogram", req),

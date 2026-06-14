@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const STATS = [
-  { label: "テスト通過", value: "54", sub: "backend/tests/" },
+  { label: "テスト項目", value: "100+", sub: "backend/tests/" },
   { label: "APIエンドポイント", value: "14", sub: "実装済み" },
   { label: "統計検定", value: "9種", sub: "t / ANOVA / χ² …" },
   { label: "グラフ形式", value: "3種", sub: "PNG / SVG / PDF" },

@@ -307,25 +307,48 @@ def _error_bar_value(values: list[float], error_type: str) -> float:
 def boxplot_figure(request: BoxplotRequest) -> PlotlyFigure:
     import random
 
+    from backend.services.graph.boxplot_comparison import (
+        annotated_pairs,
+        compute_boxplot_comparison,
+        p_value_text,
+    )
+    from backend.services.graph.boxplot_style import display_names, effective_display_style
+
     k = len(request.groups)
-    names = request.group_names or [f"群{i + 1}" for i in range(k)]
-    colors = [OKABE_ITO[i % len(OKABE_ITO)] for i in range(k)]
+    raw_names = request.group_names or [f"群{i + 1}" for i in range(k)]
+    names = display_names(request)
+    tick_names = [name.replace("\n", "<br>") for name in names]
+    style = effective_display_style(request)
+    accent_colors = (
+        [OKABE_ITO[i % len(OKABE_ITO)] for i in range(k)]
+        if request.color_mode == "color"
+        else ["#6B7280"] * k
+    )
 
     traces = []
-    for i, (group, name, color) in enumerate(zip(request.groups, names, colors)):
-        traces.append({
-            "type": "box",
-            "y": group,
-            "name": name,
-            "marker": {"color": color, "opacity": 0.8},
-            "line": {"color": color, "width": 1.5},
-            "boxpoints": False,
-            "width": 0.4,
-        })
+    for i, (group, name, color) in enumerate(zip(request.groups, names, accent_colors)):
+        if style == "distribution":
+            traces.append({
+                "type": "violin",
+                "x": [i] * len(group),
+                "y": group,
+                "name": name,
+                "width": 0.72,
+                "fillcolor": _hex_to_rgba(color, 0.14),
+                "line": {"color": _hex_to_rgba(color, 0.7), "width": 0.8},
+                "box": {"visible": False},
+                "meanline": {"visible": False},
+                "points": False,
+                "spanmode": "hard",
+                "hoverinfo": "skip",
+                "showlegend": False,
+            })
 
-        if request.show_jitter:
+        if style == "individual":
             rng = random.Random(i)
-            jitter = [rng.uniform(-0.12, 0.12) for _ in group]
+            jitter = [rng.uniform(-0.18, 0.18) for _ in group]
+            point_size = 6 if len(group) <= 40 else 5 if len(group) <= 100 else 4
+            point_opacity = 0.58 if len(group) <= 40 else 0.42 if len(group) <= 100 else 0.28
             traces.append({
                 "type": "scatter",
                 "x": [i + j for j in jitter],
@@ -335,22 +358,90 @@ def boxplot_figure(request: BoxplotRequest) -> PlotlyFigure:
                 "showlegend": False,
                 "marker": {
                     "color": color,
-                    "size": 5,
-                    "opacity": 0.5,
-                    "line": {"color": "white", "width": 0.5},
+                    "size": point_size,
+                    "opacity": point_opacity,
+                    "line": {"width": 0},
                 },
+                "hovertemplate": "%{y}<extra></extra>",
             })
+
+        traces.append({
+            "type": "box",
+            "x": [i] * len(group),
+            "y": group,
+            "name": name,
+            "fillcolor": "rgba(115,115,115,0.12)",
+            "marker": {"color": "#737373", "size": 5, "opacity": 0.65},
+            "line": {"color": "#373737", "width": 1.4},
+            "boxpoints": "outliers" if style != "individual" else False,
+            "width": 0.30 if style == "distribution" else 0.42,
+            "whiskerwidth": 0.65,
+            "showlegend": False,
+        })
+
+    comparison = compute_boxplot_comparison(request)
+    pairs = sorted(
+        annotated_pairs(comparison),
+        key=lambda pair: abs(raw_names.index(pair.group_b) - raw_names.index(pair.group_a)),
+    )
+    shapes = []
+    annotations = []
+    all_values = [value for group in request.groups for value in group]
+    data_min, data_max = min(all_values), max(all_values)
+    data_span = data_max - data_min or 1.0
+    annotation_step = data_span * 0.075
+    annotation_base = data_max + data_span * 0.06
+    for level, pair in enumerate(pairs):
+        left = raw_names.index(pair.group_a)
+        right = raw_names.index(pair.group_b)
+        y = annotation_base + level * annotation_step
+        cap = data_span * 0.025
+        shapes.extend([
+            {"type": "line", "x0": left, "x1": left, "y0": y - cap, "y1": y, "line": {"color": "#525252", "width": 1}},
+            {"type": "line", "x0": left, "x1": right, "y0": y, "y1": y, "line": {"color": "#525252", "width": 1}},
+            {"type": "line", "x0": right, "x1": right, "y0": y - cap, "y1": y, "line": {"color": "#525252", "width": 1}},
+        ])
+        annotations.append({
+            "text": p_value_text(pair.p_value),
+            "x": (left + right) / 2,
+            "y": y + cap,
+            "showarrow": False,
+            "font": {"size": 10, "color": "#525252"},
+            "yanchor": "bottom",
+        })
+
+    yaxis = dict(
+        _LAYOUT_BASE["yaxis"],
+        title=request.y_label,
+        showgrid=request.show_grid,
+        gridcolor="rgba(128,128,128,0.16)",
+        gridwidth=0.7,
+        zeroline=False,
+    )
+    annotation_top = annotation_base + len(pairs) * annotation_step + data_span * 0.05
+    if request.y_min is not None or request.y_max is not None:
+        yaxis["range"] = [
+            request.y_min,
+            max(request.y_max, annotation_top) if request.y_max is not None and pairs else request.y_max,
+        ]
+    elif pairs:
+        yaxis["range"] = [data_min - data_span * 0.08, annotation_top]
 
     layout = _layout(
         title={"text": request.title, "font": {"size": 13}} if request.title else {},
-        yaxis=dict(_LAYOUT_BASE["yaxis"], title=request.y_label),
+        yaxis=yaxis,
         xaxis=dict(
             _LAYOUT_BASE["xaxis"],
             tickmode="array",
             tickvals=list(range(k)),
-            ticktext=names,
+            ticktext=tick_names,
+            zeroline=False,
         ),
         showlegend=False,
+        violinmode="overlay",
+        boxmode="overlay",
+        shapes=shapes,
+        annotations=annotations,
     )
 
     return PlotlyFigure(data=traces, layout=layout)

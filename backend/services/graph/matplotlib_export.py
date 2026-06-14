@@ -63,42 +63,78 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
 
 
 def _boxplot_fig(req: BoxplotRequest, plt):  # type: ignore[no-untyped-def]
-    import numpy as np
+    from matplotlib.colors import to_rgba
+
+    from backend.services.graph.boxplot_comparison import (
+        annotated_pairs,
+        compute_boxplot_comparison,
+        p_value_text,
+    )
+    from backend.services.graph.boxplot_style import display_names, effective_display_style
 
     k = len(req.groups)
-    names = req.group_names or [f"群{i + 1}" for i in range(k)]
-    colors = [_COLORS[i % len(_COLORS)] for i in range(k)]
+    raw_names = req.group_names or [f"群{i + 1}" for i in range(k)]
+    names = display_names(req)
+    style = effective_display_style(req)
+    accent_colors = (
+        [_COLORS[i % len(_COLORS)] for i in range(k)]
+        if req.color_mode == "color"
+        else ["#6B7280"] * k
+    )
 
     fig, ax = plt.subplots(figsize=(max(3.5, k * 1.4), 4))
+
+    if style == "distribution":
+        violin = ax.violinplot(
+            req.groups,
+            positions=list(range(1, k + 1)),
+            widths=0.72,
+            showmeans=False,
+            showmedians=False,
+            showextrema=False,
+        )
+        for body, color in zip(violin["bodies"], accent_colors):
+            body.set_facecolor(color)
+            body.set_edgecolor(color)
+            body.set_linewidth(0.8)
+            body.set_alpha(0.16)
 
     bp = ax.boxplot(
         req.groups,
         labels=names,
         patch_artist=True,
-        widths=0.35,
-        medianprops={"color": "#373737", "linewidth": 1.5},
-        whiskerprops={"linewidth": 0.8},
-        capprops={"linewidth": 0.8},
-        flierprops={"marker": ""},
+        widths=0.30 if style == "distribution" else 0.42,
+        medianprops={"color": "#373737", "linewidth": 2},
+        whiskerprops={"color": "#373737", "linewidth": 0.9},
+        capprops={"color": "#373737", "linewidth": 0.9},
+        flierprops={
+            "marker": "o",
+            "markersize": 3,
+            "markerfacecolor": "#737373",
+            "markeredgewidth": 0,
+            "alpha": 0.6,
+        },
+        showfliers=style != "individual",
     )
-    for patch, color in zip(bp["boxes"], colors):
-        patch.set_facecolor(color)
-        patch.set_alpha(0.75)
-        patch.set_linewidth(0.8)
+    for patch in bp["boxes"]:
+        patch.set_facecolor(to_rgba("#737373", 0.12))
+        patch.set_edgecolor("#373737")
+        patch.set_linewidth(1.1)
 
-    if req.show_jitter:
+    if style == "individual":
         rng = random.Random(0)
-        for i, (group, color) in enumerate(zip(req.groups, colors)):
-            jitter = [rng.uniform(-0.12, 0.12) for _ in group]
+        for i, (group, color) in enumerate(zip(req.groups, accent_colors)):
+            jitter = [rng.uniform(-0.18, 0.18) for _ in group]
+            point_size = 18 if len(group) <= 40 else 14 if len(group) <= 100 else 10
+            point_alpha = 0.58 if len(group) <= 40 else 0.42 if len(group) <= 100 else 0.28
             ax.scatter(
                 [i + 1 + j for j in jitter],
                 group,
                 color=color,
-                s=18,
-                alpha=0.55,
-                zorder=3,
-                linewidths=0.3,
-                edgecolors="white",
+                s=point_size,
+                alpha=point_alpha,
+                zorder=1,
+                linewidths=0,
             )
 
     ax.set_ylabel(req.y_label or "")
@@ -106,6 +142,33 @@ def _boxplot_fig(req: BoxplotRequest, plt):  # type: ignore[no-untyped-def]
         ax.set_title(req.title)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
+    ax.set_axisbelow(True)
+    ax.yaxis.grid(req.show_grid, color="#D4D4D4", linewidth=0.6, alpha=0.65)
+    pairs = sorted(
+        annotated_pairs(compute_boxplot_comparison(req)),
+        key=lambda pair: abs(raw_names.index(pair.group_b) - raw_names.index(pair.group_a)),
+    )
+    annotation_top = None
+    if pairs:
+        all_values = [value for group in req.groups for value in group]
+        data_min, data_max = min(all_values), max(all_values)
+        data_span = data_max - data_min or 1.0
+        annotation_step = data_span * 0.075
+        annotation_base = data_max + data_span * 0.06
+        cap = data_span * 0.025
+        for level, pair in enumerate(pairs):
+            left = raw_names.index(pair.group_a) + 1
+            right = raw_names.index(pair.group_b) + 1
+            y = annotation_base + level * annotation_step
+            ax.plot([left, left, right, right], [y - cap, y, y, y - cap], color="#525252", linewidth=0.8)
+            ax.text((left + right) / 2, y + cap, p_value_text(pair.p_value), ha="center", va="bottom", fontsize=8, color="#525252")
+        annotation_top = annotation_base + len(pairs) * annotation_step + data_span * 0.05
+
+    if req.y_min is not None or req.y_max is not None:
+        top = max(req.y_max, annotation_top) if req.y_max is not None and annotation_top is not None else req.y_max
+        ax.set_ylim(bottom=req.y_min, top=top)
+    elif annotation_top is not None:
+        ax.set_ylim(data_min - data_span * 0.08, annotation_top)
     return fig
 
 

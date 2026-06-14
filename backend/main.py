@@ -5,6 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from backend.routers import descriptive, graph, guide, table1, test, upload
 
+DEFAULT_CORS_ORIGIN_REGEX = (
+    r"(?:https://.*\.vercel\.app|http://(?:localhost|127\.0\.0\.1)(?::\d+)?)"
+)
+
 enable_docs = os.getenv("STATSEED_ENABLE_DOCS") == "1"
 cors_origins = [
     origin.strip()
@@ -14,9 +18,12 @@ cors_origins = [
     ).split(",")
     if origin.strip()
 ]
-# Vercelのプレビューデプロイはデプロイごとにサブドメインが変わるため、
-# 固定オリジンの一覧に加えて *.vercel.app を正規表現で許可する
-cors_origin_regex = os.getenv("STATSEED_CORS_ORIGIN_REGEX", r"https://.*\.vercel\.app")
+# 開発サーバーは空き状況により3001以降で起動することがある。
+# VercelのプレビューURLとローカルの任意ポートを正規表現で許可する。
+cors_origin_regex = os.getenv(
+    "STATSEED_CORS_ORIGIN_REGEX",
+    DEFAULT_CORS_ORIGIN_REGEX,
+)
 
 app = FastAPI(
     title="Statseed API",

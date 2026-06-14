@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from backend.schemas.graph import (
     BarplotRequest,
     BoxplotRequest,
+    BoxplotResult,
     ExportRequest,
     HistogramRequest,
     KaplanMeierRequest,
@@ -50,9 +51,21 @@ def barplot(request: BarplotRequest) -> PlotlyFigure:
     return barplot_figure(request)
 
 
-@router.post("/boxplot", response_model=PlotlyFigure)
-def boxplot(request: BoxplotRequest) -> PlotlyFigure:
-    return boxplot_figure(request)
+@router.post("/boxplot", response_model=BoxplotResult)
+def boxplot(request: BoxplotRequest) -> BoxplotResult:
+    try:
+        from backend.services.graph.boxplot_comparison import compute_boxplot_comparison
+        return BoxplotResult(
+            figure=boxplot_figure(request),
+            comparison=compute_boxplot_comparison(request),
+        )
+    except ImportError:
+        raise HTTPException(
+            status_code=503,
+            detail="群間差の検定には analysis オプションが必要です（pip install '.[analysis]'）",
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.post("/histogram", response_model=PlotlyFigure)

@@ -11,6 +11,14 @@ class BoxplotRequest(BaseModel):
     title: str = ""
     y_label: str = ""
     show_jitter: bool = True
+    display_style: Literal["auto", "simple", "distribution", "individual"] = "auto"
+    color_mode: Literal["color", "monochrome"] = "color"
+    show_n: bool = True
+    show_grid: bool = True
+    y_min: FiniteFloat | None = None
+    y_max: FiniteFloat | None = None
+    show_comparison: bool = False
+    comparison_method: Literal["parametric", "nonparametric"] = "parametric"
 
     @model_validator(mode="after")
     def check_names(self) -> "BoxplotRequest":
@@ -19,7 +27,30 @@ class BoxplotRequest(BaseModel):
         for i, group in enumerate(self.groups):
             if len(group) < 2:
                 raise ValueError(f"群{i + 1}のデータ数が2件未満です")
+        if self.y_min is not None and self.y_max is not None and self.y_min >= self.y_max:
+            raise ValueError("Y軸の最大値は最小値より大きくしてください")
         return self
+
+
+class BoxplotPairComparison(BaseModel):
+    group_a: str
+    group_b: str
+    p_value: float
+    significant: bool
+
+
+class BoxplotComparisonResult(BaseModel):
+    method: str
+    omnibus_p_value: float | None = None
+    effect_size: float | None = None
+    effect_size_label: str | None = None
+    pairs: list[BoxplotPairComparison]
+    note: str
+
+
+class BoxplotResult(BaseModel):
+    figure: "PlotlyFigure"
+    comparison: BoxplotComparisonResult | None = None
 
 
 class HistogramRequest(BaseModel):

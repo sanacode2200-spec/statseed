@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { ExportRequest, PlotlyFigure, ROCResponse } from "@/lib/types";
+import type { BoxplotComparisonResult, ExportRequest, PlotlyFigure, ROCResponse } from "@/lib/types";
 import { exportRocCsv } from "@/lib/exportCsv";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -56,6 +56,10 @@ function getAspectRatio(chartType: ChartType, figure: PlotlyFigure): number {
   }
 }
 
+function formatGraphP(p: number): string {
+  return p < 0.001 ? "p < 0.001" : `p = ${p.toFixed(3)}`;
+}
+
 export default function GraphPage() {
   const { dataset } = useDataset();
   const [chartType, setChartType] = useState<ChartType>("boxplot");
@@ -92,7 +96,15 @@ export default function GraphPage() {
   const [bpGroupTexts, setBpGroupTexts] = useState(["", ""]);
   const [bpGroupNames, setBpGroupNames] = useState(["群A", "群B"]);
   const [bpYLabel, setBpYLabel] = useState("");
-  const [bpShowJitter, setBpShowJitter] = useState(true);
+  const [bpDisplayStyle, setBpDisplayStyle] = useState<"auto" | "simple" | "distribution" | "individual">("individual");
+  const [bpColorMode, setBpColorMode] = useState<"color" | "monochrome">("color");
+  const [bpShowN, setBpShowN] = useState(true);
+  const [bpShowGrid, setBpShowGrid] = useState(true);
+  const [bpYMin, setBpYMin] = useState("");
+  const [bpYMax, setBpYMax] = useState("");
+  const [bpShowComparison, setBpShowComparison] = useState(false);
+  const [bpComparisonMethod, setBpComparisonMethod] = useState<"parametric" | "nonparametric">("parametric");
+  const [bpComparison, setBpComparison] = useState<BoxplotComparisonResult | null>(null);
 
   // histogram
   const [histText, setHistText] = useState("");
@@ -248,6 +260,7 @@ export default function GraphPage() {
     setError(null);
     setFigure(null);
     setRocStats(null);
+    setBpComparison(null);
     setLoading(true);
 
     const useCsv = inputMode === "csv" && !!dataset;
@@ -325,15 +338,22 @@ export default function GraphPage() {
           if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
           group_names = bpGroupNames;
         }
-        setFigure(
-          await api.graphBoxplot({
+        const result = await api.graphBoxplot({
             groups,
             group_names,
             title,
             y_label: bpYLabel,
-            show_jitter: bpShowJitter,
-          })
-        );
+            display_style: bpDisplayStyle,
+            color_mode: bpColorMode,
+            show_n: bpShowN,
+            show_grid: bpShowGrid,
+            y_min: bpYMin === "" ? null : Number(bpYMin),
+            y_max: bpYMax === "" ? null : Number(bpYMax),
+            show_comparison: bpShowComparison,
+            comparison_method: bpComparisonMethod,
+          });
+        setFigure(result.figure);
+        setBpComparison(result.comparison);
       } else if (chartType === "histogram") {
         let values: number[];
         if (useCsv) {
@@ -427,7 +447,20 @@ export default function GraphPage() {
           groups = bpGroupTexts.map(parseNumbers);
           group_names = bpGroupNames;
         }
-        body.boxplot = { groups, group_names, title, y_label: bpYLabel, show_jitter: bpShowJitter };
+        body.boxplot = {
+          groups,
+          group_names,
+          title,
+          y_label: bpYLabel,
+          display_style: bpDisplayStyle,
+          color_mode: bpColorMode,
+          show_n: bpShowN,
+          show_grid: bpShowGrid,
+          y_min: bpYMin === "" ? null : Number(bpYMin),
+          y_max: bpYMax === "" ? null : Number(bpYMax),
+          show_comparison: bpShowComparison,
+          comparison_method: bpComparisonMethod,
+        };
       } else if (chartType === "histogram") {
         const values = useCsv ? csvHistogramData().values : parseNumbers(histText);
         body.histogram = { values, title, x_label: histXLabel, show_normal_curve: histShowNormal };
@@ -786,15 +819,119 @@ export default function GraphPage() {
                     + 群を追加
                   </button>
                 )}
-                <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={bpShowJitter}
-                    onChange={(e) => setBpShowJitter(e.target.checked)}
-                    className="rounded"
-                  />
-                  jitterプロット表示
-                </label>
+              </div>
+
+              <div className="rounded-lg border border-gray-200 dark:border-neutral-800 p-3 space-y-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[12px] font-medium text-gray-600 dark:text-neutral-400">表示スタイル</span>
+                    <span className="text-[11px] text-gray-400 dark:text-neutral-600">個別値の点サイズはデータ数に合わせて調整されます</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {([
+                      ["individual", "個別値を表示", "箱ひげとすべての測定値"],
+                      ["simple", "箱ひげのみ", "要約された分布だけを表示"],
+                    ] as const).map(([value, label, description]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setBpDisplayStyle(value)}
+                        className={`rounded-md border px-3 py-2 text-left transition-colors ${
+                          bpDisplayStyle === value
+                            ? "border-gray-900 dark:border-neutral-200 bg-gray-50 dark:bg-neutral-900"
+                            : "border-gray-200 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-900"
+                        }`}
+                      >
+                        <span className="block text-[12px] font-medium text-gray-700 dark:text-neutral-300">{label}</span>
+                        <span className="block mt-0.5 text-[10px] text-gray-400 dark:text-neutral-600">{description}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-end gap-4">
+                  <div>
+                    <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">配色</label>
+                    <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
+                      {([["color", "カラー"], ["monochrome", "白黒"]] as const).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setBpColorMode(value)}
+                          className={`px-3 py-1.5 text-[12px] transition-colors ${
+                            bpColorMode === value
+                              ? "bg-gray-900 text-white dark:bg-neutral-100 dark:text-black"
+                              : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-1.5 pb-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+                    <input type="checkbox" checked={bpShowN} onChange={(e) => setBpShowN(e.target.checked)} className="rounded" />
+                    サンプル数を表示
+                  </label>
+                  <label className="flex items-center gap-1.5 pb-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+                    <input type="checkbox" checked={bpShowGrid} onChange={(e) => setBpShowGrid(e.target.checked)} className="rounded" />
+                    補助線を表示
+                  </label>
+                  <div className="flex gap-2">
+                    <div>
+                      <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最小</label>
+                      <input type="number" value={bpYMin} onChange={(e) => setBpYMin(e.target.value)}
+                        className={`${inputCls} w-24`} placeholder="自動" step="any" />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最大</label>
+                      <input type="number" value={bpYMax} onChange={(e) => setBpYMax(e.target.value)}
+                        className={`${inputCls} w-24`} placeholder="自動" step="any" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 dark:border-neutral-800 pt-3">
+                  <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 dark:text-neutral-400 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={bpShowComparison}
+                      onChange={(e) => setBpShowComparison(e.target.checked)}
+                      className="rounded"
+                    />
+                    群間差を検定してp値を表示
+                  </label>
+                  {bpShowComparison && (
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <span className="text-[11px] text-gray-400 dark:text-neutral-600">データの扱い：</span>
+                      <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
+                        {([
+                          ["parametric", "平均値を比較", "Welch / ANOVA + Tukey"],
+                          ["nonparametric", "順位を比較", "Mann–Whitney / Kruskal–Wallis + Dunn-Holm"],
+                        ] as const).map(([value, label, detail]) => (
+                          <button
+                            key={value}
+                            type="button"
+                            title={detail}
+                            onClick={() => setBpComparisonMethod(value)}
+                            className={`px-3 py-1.5 text-[12px] transition-colors ${
+                              bpComparisonMethod === value
+                                ? "bg-gray-900 text-white dark:bg-neutral-100 dark:text-black"
+                                : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      <span className="text-[11px] text-gray-400 dark:text-neutral-600">
+                        {bpComparisonMethod === "parametric"
+                          ? "平均値の差を検定します"
+                          : "外れ値や非正規分布の影響を受けにくい方法です"}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -967,6 +1104,48 @@ export default function GraphPage() {
       {figure && (
         <Card>
           <PlotlyChart figure={figure} aspectRatio={getAspectRatio(chartType, figure)} />
+
+          {bpComparison && (
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <div>
+                  <p className="text-[12px] font-semibold text-gray-600 dark:text-neutral-400">群間比較結果</p>
+                  <p className="text-[11px] text-gray-400 dark:text-neutral-600 mt-0.5">{bpComparison.method}</p>
+                </div>
+                <div className="flex gap-3 text-[11px] text-gray-500 dark:text-neutral-500">
+                  {bpComparison.omnibus_p_value !== null && (
+                    <span>全体: {formatGraphP(bpComparison.omnibus_p_value)}</span>
+                  )}
+                  {bpComparison.effect_size !== null && bpComparison.effect_size_label && (
+                    <span>{bpComparison.effect_size_label} = {bpComparison.effect_size.toFixed(3)}</span>
+                  )}
+                </div>
+              </div>
+              <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-neutral-800">
+                <table className="w-full text-[12px]">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
+                      <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-neutral-500">比較</th>
+                      <th className="px-3 py-2 text-right font-medium text-gray-500 dark:text-neutral-500">p値</th>
+                      <th className="px-3 py-2 text-center font-medium text-gray-500 dark:text-neutral-500">基準との関係</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bpComparison.pairs.map((pair) => (
+                      <tr key={`${pair.group_a}-${pair.group_b}`} className="border-b border-gray-100 dark:border-neutral-900 last:border-0">
+                        <td className="px-3 py-2 text-gray-700 dark:text-neutral-300">{pair.group_a} vs {pair.group_b}</td>
+                        <td className="px-3 py-2 text-right font-mono text-gray-700 dark:text-neutral-300">{formatGraphP(pair.p_value)}</td>
+                        <td className="px-3 py-2 text-center text-gray-500 dark:text-neutral-500">{pair.significant ? "p < 0.05" : "p ≥ 0.05"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-[11px] text-gray-400 dark:text-neutral-600">
+                {bpComparison.note} p値は差の大きさや臨床的重要性を示しません。効果量とデータ分布も確認してください。
+              </p>
+            </div>
+          )}
 
           {/* ROC統計量 */}
           {rocStats && (
