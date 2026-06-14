@@ -8,10 +8,17 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
-import { inputAutoCls as inputCls, textareaCls } from "@/components/ui/formStyles";
+import { inputAutoCls as inputCls } from "@/components/ui/formStyles";
 import { TextCopyBlock } from "@/components/ui/TextCopyBlock";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
 import { type ChartType, getAspectRatio, formatGraphP } from "@/lib/graphConfig";
+import { HistogramPanel } from "@/components/graph/HistogramPanel";
+import { RocPanel } from "@/components/graph/RocPanel";
+import { ScatterPanel } from "@/components/graph/ScatterPanel";
+import { PairedPanel } from "@/components/graph/PairedPanel";
+import { KaplanMeierPanel } from "@/components/graph/KaplanMeierPanel";
+import { BarplotPanel } from "@/components/graph/BarplotPanel";
+import { BoxplotPanel } from "@/components/graph/BoxplotPanel";
 import { AnalysisSampleInfoCard } from "@/components/stats/TestResultCard";
 import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
 import { useDataset } from "@/contexts/DataContext";
@@ -669,533 +676,171 @@ export default function GraphPage() {
 
           {/* カプランマイヤー */}
           {chartType === "kaplan_meier" && (
-            <div className="space-y-3">
-              {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">生存時間の列</label>
-                    <select value={csvKmTimeCol} onChange={(e) => setCsvKmTimeCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvCont.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">イベントの列（1=発生, 0=打ち切り）</label>
-                    <select value={csvKmEventCol} onChange={(e) => setCsvKmEventCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvNumeric.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群ラベルの列（任意）</label>
-                    <select value={csvKmGroupCol} onChange={(e) => setCsvKmGroupCol(e.target.value)} className={`${inputCls} w-full`}>
-                      <option value="">（指定なし）</option>
-                      {csvCat.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                        生存時間（1行1データ）
-                      </label>
-                      <textarea value={kmTimesText} onChange={(e) => setKmTimesText(e.target.value)}
-                        rows={7} className={textareaCls} placeholder={"例：\n12\n18\n24\n30\n6"} />
-                    </div>
-                    <div>
-                      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                        イベント（1=発生, 0=打ち切り）
-                      </label>
-                      <textarea value={kmEventsText} onChange={(e) => setKmEventsText(e.target.value)}
-                        rows={7} className={textareaCls} placeholder={"例：\n1\n0\n1\n1\n0"} />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                      群ラベル（任意・複数群比較）
-                    </label>
-                    <textarea value={kmGroupText} onChange={(e) => setKmGroupText(e.target.value)}
-                      rows={3} className={textareaCls} placeholder={"例：\n治療群\n治療群\n対照群\n対照群\n治療群"} />
-                  </div>
-                </>
-              )}
-              <div className="flex gap-4 flex-wrap">
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
-                  <input type="text" value={kmTimeLabel} onChange={(e) => setKmTimeLabel(e.target.value)}
-                    className={`${inputCls} w-32`} placeholder="時間" />
-                </div>
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
-                  <input type="text" value={kmSurvLabel} onChange={(e) => setKmSurvLabel(e.target.value)}
-                    className={`${inputCls} w-32`} placeholder="生存率" />
-                </div>
-                <div className="flex flex-col gap-1.5 justify-end">
-                  <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
-                    <input type="checkbox" checked={kmShowCi} onChange={(e) => setKmShowCi(e.target.checked)} className="rounded" />
-                    95%CI表示
-                  </label>
-                  <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
-                    <input type="checkbox" checked={kmShowRisk} onChange={(e) => setKmShowRisk(e.target.checked)} className="rounded" />
-                    リスクテーブル表示
-                  </label>
-                </div>
-              </div>
-            </div>
+            <KaplanMeierPanel
+              csvMode={inputMode === "csv" && !!dataset}
+              csvCont={csvCont}
+              csvNumeric={csvNumeric}
+              csvCat={csvCat}
+              csvKmTimeCol={csvKmTimeCol}
+              setCsvKmTimeCol={setCsvKmTimeCol}
+              csvKmEventCol={csvKmEventCol}
+              setCsvKmEventCol={setCsvKmEventCol}
+              csvKmGroupCol={csvKmGroupCol}
+              setCsvKmGroupCol={setCsvKmGroupCol}
+              kmTimesText={kmTimesText}
+              setKmTimesText={setKmTimesText}
+              kmEventsText={kmEventsText}
+              setKmEventsText={setKmEventsText}
+              kmGroupText={kmGroupText}
+              setKmGroupText={setKmGroupText}
+              kmTimeLabel={kmTimeLabel}
+              setKmTimeLabel={setKmTimeLabel}
+              kmSurvLabel={kmSurvLabel}
+              setKmSurvLabel={setKmSurvLabel}
+              kmShowCi={kmShowCi}
+              setKmShowCi={setKmShowCi}
+              kmShowRisk={kmShowRisk}
+              setKmShowRisk={setKmShowRisk}
+            />
           )}
 
           {/* 棒グラフ */}
           {chartType === "barplot" && (
-            <div className="space-y-3">
-              <div className="flex gap-4 flex-wrap">
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
-                  <input type="text" value={barYLabel} onChange={(e) => setBarYLabel(e.target.value)}
-                    className={`${inputCls} w-full sm:w-48`} placeholder="例：握力 (kg)" />
-                </div>
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">エラーバー</label>
-                  <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
-                    {([["sd", "SD"], ["sem", "SEM"], ["ci95", "95%CI"]] as const).map(([val, label]) => (
-                      <button key={val} type="button" onClick={() => setBarErrorType(val)}
-                        className={`px-3 py-1.5 text-[12px] transition-colors ${barErrorType === val
-                          ? "bg-white text-black" : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50"}`}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
-                    <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvCont.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
-                    <select value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvCat.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {barGroupTexts.map((text, i) => (
-                      <div key={i}>
-                        <div className="flex gap-1 mb-1">
-                          <input type="text" value={barGroupNames[i]} onChange={(e) => updateBarName(i, e.target.value)}
-                            className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700" />
-                          {barGroupTexts.length > 2 && (
-                            <button type="button" onClick={() => removeBarGroup(i)}
-                              className="text-[12px] text-red-400 hover:text-red-600">✕</button>
-                          )}
-                        </div>
-                        <textarea value={text} onChange={(e) => updateBarGroup(i, e.target.value)}
-                          rows={5} className={textareaCls} placeholder="1行1データ" />
-                      </div>
-                    ))}
-                  </div>
-                  <button type="button" onClick={addBarGroup}
-                    className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors">
-                    + 群を追加
-                  </button>
-                </>
-              )}
-            </div>
+            <BarplotPanel
+              csvMode={inputMode === "csv" && !!dataset}
+              csvCont={csvCont}
+              csvCat={csvCat}
+              barYLabel={barYLabel}
+              setBarYLabel={setBarYLabel}
+              barErrorType={barErrorType}
+              setBarErrorType={setBarErrorType}
+              csvGroupedValueCol={csvGroupedValueCol}
+              setCsvGroupedValueCol={setCsvGroupedValueCol}
+              csvGroupedGroupCol={csvGroupedGroupCol}
+              setCsvGroupedGroupCol={setCsvGroupedGroupCol}
+              barGroupTexts={barGroupTexts}
+              barGroupNames={barGroupNames}
+              updateBarName={updateBarName}
+              updateBarGroup={updateBarGroup}
+              addBarGroup={addBarGroup}
+              removeBarGroup={removeBarGroup}
+            />
           )}
 
           {/* 箱ひげ図 */}
           {chartType === "boxplot" && (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
-                <input
-                  type="text"
-                  value={bpYLabel}
-                  onChange={(e) => setBpYLabel(e.target.value)}
-                  className={`${inputCls} w-full sm:w-48`}
-                  placeholder="例：握力 (kg)"
-                />
-              </div>
-              {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
-                    <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvCont.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
-                    <select value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvCat.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                  {bpGroupTexts.map((text, i) => (
-                    <div key={i}>
-                      <div className="flex gap-1 mb-1">
-                        <input
-                          type="text"
-                          value={bpGroupNames[i]}
-                          onChange={(e) => updateBpName(i, e.target.value)}
-                          className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
-                        />
-                        {bpGroupTexts.length > 2 && (
-                          <button
-                            type="button"
-                            onClick={() => removeBpGroup(i)}
-                            className="text-[12px] text-red-400 dark:text-red-500 hover:text-red-600"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                      <textarea
-                        value={text}
-                        onChange={(e) => updateBpGroup(i, e.target.value)}
-                        rows={5}
-                        className={textareaCls}
-                        placeholder="1行1データ"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="flex items-center gap-4">
-                {!(inputMode === "csv" && dataset) && (
-                  <button
-                    type="button"
-                    onClick={addBpGroup}
-                    className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
-                  >
-                    + 群を追加
-                  </button>
-                )}
-              </div>
-
-              <div className="rounded-lg border border-gray-200 dark:border-neutral-800 p-3 space-y-3">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[12px] font-medium text-gray-600 dark:text-neutral-400">表示スタイル</span>
-                    <span className="text-[11px] text-gray-400 dark:text-neutral-600">個別値の点サイズはデータ数に合わせて調整されます</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {([
-                      ["individual", "個別値を表示", "箱ひげとすべての測定値"],
-                      ["simple", "箱ひげのみ", "要約された分布だけを表示"],
-                    ] as const).map(([value, label, description]) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setBpDisplayStyle(value)}
-                        className={`rounded-md border px-3 py-2 text-left transition-colors ${
-                          bpDisplayStyle === value
-                            ? "border-gray-900 dark:border-neutral-200 bg-gray-50 dark:bg-neutral-900"
-                            : "border-gray-200 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-900"
-                        }`}
-                      >
-                        <span className="block text-[12px] font-medium text-gray-700 dark:text-neutral-300">{label}</span>
-                        <span className="block mt-0.5 text-[10px] text-gray-400 dark:text-neutral-600">{description}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-end gap-4">
-                  <div>
-                    <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">配色</label>
-                    <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
-                      {([["color", "カラー"], ["monochrome", "白黒"]] as const).map(([value, label]) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => setBpColorMode(value)}
-                          className={`px-3 py-1.5 text-[12px] transition-colors ${
-                            bpColorMode === value
-                              ? "bg-gray-900 text-white dark:bg-neutral-100 dark:text-black"
-                              : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500"
-                          }`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <label className="flex items-center gap-1.5 pb-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
-                    <input type="checkbox" checked={bpShowN} onChange={(e) => setBpShowN(e.target.checked)} className="rounded" />
-                    サンプル数を表示
-                  </label>
-                  <label className="flex items-center gap-1.5 pb-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
-                    <input type="checkbox" checked={bpShowGrid} onChange={(e) => setBpShowGrid(e.target.checked)} className="rounded" />
-                    補助線を表示
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    <div>
-                      <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最小</label>
-                      <input type="number" value={bpYMin} onChange={(e) => setBpYMin(e.target.value)}
-                        className={`${inputCls} w-24`} placeholder="自動" step="any" />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最大</label>
-                      <input type="number" value={bpYMax} onChange={(e) => setBpYMax(e.target.value)}
-                        className={`${inputCls} w-24`} placeholder="自動" step="any" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 dark:border-neutral-800 pt-3">
-                  <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 dark:text-neutral-400 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={bpShowComparison}
-                      onChange={(e) => setBpShowComparison(e.target.checked)}
-                      className="rounded"
-                    />
-                    群間差を検定してp値を表示
-                  </label>
-                  {bpShowComparison && (
-                    <div className="mt-2 flex flex-wrap items-center gap-3">
-                      <span className="text-[11px] text-gray-400 dark:text-neutral-600">データの扱い：</span>
-                      <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
-                        {([
-                          ["parametric", "平均値を比較", "Welch / ANOVA + Tukey"],
-                          ["nonparametric", "順位を比較", "Mann–Whitney / Kruskal–Wallis + Dunn-Holm"],
-                        ] as const).map(([value, label, detail]) => (
-                          <button
-                            key={value}
-                            type="button"
-                            title={detail}
-                            onClick={() => setBpComparisonMethod(value)}
-                            className={`px-3 py-1.5 text-[12px] transition-colors ${
-                              bpComparisonMethod === value
-                                ? "bg-gray-900 text-white dark:bg-neutral-100 dark:text-black"
-                                : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500"
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                      <span className="text-[11px] text-gray-400 dark:text-neutral-600">
-                        {bpComparisonMethod === "parametric"
-                          ? "平均値の差を検定します"
-                          : "外れ値や非正規分布の影響を受けにくい方法です"}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <BoxplotPanel
+              csvMode={inputMode === "csv" && !!dataset}
+              csvCont={csvCont}
+              csvCat={csvCat}
+              bpYLabel={bpYLabel}
+              setBpYLabel={setBpYLabel}
+              csvGroupedValueCol={csvGroupedValueCol}
+              setCsvGroupedValueCol={setCsvGroupedValueCol}
+              csvGroupedGroupCol={csvGroupedGroupCol}
+              setCsvGroupedGroupCol={setCsvGroupedGroupCol}
+              bpGroupTexts={bpGroupTexts}
+              bpGroupNames={bpGroupNames}
+              updateBpName={updateBpName}
+              updateBpGroup={updateBpGroup}
+              addBpGroup={addBpGroup}
+              removeBpGroup={removeBpGroup}
+              bpDisplayStyle={bpDisplayStyle}
+              setBpDisplayStyle={setBpDisplayStyle}
+              bpColorMode={bpColorMode}
+              setBpColorMode={setBpColorMode}
+              bpShowN={bpShowN}
+              setBpShowN={setBpShowN}
+              bpShowGrid={bpShowGrid}
+              setBpShowGrid={setBpShowGrid}
+              bpYMin={bpYMin}
+              setBpYMin={setBpYMin}
+              bpYMax={bpYMax}
+              setBpYMax={setBpYMax}
+              bpShowComparison={bpShowComparison}
+              setBpShowComparison={setBpShowComparison}
+              bpComparisonMethod={bpComparisonMethod}
+              setBpComparisonMethod={setBpComparisonMethod}
+            />
           )}
 
           {/* ヒストグラム */}
           {chartType === "histogram" && (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
-                <input
-                  type="text"
-                  value={histXLabel}
-                  onChange={(e) => setHistXLabel(e.target.value)}
-                  className={`${inputCls} w-full sm:w-48`}
-                  placeholder="例：年齢 (歳)"
-                />
-              </div>
-              {inputMode === "csv" && dataset ? (
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データの列</label>
-                  <select value={csvHistCol} onChange={(e) => setCsvHistCol(e.target.value)} className={`${inputCls} w-full`}>
-                    {csvCont.map((c) => (
-                      <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                    ))}
-                  </select>
-                </div>
-              ) : (
-                <div>
-                  <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
-                  <textarea
-                    value={histText}
-                    onChange={(e) => setHistText(e.target.value)}
-                    rows={7}
-                    className={textareaCls}
-                    placeholder="1行1データ（またはスペース/カンマ区切り）"
-                  />
-                </div>
-              )}
-              <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={histShowNormal}
-                  onChange={(e) => setHistShowNormal(e.target.checked)}
-                  className="rounded"
-                />
-                正規分布曲線を重ねる
-              </label>
-            </div>
+            <HistogramPanel
+              csvMode={inputMode === "csv" && !!dataset}
+              csvCont={csvCont}
+              histXLabel={histXLabel}
+              setHistXLabel={setHistXLabel}
+              csvHistCol={csvHistCol}
+              setCsvHistCol={setCsvHistCol}
+              histText={histText}
+              setHistText={setHistText}
+              histShowNormal={histShowNormal}
+              setHistShowNormal={setHistShowNormal}
+            />
           )}
 
           {/* ROC曲線 */}
           {chartType === "roc" && (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">スコアラベル</label>
-                <input type="text" value={rocScoreLabel} onChange={(e) => setRocScoreLabel(e.target.value)}
-                  className={`${inputCls} w-full sm:w-48`} placeholder="例：診断スコア" />
-              </div>
-              {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">診断スコアの列</label>
-                    <select value={csvRocScoreCol} onChange={(e) => setCsvRocScoreCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvCont.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">正解ラベルの列（1=陽性, 0=陰性）</label>
-                    <select value={csvRocLabelCol} onChange={(e) => setCsvRocLabelCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvNumeric.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                      診断スコア（1行1データ）
-                    </label>
-                    <textarea value={rocScoresText} onChange={(e) => setRocScoresText(e.target.value)}
-                      rows={7} className={textareaCls} placeholder={"例：\n0.9\n0.8\n0.4\n0.2\n0.1"} />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
-                      正解ラベル（1=陽性, 0=陰性）
-                    </label>
-                    <textarea value={rocLabelsText} onChange={(e) => setRocLabelsText(e.target.value)}
-                      rows={7} className={textareaCls} placeholder={"例：\n1\n1\n0\n0\n0"} />
-                  </div>
-                </div>
-              )}
-            </div>
+            <RocPanel
+              csvMode={inputMode === "csv" && !!dataset}
+              csvCont={csvCont}
+              csvNumeric={csvNumeric}
+              rocScoreLabel={rocScoreLabel}
+              setRocScoreLabel={setRocScoreLabel}
+              csvRocScoreCol={csvRocScoreCol}
+              setCsvRocScoreCol={setCsvRocScoreCol}
+              csvRocLabelCol={csvRocLabelCol}
+              setCsvRocLabelCol={setCsvRocLabelCol}
+              rocScoresText={rocScoresText}
+              setRocScoresText={setRocScoresText}
+              rocLabelsText={rocLabelsText}
+              setRocLabelsText={setRocLabelsText}
+            />
           )}
 
           {/* 散布図 */}
           {chartType === "scatter" && (
-            <div className="space-y-3">
-              {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸の列</label>
-                    <select value={csvScatterXCol} onChange={(e) => setCsvScatterXCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
-                      {csvCont.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                    <input type="text" value={scXLabel} onChange={(e) => setScXLabel(e.target.value)}
-                      placeholder="X軸ラベル" className={`${inputCls} w-full`} />
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸の列</label>
-                    <select value={csvScatterYCol} onChange={(e) => setCsvScatterYCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
-                      {csvCont.map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
-                      ))}
-                    </select>
-                    <input type="text" value={scYLabel} onChange={(e) => setScYLabel(e.target.value)}
-                      placeholder="Y軸ラベル" className={`${inputCls} w-full`} />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {[
-                    { label: "X", name: scXLabel, setName: setScXLabel, text: scXText, setText: setScXText },
-                    { label: "Y", name: scYLabel, setName: setScYLabel, text: scYText, setText: setScYText },
-                  ].map(({ label, name, setName, text, setText }) => (
-                    <div key={label}>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder={`${label}軸ラベル`}
-                        className={`${inputCls} w-full mb-1.5`}
-                      />
-                      <textarea
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        rows={6}
-                        className={textareaCls}
-                        placeholder="1行1データ"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-              <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={scShowReg}
-                  onChange={(e) => setScShowReg(e.target.checked)}
-                  className="rounded"
-                />
-                回帰直線を表示
-              </label>
-            </div>
+            <ScatterPanel
+              csvMode={inputMode === "csv" && !!dataset}
+              csvCont={csvCont}
+              csvScatterXCol={csvScatterXCol}
+              setCsvScatterXCol={setCsvScatterXCol}
+              csvScatterYCol={csvScatterYCol}
+              setCsvScatterYCol={setCsvScatterYCol}
+              scXLabel={scXLabel}
+              setScXLabel={setScXLabel}
+              scYLabel={scYLabel}
+              setScYLabel={setScYLabel}
+              scXText={scXText}
+              setScXText={setScXText}
+              scYText={scYText}
+              setScYText={setScYText}
+              scShowReg={scShowReg}
+              setScShowReg={setScShowReg}
+            />
           )}
 
           {/* 対応あり個別値プロット */}
           {chartType === "paired" && (
-            <div className="space-y-3">
-              {inputMode === "csv" && dataset ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入前・1時点目</label>
-                    <select value={csvPairedBeforeCol} onChange={(e) => { setCsvPairedBeforeCol(e.target.value); setPairedBeforeLabel(e.target.value); }} className={`${inputCls} w-full`}>
-                      {csvCont.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入後・2時点目</label>
-                    <select value={csvPairedAfterCol} onChange={(e) => { setCsvPairedAfterCol(e.target.value); setPairedAfterLabel(e.target.value); }} className={`${inputCls} w-full`}>
-                      {csvCont.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
-                    </select>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <textarea value={pairedBeforeText} onChange={(e) => setPairedBeforeText(e.target.value)} rows={6} className={textareaCls} placeholder="介入前（1行1データ）" />
-                  <textarea value={pairedAfterText} onChange={(e) => setPairedAfterText(e.target.value)} rows={6} className={textareaCls} placeholder="介入後（1行1データ）" />
-                </div>
-              )}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <input value={pairedBeforeLabel} onChange={(e) => setPairedBeforeLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="前ラベル" />
-                <input value={pairedAfterLabel} onChange={(e) => setPairedAfterLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="後ラベル" />
-                <input value={pairedYLabel} onChange={(e) => setPairedYLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="Y軸ラベル" />
-              </div>
-            </div>
+            <PairedPanel
+              csvMode={inputMode === "csv" && !!dataset}
+              csvCont={csvCont}
+              csvPairedBeforeCol={csvPairedBeforeCol}
+              setCsvPairedBeforeCol={setCsvPairedBeforeCol}
+              csvPairedAfterCol={csvPairedAfterCol}
+              setCsvPairedAfterCol={setCsvPairedAfterCol}
+              pairedBeforeText={pairedBeforeText}
+              setPairedBeforeText={setPairedBeforeText}
+              pairedAfterText={pairedAfterText}
+              setPairedAfterText={setPairedAfterText}
+              pairedBeforeLabel={pairedBeforeLabel}
+              setPairedBeforeLabel={setPairedBeforeLabel}
+              pairedAfterLabel={pairedAfterLabel}
+              setPairedAfterLabel={setPairedAfterLabel}
+              pairedYLabel={pairedYLabel}
+              setPairedYLabel={setPairedYLabel}
+            />
           )}
 
           <Button type="submit" loading={loading}>
