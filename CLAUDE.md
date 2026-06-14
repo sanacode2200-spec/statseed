@@ -22,9 +22,9 @@ Frontend   Next.js 14 (App Router) + TypeScript + Tailwind CSS
 Backend    FastAPI (Python 3.11+)
 計算       標準ライブラリ優先 + scipy · statsmodels · pandas · numpy（必要時のみ）
 グラフ     Plotly（画面表示） + matplotlib / seaborn（論文用出力・必要時のみ）
-DB         PostgreSQL (Supabase)
-認証       Supabase Auth
-インフラ   Vercel (Frontend) + Railway (Backend)
+DB         未接続（将来候補: PostgreSQL / Supabase）
+認証       未接続（Supabase Auth用ログインUIのみ実装済み）
+インフラ   Vercel (Frontend) + Docker対応バックエンド
 フォント   LINESeed JP（ローカル読み込み、woff2）
 ```
 
@@ -92,7 +92,8 @@ statseed/
 │       ├── types.ts           # 型定義（バックエンドスキーマと対応）
 │       ├── parse.ts           # テキスト入力パース（数値・カテゴリ・行列）
 │       ├── dataStore.ts       # データセットのsessionStorage / 明示的localStorage保存
-│       └── dataUtils.ts       # 列抽出・グループ分割などCSVデータ変換ユーティリティ
+│       ├── dataUtils.ts       # 列抽出・グループ分割などCSVデータ変換ユーティリティ
+│       └── graphHandoff.ts    # 検定結果からグラフ画面へ設定を引き継ぐ
 │
 ├── backend/                   # FastAPI
 │   ├── main.py
@@ -124,7 +125,7 @@ statseed/
 │   │   ├── table1.py          # Table1Variable（discriminated union）
 │   │   ├── upload.py
 │   │   └── guide.py
-│   └── tests/                 # 計算検証テスト（105本）
+│   └── tests/                 # 計算・API契約検証テスト（126本）
 │
 ├── pyproject.toml
 └── CLAUDE.md                  # このファイル
@@ -210,6 +211,11 @@ UIはプリセット選択 + カスタム入力の2段構え。
 - 有意差はブラケット + p値表示
 - 棒グラフ+エラーバーは使わない（情報量が少ない）
 
+**対応あり個別値プロット**
+- 各対象の前後値を線で結ぶ
+- 平均変化量（後 − 前）を明記する
+- 欠損ペアはペア単位で除外数を表示する
+
 **カプランマイヤー曲線**
 - 打ち切りマーク（+）を必ず表示
 - リスクテーブルを曲線直下に配置
@@ -226,6 +232,8 @@ UIはプリセット選択 + カスタム入力の2段構え。
 - PNG 300dpi（学会発表・Word貼り付け）
 - SVG ベクター（Illustratorで後編集可能）
 - PDF フォント埋め込み（欧文誌投稿標準）
+- 論文1段組 / 論文2段組 / 16:9スライドの実寸プリセット
+- PNG / SVG の最終出力プレビュー
 
 ---
 
@@ -249,13 +257,15 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 
 ---
 
-## Phase 1 MVP 機能リスト（完了）
+## 実装状況
 
 ### データ入力
 - [x] CSV インポート
 - [x] Excel (.xlsx) インポート
-- [x] データプレビュー・変数型の確認
+- [x] データプレビュー・変数役割（ID / 連続 / 順序 / カテゴリ / 日付 / 除外）の確認・上書き
 - [x] 欠損値の検出と表示
+- [x] 氏名・患者ID・生年月日・住所・連絡先等の個人識別情報候補警告
+- [x] 標準はタブ内保存、端末への永続保存は明示的オプトイン
 
 ### 記述統計
 - [x] 連続変数: 平均・SD・中央値・IQR・最小・最大・95%CI
@@ -268,31 +278,40 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] 3群以上: 一元配置ANOVA / Kruskal-Wallis検定
 - [x] 比率比較: χ²検定（Yates補正） / Fisher正確検定
 - [x] 相関: Pearson（95%CI付き） / Spearman
-- [x] **検定選択ガイド** — 5ステップウィザードで最適な検定を提案
+- [x] **検定選択ガイド** — 研究目的・推定対象・対応関係・分布を確認して検定を提案
+- [x] CSV解析結果へ元データ数・使用数・除外数・除外理由を表示
+- [x] Welch検定・対応t検定へ推定値と95%CIを表示
 
 ### グラフ
 - [x] ヒストグラム（正規分布曲線オーバーレイ）
 - [x] 箱ひげ図（jitterプロット付き）
 - [x] 散布図（回帰直線付き）
+- [x] 対応あり個別値プロット
 - [x] PNG 300dpi / SVG / PDF 出力
 - [x] フォントプリセット切り替えUI（論文標準 / 日本語対応 / ポスター / カスタム）
+- [x] 論文1段組 / 論文2段組 / 16:9スライド出力プリセット
+- [x] 最終出力プレビュー
+- [x] 図注・方法文の自動生成とコピー
+- [x] 検定結果から設定済みグラフ作成へ引き継ぎ
+- [x] CSVグラフへ描画使用数・除外数・除外理由を表示
 
----
+### 研究ワークフロー・追加機能
 
-## Phase 2 実装状況
-
-### 完了済み
 - [x] **Table 1 自動生成** — 連続変数（mean±SD / median(IQR)）+ カテゴリ変数（n(%)）、群比較p値付き、TSVコピー対応
+- [x] Table 1 の変数別欠損数・群分け列の除外数表示
 - [x] **多重比較（事後検定）** — Tukey HSD / Bonferroni / Holm（パラメトリック）/ Dunn + Holm（ノンパラメトリック）
 - [x] **棒グラフ** — エラーバー付き（SD / SEM / 95%CI 切り替え）
 - [x] **カプランマイヤー曲線** — 打ち切りマーク・95%CIバンド・リスクテーブル・ログランク検定p値
 - [x] **ROC曲線** — AUC + 95%CI（Hanley & McNeil 1982）・最適カットオフ（Youden指数）・感度/特異度表示
-- [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・グラフ（全6種）・Table 1 の各ページで「CSVから選択」⇄「手入力」を切り替え可能に。コピペで行き来する手間を解消（`frontend/contexts/DataContext.tsx` / `frontend/lib/dataStore.ts` / `frontend/lib/dataUtils.ts`）
+- [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・グラフ（全7種）・Table 1 の各ページで「CSVから選択」⇄「手入力」を切り替え可能
 
-### 残候補
+## 次の開発候補
+
 - [ ] Supabase Auth 認証（ログインページ UI は完成済み、Auth 接続が未実装）
-- [ ] データ保存（セッション管理・サーバー側永続化）
-- [ ] CSV エクスポート（解析結果）
+- [ ] 分析履歴・再実行可能な設定JSON・解析パッケージ出力
+- [ ] Table 1 のp値初期オフ化・standardized mean difference
+- [ ] 回帰分析・共変量調整・反復測定・一般化線形モデル
+- [ ] アクセシビリティ監査・主要ワークフローE2Eテスト
 
 ---
 
@@ -317,6 +336,7 @@ POST /api/test/correlation     # Pearson / Spearman 相関
 POST /api/graph/boxplot        # 箱ひげ図（Plotly JSON）
 POST /api/graph/histogram      # ヒストグラム（Plotly JSON）
 POST /api/graph/scatter        # 散布図（Plotly JSON）
+POST /api/graph/paired         # 対応あり個別値プロット（Plotly JSON）
 POST /api/graph/barplot        # 棒グラフ（Plotly JSON、SD/SEM/95%CIエラーバー）
 POST /api/graph/kaplan-meier   # カプランマイヤー曲線（Plotly JSON）
 POST /api/graph/roc            # ROC曲線（Plotly JSON + AUC統計量）
@@ -338,10 +358,12 @@ POST /api/table1               # Table 1 生成
 
 1. **日本語を優先** — エラーメッセージ・結果解釈・UIテキストはすべて日本語
 2. **グラフは妥協しない** — デザイン仕様から逸脱しない。テーマファイルを必ず使う
-3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証（現在105テスト）
+3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証（現在126テスト）
 4. **型安全** — TypeScript / Pydantic を徹底する
 5. **コメディカル視点** — 医療統計初学者が迷わない設計を常に意識する
 6. **高速起動を維持** — 本番ランタイムで不要な依存・不要なimport・不要なAPIドキュメント生成を避ける
+7. **誤解析を防ぐ** — 変数役割、解析使用数、欠損除外理由、推定対象を結果と一緒に示す
+8. **データ保護を既定値にする** — アップロードデータは標準でタブ内のみ保持し、端末保存は明示的な選択時だけ許可する
 
 ## ローカル開発
 
