@@ -2,25 +2,28 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import type { BoxplotComparisonResult, ExportRequest, PlotlyFigure, ROCResponse } from "@/lib/types";
+import type { AnalysisSampleInfo, BoxplotComparisonResult, ExportRequest, PlotlyFigure, ROCResponse } from "@/lib/types";
 import { exportRocCsv } from "@/lib/exportCsv";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { PlotlyChart } from "@/components/charts/PlotlyChart";
+import { AnalysisSampleInfoCard } from "@/components/stats/TestResultCard";
 import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
 import { useDataset } from "@/contexts/DataContext";
+import { takeGraphHandoff } from "@/lib/graphHandoff";
 import {
   alignRocColumns,
   alignSurvivalColumns,
   categoricalColumns,
   continuousColumns,
   findColumn,
+  numericAnalysisColumns,
   pairColumns,
   splitByGroup,
 } from "@/lib/dataUtils";
 
-type ChartType = "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier" | "roc";
+type ChartType = "boxplot" | "histogram" | "scatter" | "paired" | "barplot" | "kaplan_meier" | "roc";
 type FontPreset = "論文標準" | "日本語対応" | "ポスター" | "カスタム";
 type InputMode = "csv" | "manual";
 
@@ -45,6 +48,8 @@ function getAspectRatio(chartType: ChartType, figure: PlotlyFigure): number {
       return 5 / 4;
     case "scatter":
       return 4.5 / 4;
+    case "paired":
+      return 1;
     case "kaplan_meier": {
       const marginB = (figure.layout as { margin?: { b?: number } })?.margin?.b ?? 60;
       return marginB >= 80 ? 5 / 5.5 : 5 / 4.5;
@@ -60,6 +65,21 @@ function formatGraphP(p: number): string {
   return p < 0.001 ? "p < 0.001" : `p = ${p.toFixed(3)}`;
 }
 
+function TextCopyBlock({ title, text }: { title: string; text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[12px] font-semibold text-gray-600 dark:text-neutral-400">{title}</p>
+        <button type="button" onClick={() => navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1200); })} className="text-[11px] text-gray-500 hover:underline">
+          {copied ? "コピー済み" : "コピー"}
+        </button>
+      </div>
+      <p className="text-[12px] leading-relaxed text-gray-600 dark:text-neutral-400">{text}</p>
+    </div>
+  );
+}
+
 export default function GraphPage() {
   const { dataset } = useDataset();
   const [chartType, setChartType] = useState<ChartType>("boxplot");
@@ -68,9 +88,12 @@ export default function GraphPage() {
   // CSV列選択（チャート種別ごと）
   const [csvGroupedValueCol, setCsvGroupedValueCol] = useState("");
   const [csvGroupedGroupCol, setCsvGroupedGroupCol] = useState("");
+  const [includedGroups, setIncludedGroups] = useState<string[] | null>(null);
   const [csvHistCol, setCsvHistCol] = useState("");
   const [csvScatterXCol, setCsvScatterXCol] = useState("");
   const [csvScatterYCol, setCsvScatterYCol] = useState("");
+  const [csvPairedBeforeCol, setCsvPairedBeforeCol] = useState("");
+  const [csvPairedAfterCol, setCsvPairedAfterCol] = useState("");
   const [csvKmTimeCol, setCsvKmTimeCol] = useState("");
   const [csvKmEventCol, setCsvKmEventCol] = useState("");
   const [csvKmGroupCol, setCsvKmGroupCol] = useState("");
@@ -117,6 +140,11 @@ export default function GraphPage() {
   const [scXLabel, setScXLabel] = useState("X");
   const [scYLabel, setScYLabel] = useState("Y");
   const [scShowReg, setScShowReg] = useState(true);
+  const [pairedBeforeText, setPairedBeforeText] = useState("");
+  const [pairedAfterText, setPairedAfterText] = useState("");
+  const [pairedBeforeLabel, setPairedBeforeLabel] = useState("介入前");
+  const [pairedAfterLabel, setPairedAfterLabel] = useState("介入後");
+  const [pairedYLabel, setPairedYLabel] = useState("");
 
   // roc
   const [rocScoresText, setRocScoresText] = useState("");
@@ -130,8 +158,13 @@ export default function GraphPage() {
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sampleInfo, setSampleInfo] = useState<AnalysisSampleInfo | null>(null);
   const [exportFormat, setExportFormat] = useState<"png" | "svg" | "pdf">("png");
   const [exportTransparent, setExportTransparent] = useState(true);
+  const [outputPreset, setOutputPreset] = useState<"single" | "double" | "slide">("single");
+  const [exportPreviewUrl, setExportPreviewUrl] = useState<string | null>(null);
+  const [methodText, setMethodText] = useState("");
+  const [captionText, setCaptionText] = useState("");
 
   // font preset
   const [fontPreset, setFontPreset] = useState<FontPreset>("論文標準");
@@ -140,11 +173,36 @@ export default function GraphPage() {
 
   const csvCont = dataset ? continuousColumns(dataset.columns) : [];
   const csvCat = dataset ? categoricalColumns(dataset.columns) : [];
+  const csvNumeric = dataset ? numericAnalysisColumns(dataset.columns) : [];
 
   // データ読み込み済みなら自動的にCSVモードへ
   useEffect(() => {
     if (dataset) setInputMode("csv");
   }, [dataset]);
+
+  useEffect(() => {
+    const handoff = takeGraphHandoff();
+    if (!handoff) return;
+    setChartType(handoff.chart_type);
+    setTitle(handoff.title ?? "");
+    setMethodText(handoff.method_text ?? "");
+    setCaptionText(handoff.caption_text ?? "");
+    if (handoff.chart_type === "boxplot") {
+      setCsvGroupedValueCol(handoff.value_column ?? "");
+      setCsvGroupedGroupCol(handoff.group_column ?? "");
+      setIncludedGroups(handoff.included_groups ?? null);
+      setBpShowComparison(true);
+      setBpComparisonMethod(handoff.comparison_method ?? "parametric");
+    } else if (handoff.chart_type === "paired") {
+      setCsvPairedBeforeCol(handoff.before_column ?? "");
+      setCsvPairedAfterCol(handoff.after_column ?? "");
+      setPairedBeforeLabel(handoff.before_column ?? "介入前");
+      setPairedAfterLabel(handoff.after_column ?? "介入後");
+    } else {
+      setCsvScatterXCol(handoff.x_column ?? "");
+      setCsvScatterYCol(handoff.y_column ?? "");
+    }
+  }, []);
 
   // モード・グラフ種別切替時、選択中の列が無効なら選び直す
   useEffect(() => {
@@ -159,13 +217,16 @@ export default function GraphPage() {
     } else if (chartType === "scatter") {
       if (!csvCont.some((c) => c.name === csvScatterXCol)) setCsvScatterXCol(firstCont);
       if (!csvCont.some((c) => c.name === csvScatterYCol)) setCsvScatterYCol(csvCont[1]?.name ?? firstCont);
+    } else if (chartType === "paired") {
+      if (!csvCont.some((c) => c.name === csvPairedBeforeCol)) setCsvPairedBeforeCol(firstCont);
+      if (!csvCont.some((c) => c.name === csvPairedAfterCol)) setCsvPairedAfterCol(csvCont[1]?.name ?? firstCont);
     } else if (chartType === "kaplan_meier") {
       if (!csvCont.some((c) => c.name === csvKmTimeCol)) setCsvKmTimeCol(firstCont);
-      if (!csvCont.some((c) => c.name === csvKmEventCol)) setCsvKmEventCol(csvCont[1]?.name ?? firstCont);
+      if (!csvNumeric.some((c) => c.name === csvKmEventCol)) setCsvKmEventCol(csvNumeric[0]?.name ?? "");
       if (csvKmGroupCol && !csvCat.some((c) => c.name === csvKmGroupCol)) setCsvKmGroupCol("");
     } else if (chartType === "roc") {
       if (!csvCont.some((c) => c.name === csvRocScoreCol)) setCsvRocScoreCol(firstCont);
-      if (!csvCont.some((c) => c.name === csvRocLabelCol)) setCsvRocLabelCol(csvCont[1]?.name ?? firstCont);
+      if (!csvNumeric.some((c) => c.name === csvRocLabelCol)) setCsvRocLabelCol(csvNumeric[0]?.name ?? "");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dataset, inputMode, chartType]);
@@ -208,9 +269,12 @@ export default function GraphPage() {
     const groupCol = findColumn(dataset.columns, csvGroupedGroupCol);
     if (!valueCol || !groupCol) throw new Error("列を選択してください。");
     const { groupNames, groups } = splitByGroup(valueCol, groupCol);
-    if (groups.length < 2) throw new Error("2群以上のデータが必要です。");
-    if (groups.some((g) => g.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
-    return { groups, groupNames };
+    const filtered = includedGroups
+      ? groupNames.map((name, index) => ({ name, group: groups[index] })).filter(({ name }) => includedGroups.includes(name))
+      : groupNames.map((name, index) => ({ name, group: groups[index] }));
+    if (filtered.length < 2) throw new Error("2群以上のデータが必要です。");
+    if (filtered.some(({ group }) => group.length < 2)) throw new Error("各群に2件以上のデータが必要です。");
+    return { groups: filtered.map(({ group }) => group), groupNames: filtered.map(({ name }) => name) };
   }
 
   function csvHistogramData() {
@@ -230,6 +294,16 @@ export default function GraphPage() {
     const { a: x, b: y } = pairColumns(xCol, yCol);
     if (x.length < 3) throw new Error("3件以上のデータが必要です。");
     return { x, y };
+  }
+
+  function csvPairedData() {
+    if (!dataset) throw new Error("データが読み込まれていません。");
+    const beforeCol = findColumn(dataset.columns, csvPairedBeforeCol);
+    const afterCol = findColumn(dataset.columns, csvPairedAfterCol);
+    if (!beforeCol || !afterCol) throw new Error("列を選択してください。");
+    const { a: before, b: after } = pairColumns(beforeCol, afterCol);
+    if (before.length < 2) throw new Error("2件以上のペアが必要です。");
+    return { before, after };
   }
 
   function csvKmData() {
@@ -261,6 +335,7 @@ export default function GraphPage() {
     setFigure(null);
     setRocStats(null);
     setBpComparison(null);
+    setSampleInfo(null);
     setLoading(true);
 
     const useCsv = inputMode === "csv" && !!dataset;
@@ -282,6 +357,7 @@ export default function GraphPage() {
         const result = await api.graphRoc({ scores, labels, title, score_label: rocScoreLabel });
         setFigure(result.figure);
         setRocStats(result.stats);
+        if (useCsv) setSampleInfo(csvSampleInfo(scores.length, "スコアまたは正解ラベルが欠損した行"));
       } else if (chartType === "kaplan_meier") {
         let times: number[];
         let events: number[];
@@ -309,6 +385,7 @@ export default function GraphPage() {
             show_risk_table: kmShowRisk,
           })
         );
+        if (useCsv) setSampleInfo(csvSampleInfo(times.length, "生存時間、イベント、または指定した群が欠損した行"));
       } else if (chartType === "barplot") {
         let groups: number[][];
         let group_names: string[];
@@ -328,6 +405,7 @@ export default function GraphPage() {
             error_type: barErrorType,
           })
         );
+        if (useCsv) setSampleInfo(csvSampleInfo(groups.reduce((sum, group) => sum + group.length, 0), "値または群が欠損した行"));
       } else if (chartType === "boxplot") {
         let groups: number[][];
         let group_names: string[];
@@ -354,6 +432,7 @@ export default function GraphPage() {
           });
         setFigure(result.figure);
         setBpComparison(result.comparison);
+        if (useCsv) setSampleInfo(csvSampleInfo(groups.reduce((sum, group) => sum + group.length, 0), "値または群が欠損した行"));
       } else if (chartType === "histogram") {
         let values: number[];
         if (useCsv) {
@@ -370,6 +449,21 @@ export default function GraphPage() {
             show_normal_curve: histShowNormal,
           })
         );
+        if (useCsv) setSampleInfo(csvSampleInfo(values.length, "選択した値が欠損した行"));
+      } else if (chartType === "paired") {
+        let before: number[];
+        let after: number[];
+        if (useCsv) {
+          ({ before, after } = csvPairedData());
+        } else {
+          before = parseNumbers(pairedBeforeText);
+          after = parseNumbers(pairedAfterText);
+          if (before.length < 2 || before.length !== after.length) throw new Error("同数のペアを2件以上入力してください。");
+        }
+        setFigure(await api.graphPaired({
+          before, after, before_label: pairedBeforeLabel, after_label: pairedAfterLabel, title, y_label: pairedYLabel,
+        }));
+        if (useCsv) setSampleInfo(csvSampleInfo(before.length, "前後のいずれかが欠損したペア"));
       } else {
         let x: number[];
         let y: number[];
@@ -391,7 +485,10 @@ export default function GraphPage() {
             show_regression: scShowReg,
           })
         );
+        if (useCsv) setSampleInfo(csvSampleInfo(x.length, "X・Yのいずれかが欠損した行（完全ケース）"));
       }
+      if (!captionText) setCaptionText(`${title || CHART_OPTIONS.find((option) => option.value === chartType)?.label || "グラフ"}。個別値または解析対象データを表示した。`);
+      if (!methodText) setMethodText(`Statseedを用いて${CHART_OPTIONS.find((option) => option.value === chartType)?.label || "グラフ"}を作成した。欠損値は利用する変数の完全ケースで除外した。`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "グラフ生成に失敗しました。");
     } finally {
@@ -399,7 +496,17 @@ export default function GraphPage() {
     }
   }
 
-  async function handleExport() {
+  function csvSampleInfo(used: number, exclusionReason: string): AnalysisSampleInfo {
+    const total = dataset?.n_rows ?? used;
+    return {
+      total,
+      used,
+      excluded: total - used,
+      exclusion_reason: exclusionReason,
+    };
+  }
+
+  async function handleExport(download = true) {
     setExporting(true);
     const useCsv = inputMode === "csv" && !!dataset;
     try {
@@ -413,6 +520,11 @@ export default function GraphPage() {
           fontPreset === "カスタム" && customSize
             ? parseInt(customSize, 10) || null
             : null,
+        ...({
+          single: { width_inches: 3.5, height_inches: 3.2 },
+          double: { width_inches: 7.2, height_inches: 4.5 },
+          slide: { width_inches: 10, height_inches: 5.625 },
+        }[outputPreset]),
       };
       if (chartType === "kaplan_meier") {
         let times: number[];
@@ -478,6 +590,15 @@ export default function GraphPage() {
           if (labels.some((l) => l !== 0 && l !== 1)) throw new Error("ラベルは 0（陰性）または 1（陽性）を入力してください。");
         }
         body.roc = { scores, labels, title, score_label: rocScoreLabel };
+      } else if (chartType === "paired") {
+        let before: number[];
+        let after: number[];
+        if (useCsv) ({ before, after } = csvPairedData());
+        else {
+          before = parseNumbers(pairedBeforeText);
+          after = parseNumbers(pairedAfterText);
+        }
+        body.paired = { before, after, before_label: pairedBeforeLabel, after_label: pairedAfterLabel, title, y_label: pairedYLabel };
       } else {
         let x: number[];
         let y: number[];
@@ -498,11 +619,14 @@ export default function GraphPage() {
       if (!res.ok) throw new Error("エクスポートに失敗しました。");
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `statseed_graph.${exportFormat}`;
-      a.click();
-      URL.revokeObjectURL(url);
+      if (exportPreviewUrl) URL.revokeObjectURL(exportPreviewUrl);
+      setExportPreviewUrl(url);
+      if (download) {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `statseed_graph.${exportFormat}`;
+        a.click();
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "エクスポートに失敗しました。");
     } finally {
@@ -517,6 +641,7 @@ export default function GraphPage() {
     { value: "boxplot", label: "箱ひげ図" },
     { value: "histogram", label: "ヒストグラム" },
     { value: "scatter", label: "散布図" },
+    { value: "paired", label: "対応ありプロット" },
   ];
 
   const toggleBtn = (active: boolean) =>
@@ -559,6 +684,14 @@ export default function GraphPage() {
               ))}
             </div>
           </div>
+
+          {/* タイトル */}
+          {includedGroups && (chartType === "boxplot" || chartType === "barplot") && (
+            <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 px-3 py-2 text-[12px] text-gray-500 dark:text-neutral-500">
+              検定結果から引き継いだ群: {includedGroups.join(" / ")}
+              <button type="button" onClick={() => setIncludedGroups(null)} className="ml-3 hover:underline">全群を使用</button>
+            </div>
+          )}
 
           {/* タイトル */}
           <div>
@@ -610,7 +743,7 @@ export default function GraphPage() {
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">イベントの列（1=発生, 0=打ち切り）</label>
                     <select value={csvKmEventCol} onChange={(e) => setCsvKmEventCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvCont.map((c) => (
+                      {csvNumeric.map((c) => (
                         <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
                       ))}
                     </select>
@@ -1003,7 +1136,7 @@ export default function GraphPage() {
                   <div>
                     <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">正解ラベルの列（1=陽性, 0=陰性）</label>
                     <select value={csvRocLabelCol} onChange={(e) => setCsvRocLabelCol(e.target.value)} className={`${inputCls} w-full`}>
-                      {csvCont.map((c) => (
+                      {csvNumeric.map((c) => (
                         <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
                       ))}
                     </select>
@@ -1093,6 +1226,38 @@ export default function GraphPage() {
             </div>
           )}
 
+          {/* 対応あり個別値プロット */}
+          {chartType === "paired" && (
+            <div className="space-y-3">
+              {inputMode === "csv" && dataset ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入前・1時点目</label>
+                    <select value={csvPairedBeforeCol} onChange={(e) => { setCsvPairedBeforeCol(e.target.value); setPairedBeforeLabel(e.target.value); }} className={`${inputCls} w-full`}>
+                      {csvCont.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入後・2時点目</label>
+                    <select value={csvPairedAfterCol} onChange={(e) => { setCsvPairedAfterCol(e.target.value); setPairedAfterLabel(e.target.value); }} className={`${inputCls} w-full`}>
+                      {csvCont.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <textarea value={pairedBeforeText} onChange={(e) => setPairedBeforeText(e.target.value)} rows={6} className={textareaCls} placeholder="介入前（1行1データ）" />
+                  <textarea value={pairedAfterText} onChange={(e) => setPairedAfterText(e.target.value)} rows={6} className={textareaCls} placeholder="介入後（1行1データ）" />
+                </div>
+              )}
+              <div className="grid grid-cols-3 gap-3">
+                <input value={pairedBeforeLabel} onChange={(e) => setPairedBeforeLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="前ラベル" />
+                <input value={pairedAfterLabel} onChange={(e) => setPairedAfterLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="後ラベル" />
+                <input value={pairedYLabel} onChange={(e) => setPairedYLabel(e.target.value)} className={`${inputCls} w-full`} placeholder="Y軸ラベル" />
+              </div>
+            </div>
+          )}
+
           <Button type="submit" loading={loading}>
             グラフを描画
           </Button>
@@ -1103,6 +1268,7 @@ export default function GraphPage() {
 
       {figure && (
         <Card>
+          {sampleInfo && <div className="mb-4"><AnalysisSampleInfoCard info={sampleInfo} /></div>}
           <PlotlyChart figure={figure} aspectRatio={getAspectRatio(chartType, figure)} />
 
           {bpComparison && (
@@ -1191,6 +1357,13 @@ export default function GraphPage() {
             </div>
           )}
 
+          {(captionText || methodText) && (
+            <div className="mt-4 grid gap-3 border-t border-gray-100 dark:border-neutral-800 pt-4 md:grid-cols-2">
+              <TextCopyBlock title="図注" text={captionText || `${title || "図"}。個別値と解析対象数を示した。`} />
+              <TextCopyBlock title="方法文" text={methodText || "Statseedを用いて解析および作図を行った。"} />
+            </div>
+          )}
+
           {/* エクスポート */}
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-3">
             {/* フォントプリセット */}
@@ -1253,6 +1426,27 @@ export default function GraphPage() {
             </div>
 
             {/* フォーマット & ダウンロード */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">用途：</span>
+              {([
+                ["single", "論文1段組"],
+                ["double", "論文2段組"],
+                ["slide", "16:9スライド"],
+              ] as const).map(([value, label]) => (
+                <button key={value} type="button" onClick={() => setOutputPreset(value)} className={toggleBtn(outputPreset === value)}>
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {exportPreviewUrl && exportFormat !== "pdf" && (
+              <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-white p-3">
+                <p className="mb-2 text-[11px] text-gray-500">最終出力プレビュー</p>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={exportPreviewUrl} alt="最終出力プレビュー" className="mx-auto max-h-[420px] max-w-full" />
+              </div>
+            )}
+
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">形式：</span>
               {(["png", "svg", "pdf"] as const).map((fmt) => (
@@ -1268,9 +1462,16 @@ export default function GraphPage() {
               ))}
               <Button
                 variant="secondary"
-                onClick={handleExport}
+                onClick={() => handleExport(false)}
                 loading={exporting}
                 className="ml-1"
+              >
+                最終出力をプレビュー
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => handleExport(true)}
+                loading={exporting}
               >
                 ダウンロード
               </Button>

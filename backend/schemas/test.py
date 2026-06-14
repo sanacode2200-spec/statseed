@@ -117,6 +117,8 @@ class TestResult(BaseModel):
     effect_size_label: str | None = None
     ci95_low: float | None = None
     ci95_high: float | None = None
+    estimate: float | None = None
+    estimate_label: str | None = None
     interpretation: str
 
 

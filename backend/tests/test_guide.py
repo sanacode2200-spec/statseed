@@ -70,3 +70,16 @@ def test_unknown_normal_defaults_to_nonparametric() -> None:
     req = GuideRequest(purpose="compare", data_type="continuous", n_groups=2, paired=False, normal="unknown")
     res = suggest(req)
     assert res.suggestions[0].endpoint == "/api/test/mannwhitney"
+
+
+def test_mean_estimand_prioritizes_welch_when_normality_unknown() -> None:
+    req = GuideRequest(
+        purpose="compare",
+        data_type="continuous",
+        n_groups=2,
+        paired=False,
+        normal="unknown",
+        estimand="mean",
+    )
+    res = suggest(req)
+    assert res.suggestions[0].endpoint == "/api/test/ttest"

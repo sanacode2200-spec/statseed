@@ -9,6 +9,7 @@ class GuideRequest(BaseModel):
     n_groups: Literal[2, 3] = 2
     paired: bool = False
     normal: Literal["yes", "no", "unknown"] = "unknown"
+    estimand: Literal["mean", "distribution"] | None = None
 
 
 class SuggestedTest(BaseModel):

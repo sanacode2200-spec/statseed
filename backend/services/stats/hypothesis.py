@@ -76,6 +76,8 @@ def run_ttest_ind(request: TwoGroupRequest) -> TestResult:
         effect_size_label="Cohen's d",
         ci95_low=ci_low,
         ci95_high=ci_high,
+        estimate=diff,
+        estimate_label=f"平均値差（{request.group_a_name} − {request.group_b_name}）",
         interpretation=interpretation,
     )
 
@@ -161,7 +163,7 @@ def _r_label(r: float) -> str:
 def run_ttest_paired(request: PairedRequest) -> TestResult:
     from scipy import stats
 
-    diffs = [b - a for b, a in zip(request.before, request.after)]
+    diffs = [before - after for before, after in zip(request.before, request.after)]
     if not _has_variance(diffs):
         raise ValueError("データのばらつきがないため、この検定は計算できません")
 
@@ -194,6 +196,8 @@ def run_ttest_paired(request: PairedRequest) -> TestResult:
         effect_size_label="Cohen's d",
         ci95_low=ci_low,
         ci95_high=ci_high,
+        estimate=mean_diff,
+        estimate_label="平均差（介入前 − 介入後）",
         interpretation=interpretation,
     )
 

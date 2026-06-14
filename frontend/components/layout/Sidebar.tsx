@@ -33,7 +33,7 @@ const NAV_GROUPS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { dataset } = useDataset();
+  const { dataset, storageMode, clearDataset } = useDataset();
   const [dark, setDark] = useState(false);
 
   useEffect(() => {
@@ -90,19 +90,34 @@ export function Sidebar() {
 
       {/* 読み込み中データ */}
       {dataset && (
-        <Link
-          href="/dashboard/data"
+        <div
           className="mx-3 mt-2 flex items-center gap-1.5 px-2 py-1.5 rounded-md
             bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800
-            text-[11px] hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
+            text-[11px]"
           title={dataset.filename}
         >
           <span className="text-emerald-500 dark:text-emerald-400 shrink-0">
             <DotIcon />
           </span>
-          <span className="truncate text-gray-600 dark:text-neutral-400">{dataset.filename}</span>
-          <span className="ml-auto shrink-0 text-gray-400 dark:text-neutral-600">{dataset.n_rows}行</span>
-        </Link>
+          <Link href="/dashboard/data" className="min-w-0 flex-1 truncate text-gray-600 dark:text-neutral-400 hover:underline">
+            {dataset.filename}
+          </Link>
+          <span
+            className="shrink-0 text-gray-400 dark:text-neutral-600"
+            title={storageMode === "persistent" ? "この端末に保存中" : "このタブ内だけに保存中"}
+          >
+            {storageMode === "persistent" ? "端末保存" : "タブ内"}
+          </span>
+          <button
+            type="button"
+            onClick={clearDataset}
+            className="shrink-0 text-gray-400 dark:text-neutral-600 hover:text-red-500 dark:hover:text-red-400"
+            title="データを今すぐ削除"
+            aria-label="データを今すぐ削除"
+          >
+            ×
+          </button>
+        </div>
       )}
 
       {/* ナビゲーション */}

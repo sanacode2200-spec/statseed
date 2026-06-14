@@ -50,6 +50,8 @@ class Table1Row(BaseModel):
     groups: dict[str, str] | None = None
     p_value: str | None = None
     test_name: str | None = None
+    missing: int = 0
+    missing_by_group: dict[str, int] | None = None
 
 
 class Table1Result(BaseModel):
@@ -57,3 +59,4 @@ class Table1Result(BaseModel):
     group_names: list[str] | None = None
     n_overall: int
     n_by_group: dict[str, int] | None = None
+    group_missing: int = 0

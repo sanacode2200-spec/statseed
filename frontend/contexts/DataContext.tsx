@@ -2,11 +2,18 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import type { UploadResponse } from "@/lib/types";
-import { clearDataset, loadDataset, saveDataset } from "@/lib/dataStore";
+import {
+  clearDataset,
+  loadDataset,
+  saveDataset,
+  type DatasetStorageMode,
+} from "@/lib/dataStore";
 
 interface DataContextValue {
   dataset: UploadResponse | null;
-  setDataset: (data: UploadResponse) => void;
+  storageMode: DatasetStorageMode;
+  setDataset: (data: UploadResponse, mode?: DatasetStorageMode) => void;
+  setStorageMode: (mode: DatasetStorageMode) => void;
   clearDataset: () => void;
 }
 
@@ -14,23 +21,33 @@ const DataContext = createContext<DataContextValue | null>(null);
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const [dataset, setDatasetState] = useState<UploadResponse | null>(null);
+  const [storageMode, setStorageModeState] = useState<DatasetStorageMode>("session");
 
   useEffect(() => {
-    setDatasetState(loadDataset());
+    const stored = loadDataset();
+    setDatasetState(stored.dataset);
+    setStorageModeState(stored.mode);
   }, []);
 
-  function setDataset(data: UploadResponse) {
+  function setDataset(data: UploadResponse, mode = storageMode) {
     setDatasetState(data);
-    saveDataset(data);
+    setStorageModeState(mode);
+    saveDataset(data, mode);
+  }
+
+  function setStorageMode(mode: DatasetStorageMode) {
+    setStorageModeState(mode);
+    if (dataset) saveDataset(dataset, mode);
   }
 
   function clear() {
     setDatasetState(null);
+    setStorageModeState("session");
     clearDataset();
   }
 
   return (
-    <DataContext.Provider value={{ dataset, setDataset, clearDataset: clear }}>
+    <DataContext.Provider value={{ dataset, storageMode, setDataset, setStorageMode, clearDataset: clear }}>
       {children}
     </DataContext.Provider>
   );

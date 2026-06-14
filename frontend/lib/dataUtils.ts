@@ -1,11 +1,29 @@
-import type { ColumnInfo } from "./types";
+import type { ColumnInfo, ColumnRole } from "./types";
+
+export function columnRole(column: ColumnInfo): ColumnRole {
+  return column.role ?? column.dtype;
+}
 
 export function continuousColumns(columns: ColumnInfo[]): ColumnInfo[] {
-  return columns.filter((c) => c.dtype === "continuous");
+  return columns.filter((c) => columnRole(c) === "continuous" && c.values.length > 0);
 }
 
 export function categoricalColumns(columns: ColumnInfo[]): ColumnInfo[] {
-  return columns.filter((c) => c.dtype === "categorical");
+  return columns.filter((c) => {
+    const role = columnRole(c);
+    return role === "categorical" || role === "ordinal";
+  });
+}
+
+export function analysisColumns(columns: ColumnInfo[]): ColumnInfo[] {
+  return columns.filter((c) => {
+    const role = columnRole(c);
+    return role === "continuous" || role === "categorical" || role === "ordinal";
+  });
+}
+
+export function numericAnalysisColumns(columns: ColumnInfo[]): ColumnInfo[] {
+  return analysisColumns(columns).filter((c) => c.values.length > 0);
 }
 
 export function findColumn(columns: ColumnInfo[], name: string): ColumnInfo | undefined {

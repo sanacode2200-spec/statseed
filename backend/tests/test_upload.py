@@ -42,6 +42,8 @@ def test_parse_csv_column_types() -> None:
 
     assert age_col.dtype == "continuous"
     assert group_col.dtype == "categorical"
+    assert age_col.role == "continuous"
+    assert group_col.role == "categorical"
 
 
 def test_parse_csv_missing_detection() -> None:
@@ -69,11 +71,41 @@ def test_parse_csv_numeric_conversion_failure_counts_as_missing() -> None:
     assert column.values == [1.0, 2.0, None, 4.0, 5.0]
 
 
-def test_parse_csv_categorical_has_empty_values() -> None:
+def test_parse_csv_keeps_categorical_values_for_all_columns() -> None:
     result = parse_csv(_CSV, "test.csv")
 
+    age_col = next(c for c in result.columns if c.name == "age")
     group_col = next(c for c in result.columns if c.name == "group")
+    assert age_col.cat_values == ["20", "22", "24", "26", "28"]
     assert group_col.values == []
+    assert group_col.cat_values == ["A", "B", "A", "B", "A"]
+
+
+def test_parse_csv_suggests_id_and_ordinal_roles() -> None:
+    result = parse_csv(
+        b"patient_id,stage,outcome\n1,1,0\n2,2,1\n3,3,1\n4,2,0\n5,1,1\n",
+        "roles.csv",
+    )
+
+    roles = {column.name: column.role for column in result.columns}
+    assert roles == {"patient_id": "id", "stage": "ordinal", "outcome": "categorical"}
+
+
+def test_parse_csv_detects_privacy_risks() -> None:
+    result = parse_csv(
+        "患者氏名,生年月日,連絡先,score\n"
+        "田中太郎,1980-01-01,tanaka@example.com,10\n"
+        "佐藤花子,1990-02-03,sato@example.com,20\n".encode(),
+        "privacy.csv",
+    )
+
+    risks = {column.name: column.privacy_risk for column in result.columns}
+    assert risks == {
+        "患者氏名": "direct_identifier",
+        "生年月日": "birth_date",
+        "連絡先": "contact",
+        "score": None,
+    }
 
 
 def test_parse_csv_preview_rows() -> None:

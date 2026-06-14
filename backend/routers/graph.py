@@ -10,6 +10,7 @@ from backend.schemas.graph import (
     ExportRequest,
     HistogramRequest,
     KaplanMeierRequest,
+    PairedPlotRequest,
     PlotlyFigure,
     ROCRequest,
     ROCResponse,
@@ -22,6 +23,7 @@ from backend.services.graph.plotly_charts import (
     km_figure,
     roc_figure,
     scatter_figure,
+    paired_figure,
 )
 
 
@@ -76,6 +78,11 @@ def histogram(request: HistogramRequest) -> PlotlyFigure:
 @router.post("/scatter", response_model=PlotlyFigure)
 def scatter(request: ScatterRequest) -> PlotlyFigure:
     return scatter_figure(request)
+
+
+@router.post("/paired", response_model=PlotlyFigure)
+def paired(request: PairedPlotRequest) -> PlotlyFigure:
+    return paired_figure(request)
 
 
 @router.post("/export")

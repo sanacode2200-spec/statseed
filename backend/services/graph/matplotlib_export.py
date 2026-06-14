@@ -3,7 +3,7 @@ import math
 import random
 import statistics
 
-from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, KaplanMeierRequest, ROCRequest, ScatterRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, KaplanMeierRequest, PairedPlotRequest, ROCRequest, ScatterRequest
 from backend.services.graph.theme import FONT_FALLBACK_CHAIN, FONT_PRESETS, OKABE_ITO, STATSEED_THEME
 
 _COLORS = list(OKABE_ITO.values())[:4]
@@ -52,9 +52,13 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
         fig = _km_fig(request.kaplan_meier, plt)
     elif request.chart_type == "roc" and request.roc:
         fig = _roc_fig(request.roc, plt)
+    elif request.chart_type == "paired" and request.paired:
+        fig = _paired_fig(request.paired, plt)
     else:
         fig = _scatter_fig(request.scatter, plt)  # type: ignore[arg-type]
 
+    if request.width_inches and request.height_inches:
+        fig.set_size_inches(float(request.width_inches), float(request.height_inches))
     buf = io.BytesIO()
     fig.savefig(buf, format=fmt, bbox_inches="tight", transparent=request.transparent)
     plt.close(fig)
@@ -369,6 +373,22 @@ def _scatter_fig(req: ScatterRequest, plt):  # type: ignore[no-untyped-def]
         ax.set_title(req.title)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
+    return fig
+
+
+def _paired_fig(req: PairedPlotRequest, plt):  # type: ignore[no-untyped-def]
+    fig, ax = plt.subplots(figsize=(4, 4))
+    for before, after in zip(req.before, req.after):
+        ax.plot([0, 1], [before, after], color="#737373", alpha=0.35, linewidth=0.8, marker="o", markersize=4)
+    ax.set_xticks([0, 1])
+    ax.set_xticklabels([req.before_label, req.after_label])
+    ax.set_ylabel(req.y_label)
+    if req.title:
+        ax.set_title(req.title)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    mean_diff = statistics.fmean(after - before for before, after in zip(req.before, req.after))
+    ax.text(0.98, 0.98, f"平均変化量 = {mean_diff:.3g}", transform=ax.transAxes, ha="right", va="top", fontsize=8)
     return fig
 
 

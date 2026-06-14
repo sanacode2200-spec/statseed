@@ -50,6 +50,7 @@ def test_continuous_with_missing_values() -> None:
     )
     result = build_table1(req)
     assert "165.0" in result.rows[0].overall
+    assert result.rows[0].missing == 1
 
 
 def test_single_categorical_no_group() -> None:
@@ -107,6 +108,16 @@ def test_mixed_variables() -> None:
     assert result.group_names == ["A", "B"]
     assert result.n_by_group == {"A": 2, "B": 2}
     assert len(result.rows) >= 2
+
+
+def test_group_missing_is_reported() -> None:
+    req = _req(
+        variables=[{"name": "年齢", "type": "continuous", "values": [20.0, None, 40.0]}],
+        group_values=["A", None, "B"],
+    )
+    result = build_table1(req)
+    assert result.group_missing == 1
+    assert result.rows[0].missing == 1
 
 
 def test_p_value_format_less_than_001() -> None:

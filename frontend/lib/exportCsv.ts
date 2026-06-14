@@ -125,16 +125,16 @@ export function exportPosthocCsv(result: PosthocResult) {
 
 export function exportTable1Csv(result: Table1Result) {
   const cols = result.group_names
-    ? ["変数", "全体", ...result.group_names, "p値", "検定"]
-    : ["変数", "全体"];
+    ? ["変数", "全体", "欠損", ...result.group_names, "p値", "検定"]
+    : ["変数", "全体", "欠損"];
 
   const headerN = result.group_names
-    ? ["", `n = ${result.n_overall}`, ...result.group_names.map((g) => `n = ${result.n_by_group?.[g] ?? ""}`), "", ""]
-    : ["", `n = ${result.n_overall}`];
+    ? ["", `n = ${result.n_overall}`, "", ...result.group_names.map((g) => `n = ${result.n_by_group?.[g] ?? ""}`), "", ""]
+    : ["", `n = ${result.n_overall}`, ""];
 
   const dataRows = result.rows.map((r) => {
     const label = r.indent ? `  ${r.variable}` : r.variable;
-    const cells: (string | null)[] = [label, r.overall];
+    const cells: (string | null)[] = [label, r.overall, r.indent ? "" : String(r.missing)];
     if (result.group_names) {
       for (const g of result.group_names) cells.push(r.groups?.[g] ?? "");
       cells.push(r.indent ? "" : (r.p_value ?? ""));

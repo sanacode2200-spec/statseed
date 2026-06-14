@@ -126,6 +126,7 @@ function IconUnknown() {
 type Step =
   | "purpose"
   | "data_type"
+  | "estimand"
   | "n_groups"
   | "paired"
   | "normal"
@@ -176,6 +177,23 @@ const STEPS: Record<
       },
     ],
   },
+  estimand: {
+    question: "主に何の違いを知りたいですか？",
+    choices: [
+      {
+        value: "mean",
+        label: "平均値の差",
+        description: "平均的にどれくらい違うかを、差と95%信頼区間で示したい",
+        icon: IconScale,
+      },
+      {
+        value: "distribution",
+        label: "順位・分布の違い",
+        description: "順序尺度、強い歪み、外れ値を考慮して群の位置を比べたい",
+        icon: IconSkewed,
+      },
+    ],
+  },
   n_groups: {
     question: "比較する群の数はいくつですか？",
     choices: [
@@ -211,24 +229,24 @@ const STEPS: Record<
     ],
   },
   normal: {
-    question: "データは正規分布に従いますか？",
+    question: "分布と外れ値を確認しましたか？",
     choices: [
       {
         value: "yes",
-        label: "従う",
-        description: "分布図・外れ値・研究デザインを確認し、平均値の比較が妥当",
+        label: "大きな問題はない",
+        description: "個別値・分布・外れ値を確認し、選んだ推定対象に大きな問題がない",
         icon: IconBell,
       },
       {
         value: "no",
-        label: "従わない",
-        description: "強い歪み・外れ値がある、または順位・順序尺度を比較したい",
+        label: "強い歪み・外れ値がある",
+        description: "結果が一部の値に強く左右される可能性がある",
         icon: IconSkewed,
       },
       {
         value: "unknown",
         label: "わからない",
-        description: "分布図や解析前提をまだ確認していない",
+        description: "個別値プロットや分布をまだ確認していない",
         icon: IconUnknown,
       },
     ],
@@ -243,6 +261,7 @@ interface Answers {
   n_groups?: 2 | 3;
   paired?: boolean;
   normal?: "yes" | "no" | "unknown";
+  estimand?: "mean" | "distribution";
 }
 
 function nextStep(step: Step, answers: Answers): Step {
@@ -252,8 +271,9 @@ function nextStep(step: Step, answers: Answers): Step {
   }
   if (step === "data_type") {
     if (answers.data_type === "categorical") return "result";
-    return "n_groups";
+    return "estimand";
   }
+  if (step === "estimand") return "n_groups";
   if (step === "n_groups") {
     if (answers.n_groups === 3) return "normal";
     return "paired";
@@ -329,6 +349,7 @@ export default function GuidePage() {
 
     if (step === "purpose") next.purpose = value as Answers["purpose"];
     else if (step === "data_type") next.data_type = value as Answers["data_type"];
+    else if (step === "estimand") next.estimand = value as Answers["estimand"];
     else if (step === "n_groups") next.n_groups = Number(value) as 2 | 3;
     else if (step === "paired") next.paired = value === "true";
     else if (step === "normal") next.normal = value as Answers["normal"];
@@ -349,6 +370,7 @@ export default function GuidePage() {
           n_groups: next.n_groups ?? 2,
           paired: next.paired ?? false,
           normal: next.normal ?? "unknown",
+          estimand: next.estimand,
         };
         setResult(await api.guideSuggest(req));
       } catch (err) {
@@ -379,7 +401,7 @@ export default function GuidePage() {
   }
 
   const stepConfig = step !== "result" ? STEPS[step] : null;
-  const totalSteps = 5;
+  const totalSteps = 6;
   const currentIndex = history.length + 1;
 
   return (
@@ -465,6 +487,9 @@ export default function GuidePage() {
             <>
               <Card>
                 <p className="text-[13px] text-gray-600 dark:text-neutral-400 leading-relaxed">{result.summary}</p>
+                <p className="mt-3 border-t border-gray-200 dark:border-neutral-800 pt-3 text-[12px] text-gray-500 dark:text-neutral-500">
+                  提案は正規性検定の合否だけで決めず、研究目的、個別値、外れ値、分散、欠損、対応関係を確認して使用してください。
+                </p>
               </Card>
               {result.suggestions.map((s) => (
                 <SuggestionCard key={s.test_name} s={s} />

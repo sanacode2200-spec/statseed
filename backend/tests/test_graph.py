@@ -5,8 +5,8 @@ from fastapi import HTTPException
 from pydantic import ValidationError
 
 from backend.routers import graph
-from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest
-from backend.services.graph.plotly_charts import barplot_figure, boxplot_figure
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, ExportRequest, HistogramRequest, PairedPlotRequest
+from backend.services.graph.plotly_charts import barplot_figure, boxplot_figure, paired_figure
 from backend.services.graph.theme import FONT_PRESETS
 
 
@@ -120,6 +120,26 @@ def test_barplot_figure_ci95() -> None:
 def test_barplot_requires_two_values_per_group() -> None:
     with pytest.raises(ValidationError, match="データ数が2件未満"):
         BarplotRequest(groups=[[1.0]])
+
+
+def test_paired_plot_connects_each_pair() -> None:
+    fig = paired_figure(PairedPlotRequest(before=[1, 2, 3], after=[2, 4, 6]))
+    assert len(fig.data) == 3
+    assert fig.data[0]["mode"] == "lines+markers"
+
+
+def test_paired_plot_can_be_exported() -> None:
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    data, mime = export_bytes(ExportRequest(
+        chart_type="paired",
+        format="png",
+        width_inches=3.5,
+        height_inches=3.2,
+        paired=PairedPlotRequest(before=[1, 2, 3], after=[2, 4, 6]),
+    ))
+    assert mime == "image/png"
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
 
 
 def test_export_returns_503_when_graph_dependency_is_missing(monkeypatch) -> None:

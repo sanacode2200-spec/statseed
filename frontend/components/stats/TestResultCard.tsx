@@ -1,4 +1,4 @@
-import type { CorrelationResult, TestResult } from "@/lib/types";
+import type { AnalysisSampleInfo, CorrelationResult, TestResult } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 
 function fmt(v: number | null, digits = 3): string {
@@ -20,9 +20,38 @@ function pBadge(p: number) {
   );
 }
 
+export function AnalysisSampleInfoCard({ info }: { info: AnalysisSampleInfo }) {
+  return (
+    <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 px-4 py-3">
+      <div className="grid grid-cols-3 gap-3 text-[12px]">
+        <div>
+          <p className="text-gray-400 dark:text-neutral-600">元データ</p>
+          <p className="mt-0.5 font-mono text-gray-800 dark:text-neutral-200">{info.total} 件</p>
+        </div>
+        <div>
+          <p className="text-gray-400 dark:text-neutral-600">解析使用</p>
+          <p className="mt-0.5 font-mono text-gray-800 dark:text-neutral-200">{info.used} 件</p>
+        </div>
+        <div>
+          <p className="text-gray-400 dark:text-neutral-600">除外</p>
+          <p className={`mt-0.5 font-mono ${info.excluded > 0 ? "text-orange-600 dark:text-orange-400" : "text-gray-800 dark:text-neutral-200"}`}>
+            {info.excluded} 件
+          </p>
+        </div>
+      </div>
+      <p className="mt-2 border-t border-gray-200 dark:border-neutral-800 pt-2 text-[11px] text-gray-500 dark:text-neutral-500">
+        除外理由: {info.exclusion_reason}
+      </p>
+    </div>
+  );
+}
+
 export function TestResultCard({ result }: { result: TestResult }) {
   const rows: [string, string][] = [
     ["検定統計量", result.statistic !== null ? fmt(result.statistic) : "—"],
+    ...(result.estimate !== null && result.estimate !== undefined && result.estimate_label
+      ? [[result.estimate_label, fmt(result.estimate)] as [string, string]]
+      : []),
     ...(result.effect_size !== null && result.effect_size_label
       ? [[result.effect_size_label, fmt(result.effect_size)] as [string, string]]
       : []),

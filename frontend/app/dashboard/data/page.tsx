@@ -3,24 +3,22 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import type { ColumnInfo, UploadResponse } from "@/lib/types";
+import type { ColumnRole, UploadResponse } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { useDataset } from "@/contexts/DataContext";
+import { columnRole } from "@/lib/dataUtils";
 
 const ACCEPT = ".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
-function ColTypeBadge({ dtype }: { dtype: ColumnInfo["dtype"] }) {
-  return dtype === "continuous" ? (
-    <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium bg-blue-50 dark:bg-neutral-800 text-white dark:text-[#56B4E9]">
-      連続
-    </span>
-  ) : (
-    <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-medium bg-gray-100 dark:bg-neutral-900 text-gray-500 dark:text-neutral-500">
-      カテゴリ
-    </span>
-  );
-}
+const ROLE_OPTIONS: { value: ColumnRole; label: string }[] = [
+  { value: "id", label: "ID" },
+  { value: "continuous", label: "連続" },
+  { value: "ordinal", label: "順序" },
+  { value: "categorical", label: "カテゴリ" },
+  { value: "date", label: "日付" },
+  { value: "exclude", label: "除外" },
+];
 
 function CopyButton({ values }: { values: (number | null)[] }) {
   const [copied, setCopied] = useState(false);
@@ -45,7 +43,7 @@ function CopyButton({ values }: { values: (number | null)[] }) {
 
 export default function DataPage() {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { dataset, setDataset, clearDataset } = useDataset();
+  const { dataset, storageMode, setDataset, setStorageMode, clearDataset } = useDataset();
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +62,7 @@ export default function DataPage() {
         ? await api.uploadCsv(file)
         : await api.uploadExcel(file);
       setResult(res);
-      setDataset(res);
+      setDataset(res, "session");
       const firstContinuous = res.columns.find((c) => c.dtype === "continuous");
       if (firstContinuous) setActiveCol(firstContinuous.name);
     } catch (err) {
@@ -80,6 +78,45 @@ export default function DataPage() {
     setActiveCol(null);
   }
 
+  function updateRole(columnName: string, role: ColumnRole) {
+    const current = result ?? dataset;
+    if (!current) return;
+    const updated = {
+      ...current,
+      columns: current.columns.map((column) =>
+        column.name === columnName ? { ...column, role } : column
+      ),
+    };
+    setResult(updated);
+    setDataset(updated);
+    if (role !== "continuous" && activeCol === columnName) setActiveCol(null);
+  }
+
+  function excludePrivacyRiskColumns() {
+    const current = result ?? dataset;
+    if (!current) return;
+    const updated = {
+      ...current,
+      columns: current.columns.map((column) =>
+        column.privacy_risk ? { ...column, role: "exclude" as const } : column
+      ),
+    };
+    setResult(updated);
+    setDataset(updated);
+    setActiveCol(null);
+  }
+
+  function handleStorageModeChange(persistent: boolean) {
+    if (persistent && privacyRiskColumns.length > 0) {
+      const confirmed = window.confirm(
+        `個人識別情報を含む可能性がある列が ${privacyRiskColumns.length} 件あります。` +
+        "この端末にデータを残しますか？共有端末では保存しないでください。"
+      );
+      if (!confirmed) return;
+    }
+    setStorageMode(persistent ? "persistent" : "session");
+  }
+
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
@@ -93,7 +130,9 @@ export default function DataPage() {
     if (file) handleFile(file);
   }
 
-  const activeColInfo = result?.columns.find((c) => c.name === activeCol);
+  const displayed = result ?? dataset;
+  const activeColInfo = displayed?.columns.find((c) => c.name === activeCol);
+  const privacyRiskColumns = displayed?.columns.filter((column) => column.privacy_risk) ?? [];
 
   return (
     <div>
@@ -105,26 +144,6 @@ export default function DataPage() {
         CSV または Excel ファイルをアップロードすると、列ごとの概要を確認できます。
         読み込んだデータは記述統計・検定・グラフ・Table 1 の各ページで列を選ぶだけで使えます。
       </p>
-
-      {dataset && !result && (
-        <Card className="mb-5 flex items-center justify-between">
-          <div className="min-w-0">
-            <p className="text-[13px] font-medium text-gray-700 dark:text-neutral-300 truncate">
-              読み込み済み: {dataset.filename}
-            </p>
-            <p className="text-[12px] text-gray-400 dark:text-neutral-600">
-              {dataset.n_rows} 行 × {dataset.n_cols} 列 — 各解析ページで「CSVから選択」が使えます
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleClear}
-            className="shrink-0 ml-4 text-[12px] text-gray-400 dark:text-neutral-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-          >
-            データをクリア
-          </button>
-        </Card>
-      )}
 
       {/* Drop zone */}
       <div
@@ -158,17 +177,68 @@ export default function DataPage() {
 
       {error && <ErrorMessage message={error} />}
 
-      {result && (
+      {displayed && (
         <div className="space-y-4">
+          {privacyRiskColumns.length > 0 && (
+            <div className="rounded-xl border border-orange-300 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/20 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-[14px] font-semibold text-orange-800 dark:text-orange-300">
+                    個人識別情報を含む可能性があります
+                  </h2>
+                  <p className="mt-1 text-[12px] text-orange-700 dark:text-orange-400">
+                    端末保存や画面共有の前に確認してください。解析から除外しても元データ内の値は削除されません。
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={excludePrivacyRiskColumns}
+                  className="rounded-md border border-orange-300 dark:border-orange-800 px-3 py-1.5 text-[12px] font-medium text-orange-800 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-950/40"
+                >
+                  候補列を解析から一括除外
+                </button>
+              </div>
+              <div className="mt-3 space-y-2">
+                {privacyRiskColumns.map((column) => (
+                  <div
+                    key={column.name}
+                    className="flex flex-wrap items-center gap-2 rounded-md bg-white/70 dark:bg-black/20 px-3 py-2"
+                  >
+                    <span className="text-[12px] font-medium text-orange-900 dark:text-orange-200">
+                      {column.name}
+                    </span>
+                    <span className="min-w-0 flex-1 text-[11px] text-orange-700 dark:text-orange-400">
+                      {column.privacy_reason}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => updateRole(column.name, "id")}
+                      className="text-[11px] text-orange-800 dark:text-orange-300 hover:underline"
+                    >
+                      IDとして扱う
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updateRole(column.name, "exclude")}
+                      className="text-[11px] text-orange-800 dark:text-orange-300 hover:underline"
+                    >
+                      解析から除外
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* サマリー */}
           <Card>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">
-                {result.filename}
+                {displayed.filename}
               </h2>
               <div className="flex items-center gap-3">
                 <span className="text-[12px] text-gray-400 dark:text-neutral-600">
-                  {result.n_rows} 行 × {result.n_cols} 列
+                  {displayed.n_rows} 行 × {displayed.n_cols} 列
                 </span>
                 <button
                   type="button"
@@ -179,8 +249,29 @@ export default function DataPage() {
                 </button>
               </div>
             </div>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 px-3 py-2.5">
+              <div>
+                <p className="text-[12px] font-medium text-gray-700 dark:text-neutral-300">
+                  {storageMode === "persistent" ? "この端末に保存中" : "このタブ内だけに保存中"}
+                </p>
+                <p className="mt-0.5 text-[11px] text-gray-400 dark:text-neutral-600">
+                  {storageMode === "persistent"
+                    ? "ブラウザを閉じてもデータが残ります。共有端末では使用しないでください。"
+                    : "ページ更新では保持され、タブを閉じると削除されます。"}
+                </p>
+              </div>
+              <label className="flex items-center gap-2 text-[12px] text-gray-600 dark:text-neutral-400 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={storageMode === "persistent"}
+                  onChange={(e) => handleStorageModeChange(e.target.checked)}
+                  className="rounded"
+                />
+                この端末に保存する
+              </label>
+            </div>
             <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-4">
-              このデータは保存されました。
+              解析前に各列の役割を確認してください。ID・日付・除外にした列は解析候補に表示されません。
               {" "}
               <Link href="/dashboard/descriptive" className="text-white hover:underline">記述統計</Link>
               {" / "}
@@ -198,31 +289,62 @@ export default function DataPage() {
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-neutral-800 text-left">
                     <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">列名</th>
-                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">型</th>
+                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">解析上の役割</th>
                     <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">有効数</th>
                     <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">欠損数</th>
                     <th className="pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {result.columns.map((col) => (
+                  {displayed.columns.map((col) => {
+                    const role = columnRole(col);
+                    return (
                     <tr
                       key={col.name}
-                      onClick={() => col.dtype === "continuous" && setActiveCol(col.name)}
+                      onClick={() => role === "continuous" && setActiveCol(col.name)}
                       className={`border-b border-gray-100 dark:border-neutral-900 last:border-0 transition-colors ${
-                        col.dtype === "continuous"
+                        role === "continuous"
                           ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-neutral-950"
-                          : "opacity-50"
+                          : ""
                       } ${activeCol === col.name ? "bg-gray-50 dark:bg-neutral-950" : ""}`}
                     >
                       <td className="py-2 pr-4 font-medium text-gray-700 dark:text-neutral-300">
                         {col.name}
+                        {col.privacy_risk && (
+                          <span
+                            className="ml-2 rounded bg-orange-100 dark:bg-orange-950/40 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:text-orange-400"
+                            title={col.privacy_reason ?? undefined}
+                          >
+                            要確認
+                          </span>
+                        )}
                         {activeCol === col.name && (
                           <span className="ml-2 text-[11px] text-gray-400 dark:text-neutral-600">▶ 選択中</span>
                         )}
                       </td>
-                      <td className="py-2 pr-4">
-                        <ColTypeBadge dtype={col.dtype} />
+                      <td className="py-2 pr-4 min-w-52">
+                        <select
+                          value={role}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) => updateRole(col.name, e.target.value as ColumnRole)}
+                          className="rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[12px] bg-white dark:bg-[#111] text-gray-700 dark:text-neutral-300 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
+                          aria-label={`${col.name} の役割`}
+                        >
+                          {ROLE_OPTIONS.map((option) => (
+                            <option
+                              key={option.value}
+                              value={option.value}
+                              disabled={option.value === "continuous" && col.values.length === 0}
+                            >
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        {col.role_reason && (
+                          <p className="mt-1 text-[10px] leading-tight text-gray-400 dark:text-neutral-600">
+                            {col.role_reason}
+                          </p>
+                        )}
                       </td>
                       <td className="py-2 pr-4 text-right font-mono text-gray-600 dark:text-neutral-400">
                         {col.n_valid}
@@ -235,12 +357,13 @@ export default function DataPage() {
                         )}
                       </td>
                       <td className="py-2">
-                        {col.dtype === "continuous" && col.values.length > 0 && (
+                        {role === "continuous" && col.values.length > 0 && (
                           <CopyButton values={col.values} />
                         )}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -274,13 +397,13 @@ export default function DataPage() {
           {/* データプレビューテーブル */}
           <Card>
             <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 mb-3">
-              先頭 {result.preview_rows.length} 行
+              先頭 {displayed.preview_rows.length} 行
             </h3>
             <div className="overflow-x-auto">
               <table className="text-[12px] min-w-full">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-neutral-800">
-                    {result.columns.map((col) => (
+                    {displayed.columns.map((col) => (
                       <th
                         key={col.name}
                         className="pb-2 pr-4 text-left font-medium text-gray-400 dark:text-neutral-600 whitespace-nowrap"
@@ -291,9 +414,9 @@ export default function DataPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {result.preview_rows.map((row, i) => (
+                  {displayed.preview_rows.map((row, i) => (
                     <tr key={i} className={i % 2 === 0 ? "" : "bg-gray-50 dark:bg-neutral-950/50"}>
-                      {result.columns.map((col) => (
+                      {displayed.columns.map((col) => (
                         <td
                           key={col.name}
                           className={`py-1.5 pr-4 font-mono whitespace-nowrap ${

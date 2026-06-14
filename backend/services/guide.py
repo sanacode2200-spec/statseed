@@ -42,8 +42,8 @@ def _correlate(req: GuideRequest) -> GuideResponse:
                 test_name="Pearson積率相関係数",
                 endpoint="/api/test/correlation",
                 confidence="代替案",
-                reason="サンプルサイズが大きい（n≥30）場合は正規性を問わず使用されることもあります。",
-                caution="正規性が確認できていない場合は解釈に注意してください。",
+                reason="線形関係の強さを評価したい場合の選択肢です。",
+                caution="散布図で線形性と外れ値を確認してください。",
             ),
         ],
         summary="正規分布が確認できない場合はSpearman順位相関係数が適しています。",
@@ -85,14 +85,15 @@ def _continuous(req: GuideRequest) -> GuideResponse:
 
 
 def _twogroup(req: GuideRequest) -> GuideResponse:
-    if req.normal == "yes":
+    if req.estimand == "mean" or (req.estimand is None and req.normal == "yes"):
         return GuideResponse(
             suggestions=[
                 SuggestedTest(
                     test_name="Welchのt検定（独立2群）",
                     endpoint="/api/test/ttest",
                     confidence="推奨",
-                    reason="正規分布に従う2群の平均値を比較します。等分散を仮定しないWelch法は現在の標準です。",
+                    reason="研究目的である2群の平均値差を推定します。等分散を仮定しないWelch法を用います。",
+                    caution="各群の分布、外れ値、平均値差の95%信頼区間を合わせて確認してください。",
                 ),
                 SuggestedTest(
                     test_name="Mann-Whitney U検定",
@@ -115,8 +116,8 @@ def _twogroup(req: GuideRequest) -> GuideResponse:
                 test_name="Welchのt検定（独立2群）",
                 endpoint="/api/test/ttest",
                 confidence="代替案",
-                reason="n≥30程度あれば中心極限定理により正規性を問わず使えることもあります。",
-                caution="小サンプルで非正規分布の場合は解釈に注意してください。",
+                reason="平均値差を推定したい場合の選択肢です。",
+                caution="強い歪みや外れ値がある場合は、平均値差が研究目的に合うか再確認してください。",
             ),
         ],
         summary="正規分布が確認できない2群の比較にはMann-Whitney U検定が適しています。",
@@ -124,14 +125,15 @@ def _twogroup(req: GuideRequest) -> GuideResponse:
 
 
 def _paired(req: GuideRequest) -> GuideResponse:
-    if req.normal == "yes":
+    if req.estimand == "mean" or (req.estimand is None and req.normal == "yes"):
         return GuideResponse(
             suggestions=[
                 SuggestedTest(
                     test_name="対応のあるt検定",
                     endpoint="/api/test/ttest-paired",
                     confidence="推奨",
-                    reason="同一対象の前後比較・クロスオーバー試験など対応のある2群を比較します。差分が正規分布に従う場合に使用します。",
+                    reason="同一対象の前後差について、平均変化量を推定します。",
+                    caution="元の各時点ではなく、対象ごとの差分の分布と外れ値を確認してください。",
                 ),
                 SuggestedTest(
                     test_name="Wilcoxon符号順位検定",
@@ -154,8 +156,8 @@ def _paired(req: GuideRequest) -> GuideResponse:
                 test_name="対応のあるt検定",
                 endpoint="/api/test/ttest-paired",
                 confidence="代替案",
-                reason="n≥30程度あれば中心極限定理により正規性を問わず使えることもあります。",
-                caution="小サンプルで非正規分布の場合は解釈に注意してください。",
+                reason="平均変化量を推定したい場合の選択肢です。",
+                caution="差分に強い歪みや外れ値がある場合は解釈に注意してください。",
             ),
         ],
         summary="正規性が確認できない対応2群にはWilcoxon符号順位検定が適しています。",
@@ -163,14 +165,14 @@ def _paired(req: GuideRequest) -> GuideResponse:
 
 
 def _multigroup(req: GuideRequest) -> GuideResponse:
-    if req.normal == "yes":
+    if req.estimand == "mean" or (req.estimand is None and req.normal == "yes"):
         return GuideResponse(
             suggestions=[
                 SuggestedTest(
                     test_name="一元配置ANOVA",
                     endpoint="/api/test/anova",
                     confidence="推奨",
-                    reason="正規分布に従う3群以上の平均値を比較します。有意差が出た場合は多重比較（Tukey法など）が必要です。",
+                    reason="研究目的である3群以上の平均値差を比較します。全体差の後にTukey法などで群間差を確認します。",
                     caution="ANOVA単体では「どの群間に差があるか」は判定できません。多重比較を合わせて行ってください。",
                 ),
                 SuggestedTest(

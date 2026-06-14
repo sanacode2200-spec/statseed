@@ -76,6 +76,21 @@ class ScatterRequest(BaseModel):
         return self
 
 
+class PairedPlotRequest(BaseModel):
+    before: list[FiniteFloat] = Field(min_length=2)
+    after: list[FiniteFloat] = Field(min_length=2)
+    before_label: str = "介入前"
+    after_label: str = "介入後"
+    title: str = ""
+    y_label: str = ""
+
+    @model_validator(mode="after")
+    def check_length(self) -> "PairedPlotRequest":
+        if len(self.before) != len(self.after):
+            raise ValueError("beforeとafterのデータ数が一致しません")
+        return self
+
+
 class ROCRequest(BaseModel):
     scores: list[FiniteFloat] = Field(min_length=4)
     labels: list[int] = Field(min_length=4)
@@ -152,15 +167,18 @@ class PlotlyFigure(BaseModel):
 
 
 class ExportRequest(BaseModel):
-    chart_type: Literal["boxplot", "histogram", "scatter", "barplot", "kaplan_meier", "roc"]
+    chart_type: Literal["boxplot", "histogram", "scatter", "paired", "barplot", "kaplan_meier", "roc"]
     format: Literal["png", "svg", "pdf"] = "png"
     transparent: bool = True
     font_preset: Literal["論文標準", "日本語対応", "ポスター", "カスタム"] | None = None
     font_family: str | None = Field(default=None, max_length=80)
     font_size: int | None = Field(default=None, ge=6, le=24)
+    width_inches: FiniteFloat | None = Field(default=None, ge=2, le=16)
+    height_inches: FiniteFloat | None = Field(default=None, ge=2, le=16)
     boxplot: BoxplotRequest | None = None
     histogram: HistogramRequest | None = None
     scatter: ScatterRequest | None = None
+    paired: PairedPlotRequest | None = None
     barplot: BarplotRequest | None = None
     kaplan_meier: KaplanMeierRequest | None = None
     roc: ROCRequest | None = None
@@ -171,6 +189,7 @@ class ExportRequest(BaseModel):
             "boxplot": self.boxplot,
             "histogram": self.histogram,
             "scatter": self.scatter,
+            "paired": self.paired,
             "barplot": self.barplot,
             "kaplan_meier": self.kaplan_meier,
             "roc": self.roc,

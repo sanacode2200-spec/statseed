@@ -1,17 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import type { CorrelationResult, TestResult } from "@/lib/types";
+import type { AnalysisSampleInfo, CorrelationResult, TestResult } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
-import { CorrelationResultCard, TestResultCard } from "@/components/stats/TestResultCard";
+import { AnalysisSampleInfoCard, CorrelationResultCard, TestResultCard } from "@/components/stats/TestResultCard";
 import { PosthocResultTable } from "@/components/stats/PosthocResultTable";
 import { parseIntegerMatrix, parseNumbers } from "@/lib/parse";
 import type { ColumnInfo, PosthocResult } from "@/lib/types";
 import { exportCorrelationCsv, exportPosthocCsv, exportTestResultCsv } from "@/lib/exportCsv";
 import { useDataset } from "@/contexts/DataContext";
+import { saveGraphHandoff } from "@/lib/graphHandoff";
 import {
   categoricalColumns,
   continuousColumns,
@@ -92,6 +94,7 @@ function ColSelect({
 }
 
 export default function TestPage() {
+  const router = useRouter();
   const { dataset } = useDataset();
   const [inputMode, setInputMode] = useState<InputMode>("manual");
 
@@ -127,6 +130,7 @@ export default function TestPage() {
   const [yText, setYText] = useState("");
 
   const [result, setResult] = useState<TestResult | CorrelationResult | PosthocResult | null>(null);
+  const [sampleInfo, setSampleInfo] = useState<AnalysisSampleInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -180,6 +184,7 @@ export default function TestPage() {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setSampleInfo(null);
     setLoading(true);
 
     try {
@@ -199,6 +204,12 @@ export default function TestPage() {
             group_b_name: csvGroupB,
           };
           setResult(testType === "ttest" ? await api.ttestInd(req) : await api.mannwhitney(req));
+          setSampleInfo({
+            total: dataset.n_rows,
+            used: a.length + b.length,
+            excluded: dataset.n_rows - a.length - b.length,
+            exclusion_reason: "値または群が欠損、もしくは選択した2群以外の行",
+          });
         } else if (isPaired) {
           const beforeCol = findColumn(dataset.columns, csvBeforeCol);
           const afterCol = findColumn(dataset.columns, csvAfterCol);
@@ -207,6 +218,12 @@ export default function TestPage() {
           if (before.length < 2) throw new Error("2件以上のデータが必要です。");
           const req = { variable_name: `${beforeCol.name} → ${afterCol.name}`, before, after };
           setResult(testType === "ttest-paired" ? await api.ttestPaired(req) : await api.wilcoxon(req));
+          setSampleInfo({
+            total: dataset.n_rows,
+            used: before.length,
+            excluded: dataset.n_rows - before.length,
+            exclusion_reason: "介入前・介入後のいずれかが欠損したペア",
+          });
         } else if (isMultiGroup || isPosthoc) {
           const valueCol = findColumn(dataset.columns, csvValueCol);
           const groupCol = findColumn(dataset.columns, csvGroupCol);
@@ -223,6 +240,13 @@ export default function TestPage() {
           } else {
             setResult(testType === "anova" ? await api.anova(req) : await api.kruskal(req));
           }
+          const used = groups.reduce((sum, group) => sum + group.length, 0);
+          setSampleInfo({
+            total: dataset.n_rows,
+            used,
+            excluded: dataset.n_rows - used,
+            exclusion_reason: "値または群が欠損した行",
+          });
         } else if (isTable) {
           const rowCol = findColumn(dataset.columns, csvRowCol);
           const colCol = findColumn(dataset.columns, csvColCol);
@@ -231,6 +255,13 @@ export default function TestPage() {
           if (table.length < 2) throw new Error("2行以上のデータが必要です。");
           const req = { observed: table };
           setResult(testType === "chisquare" ? await api.chisquare(req) : await api.fisher(req));
+          const used = table.flat().reduce((sum, count) => sum + count, 0);
+          setSampleInfo({
+            total: dataset.n_rows,
+            used,
+            excluded: dataset.n_rows - used,
+            exclusion_reason: "クロス集計に使う2列のいずれかが欠損した行",
+          });
         } else if (isCorrelation) {
           const xCol = findColumn(dataset.columns, csvXCol);
           const yCol = findColumn(dataset.columns, csvYCol);
@@ -246,6 +277,12 @@ export default function TestPage() {
               method: testType === "pearson" ? "pearson" : "spearman",
             })
           );
+          setSampleInfo({
+            total: dataset.n_rows,
+            used: x.length,
+            excluded: dataset.n_rows - x.length,
+            exclusion_reason: "X・Yのいずれかが欠損した行（完全ケース解析）",
+          });
         }
       } else if (isTwoGroup) {
         const ga = parseNumbers(groupAText);
@@ -321,6 +358,45 @@ export default function TestPage() {
     setMultiGroupNames((prev) => prev.filter((_, i) => i !== index));
   }
 
+  function createGraphFromResult() {
+    if (!result || !dataset || inputMode !== "csv") return;
+    const methodText = "method" in result ? result.method : "test_name" in result ? result.test_name : "";
+    const captionText = "interpretation" in result ? result.interpretation : "";
+    if (isPaired) {
+      saveGraphHandoff({
+        chart_type: "paired",
+        before_column: csvBeforeCol,
+        after_column: csvAfterCol,
+        title: `${csvBeforeCol} と ${csvAfterCol} の対応あり比較`,
+        method_text: methodText,
+        caption_text: captionText,
+      });
+    } else if (isCorrelation) {
+      saveGraphHandoff({
+        chart_type: "scatter",
+        x_column: csvXCol,
+        y_column: csvYCol,
+        title: `${csvXCol} と ${csvYCol} の関連`,
+        method_text: methodText,
+        caption_text: captionText,
+      });
+    } else if (isTwoGroup || isMultiGroup || isPosthoc) {
+      saveGraphHandoff({
+        chart_type: "boxplot",
+        value_column: csvValueCol,
+        group_column: csvGroupCol,
+        included_groups: isTwoGroup ? [csvGroupA, csvGroupB] : undefined,
+        comparison_method: testType === "mannwhitney" || testType === "kruskal" || testType === "steel_dwass" ? "nonparametric" : "parametric",
+        title: `${csvValueCol} の群間比較`,
+        method_text: methodText,
+        caption_text: captionText,
+      });
+    } else {
+      return;
+    }
+    router.push("/dashboard/graph");
+  }
+
   const grouped = TEST_OPTIONS.reduce<Record<string, typeof TEST_OPTIONS>>(
     (acc, opt) => {
       (acc[opt.category] ??= []).push(opt);
@@ -347,6 +423,7 @@ export default function TestPage() {
               onChange={(e) => {
                 setTestType(e.target.value as TestType);
                 setResult(null);
+                setSampleInfo(null);
                 setError(null);
               }}
               className={inputCls}
@@ -373,7 +450,12 @@ export default function TestPage() {
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setInputMode(opt.value)}
+                  onClick={() => {
+                    setInputMode(opt.value);
+                    setResult(null);
+                    setSampleInfo(null);
+                    setError(null);
+                  }}
                   className={`px-3 py-1 rounded text-[12px] font-medium transition-colors ${
                     inputMode === opt.value
                       ? "bg-white dark:bg-neutral-800 text-black dark:text-white shadow-sm"
@@ -604,7 +686,16 @@ export default function TestPage() {
 
       {result && (
         <div className="space-y-3">
+          {sampleInfo && <AnalysisSampleInfoCard info={sampleInfo} />}
           <div className="flex justify-end">
+            {inputMode === "csv" && dataset && !isTable && (
+              <button
+                onClick={createGraphFromResult}
+                className="mr-4 text-[12px] font-medium text-white dark:text-[#56B4E9] hover:underline"
+              >
+                この結果からグラフを作成
+              </button>
+            )}
             <button
               onClick={() => {
                 if ("pairs" in result) exportPosthocCsv(result as PosthocResult);

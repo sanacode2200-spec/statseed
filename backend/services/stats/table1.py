@@ -34,6 +34,11 @@ def build_table1(request: Table1Request) -> Table1Result:
         group_names=group_names,
         n_overall=n_overall,
         n_by_group=n_by_group,
+        group_missing=(
+            len(request.group_values) - sum(len(indices) for indices in group_map.values())
+            if request.group_values is not None and group_map is not None
+            else 0
+        ),
     )
 
 
@@ -69,6 +74,7 @@ def _continuous_rows(
     overall = _fmt_continuous(all_vals, var.display)
 
     groups: dict[str, str] | None = None
+    missing_by_group: dict[str, int] | None = None
     p_value: str | None = None
     test_name: str | None = None
 
@@ -78,6 +84,9 @@ def _continuous_rows(
             for g, idxs in group_map.items()
         }
         groups = {g: _fmt_continuous(group_data[g], var.display) for g in group_names}
+        missing_by_group = {
+            g: len(group_map[g]) - len(group_data[g]) for g in group_names
+        }
         p_value, test_name = _continuous_pvalue(
             [group_data[g] for g in group_names]
         )
@@ -88,6 +97,8 @@ def _continuous_rows(
         groups=groups,
         p_value=p_value,
         test_name=test_name,
+        missing=len(var.values) - len(all_vals),
+        missing_by_group=missing_by_group,
     )]
 
 
@@ -144,6 +155,7 @@ def _categorical_rows(
     p_value: str | None = None
     test_name: str | None = None
     group_counts_per_cat: dict[str, dict[str, int]] | None = None
+    missing_by_group: dict[str, int] | None = None
 
     if group_map is not None and group_names is not None:
         group_vals = {
@@ -154,15 +166,20 @@ def _categorical_rows(
             cat: {g: group_vals[g].count(cat) for g in group_names}
             for cat in categories
         }
+        missing_by_group = {
+            g: len(group_map[g]) - len(group_vals[g]) for g in group_names
+        }
         p_value, test_name = _categorical_pvalue(categories, group_names, group_counts_per_cat)
 
     # ヘッダー行（変数名 + 全体N）
     rows: list[Table1Row] = [Table1Row(
         variable=var.name,
         overall=f"n = {n_all}",
-        groups={g: f"n = {len(group_map[g])}" for g in group_names} if group_map and group_names else None,
+        groups={g: f"n = {len(group_vals[g])}" for g in group_names} if group_map and group_names else None,
         p_value=p_value,
         test_name=test_name,
+        missing=len(var.values) - n_all,
+        missing_by_group=missing_by_group,
     )]
 
     # カテゴリごとのサブ行
@@ -175,7 +192,7 @@ def _categorical_rows(
         if group_map and group_names and group_counts_per_cat:
             grp_strs = {}
             for g in group_names:
-                n_g = len(group_map[g])
+                n_g = sum(group_counts_per_cat[category][g] for category in categories)
                 c_g = group_counts_per_cat[cat][g]
                 p_g = c_g / n_g * 100 if n_g > 0 else 0.0
                 grp_strs[g] = f"{c_g} ({p_g:.1f}%)"

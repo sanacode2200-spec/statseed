@@ -44,6 +44,13 @@ export interface CategoricalResponse {
 
 // --- 検定共通 ---
 
+export interface AnalysisSampleInfo {
+  total: number;
+  used: number;
+  excluded: number;
+  exclusion_reason: string;
+}
+
 export interface TestResult {
   test_name: string;
   statistic: number | null;
@@ -52,6 +59,8 @@ export interface TestResult {
   effect_size_label: string | null;
   ci95_low: number | null;
   ci95_high: number | null;
+  estimate?: number | null;
+  estimate_label?: string | null;
   interpretation: string;
 }
 
@@ -107,6 +116,7 @@ export interface GuideRequest {
   n_groups?: 2 | 3;
   paired?: boolean;
   normal?: "yes" | "no" | "unknown";
+  estimand?: "mean" | "distribution";
 }
 
 export interface SuggestedTest {
@@ -124,9 +134,16 @@ export interface GuideResponse {
 
 // --- アップロード ---
 
+export type ColumnRole = "id" | "continuous" | "ordinal" | "categorical" | "date" | "exclude";
+export type PrivacyRisk = "direct_identifier" | "contact" | "birth_date" | "address";
+
 export interface ColumnInfo {
   name: string;
   dtype: "continuous" | "categorical";
+  role?: ColumnRole;
+  role_reason?: string;
+  privacy_risk?: PrivacyRisk | null;
+  privacy_reason?: string | null;
   n_valid: number;
   n_missing: number;
   values: (number | null)[];
@@ -200,6 +217,8 @@ export interface Table1Row {
   groups: Record<string, string> | null;
   p_value: string | null;
   test_name: string | null;
+  missing: number;
+  missing_by_group: Record<string, number> | null;
 }
 
 export interface Table1Result {
@@ -207,6 +226,7 @@ export interface Table1Result {
   group_names: string[] | null;
   n_overall: number;
   n_by_group: Record<string, number> | null;
+  group_missing: number;
 }
 
 // --- グラフ ---
@@ -284,6 +304,15 @@ export interface ScatterRequest {
   show_regression?: boolean;
 }
 
+export interface PairedPlotRequest {
+  before: number[];
+  after: number[];
+  before_label?: string;
+  after_label?: string;
+  title?: string;
+  y_label?: string;
+}
+
 export interface PlotlyFigure {
   data: Record<string, unknown>[];
   layout: Record<string, unknown>;
@@ -317,16 +346,34 @@ export interface ROCResult {
 }
 
 export interface ExportRequest {
-  chart_type: "boxplot" | "histogram" | "scatter" | "barplot" | "kaplan_meier" | "roc";
+  chart_type: "boxplot" | "histogram" | "scatter" | "paired" | "barplot" | "kaplan_meier" | "roc";
   format: "png" | "svg" | "pdf";
   transparent?: boolean;
   font_preset?: "論文標準" | "日本語対応" | "ポスター" | "カスタム" | null;
   font_family?: string | null;
   font_size?: number | null;
+  width_inches?: number | null;
+  height_inches?: number | null;
   boxplot?: BoxplotRequest;
   histogram?: HistogramRequest;
   scatter?: ScatterRequest;
+  paired?: PairedPlotRequest;
   barplot?: BarplotRequest;
   kaplan_meier?: KaplanMeierRequest;
   roc?: ROCRequest;
+}
+
+export interface GraphHandoff {
+  chart_type: "boxplot" | "scatter" | "paired";
+  value_column?: string;
+  group_column?: string;
+  included_groups?: string[];
+  before_column?: string;
+  after_column?: string;
+  x_column?: string;
+  y_column?: string;
+  comparison_method?: "parametric" | "nonparametric";
+  title?: string;
+  method_text?: string;
+  caption_text?: string;
 }

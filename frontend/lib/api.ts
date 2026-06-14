@@ -15,6 +15,7 @@ import type {
   HistogramRequest,
   MultiGroupRequest,
   PairedRequest,
+  PairedPlotRequest,
   PlotlyFigure,
   PosthocRequest,
   PosthocResult,
@@ -124,6 +125,9 @@ export const api = {
 
   graphScatter: (req: ScatterRequest) =>
     post<PlotlyFigure>("/api/graph/scatter", req),
+
+  graphPaired: (req: PairedPlotRequest) =>
+    post<PlotlyFigure>("/api/graph/paired", req),
 
   graphRoc: (req: ROCRequest) =>
     post<ROCResult>("/api/graph/roc", req),

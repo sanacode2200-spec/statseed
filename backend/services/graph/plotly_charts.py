@@ -1,7 +1,7 @@
 import math
 import statistics
 
-from backend.schemas.graph import BarplotRequest, BoxplotRequest, HistogramRequest, KaplanMeierRequest, PlotlyFigure, ROCRequest, ROCResponse, ScatterRequest
+from backend.schemas.graph import BarplotRequest, BoxplotRequest, HistogramRequest, KaplanMeierRequest, PairedPlotRequest, PlotlyFigure, ROCRequest, ROCResponse, ScatterRequest
 
 OKABE_ITO = ["#0072B2", "#E69F00", "#009E73", "#CC79A7"]
 
@@ -534,4 +534,33 @@ def scatter_figure(request: ScatterRequest) -> PlotlyFigure:
         showlegend=request.show_regression,
     )
 
+    return PlotlyFigure(data=traces, layout=layout)
+
+
+def paired_figure(request: PairedPlotRequest) -> PlotlyFigure:
+    traces: list[dict] = []
+    for i, (before, after) in enumerate(zip(request.before, request.after)):
+        traces.append({
+            "type": "scatter",
+            "x": [request.before_label, request.after_label],
+            "y": [float(before), float(after)],
+            "mode": "lines+markers",
+            "line": {"color": "rgba(115,115,115,0.35)", "width": 1},
+            "marker": {"color": [OKABE_ITO[0], OKABE_ITO[1]], "size": 7},
+            "showlegend": False,
+            "hovertemplate": f"ペア {i + 1}<br>%{{x}}: %{{y:.3g}}<extra></extra>",
+        })
+    diffs = [float(after) - float(before) for before, after in zip(request.before, request.after)]
+    mean_diff = statistics.fmean(diffs)
+    layout = _layout(
+        title={"text": request.title, "font": {"size": 13}} if request.title else {},
+        xaxis=dict(_LAYOUT_BASE["xaxis"], title=""),
+        yaxis=dict(_LAYOUT_BASE["yaxis"], title=request.y_label),
+        annotations=[{
+            "text": f"平均変化量 = {mean_diff:.3g}",
+            "xref": "paper", "yref": "paper", "x": 0.98, "y": 0.98,
+            "xanchor": "right", "yanchor": "top", "showarrow": False,
+            "font": {"size": 11}, "bgcolor": "rgba(255,255,255,0.8)",
+        }],
+    )
     return PlotlyFigure(data=traces, layout=layout)

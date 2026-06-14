@@ -86,12 +86,12 @@ statseed/
 │   │   ├── charts/            # PlotlyChart（動的import）
 │   │   └── stats/             # DescriptiveResultTable / TestResultCard
 │   ├── contexts/
-│   │   └── DataContext.tsx    # アップロード済みデータをページ間で共有（localStorage永続化）
+│   │   └── DataContext.tsx    # アップロード済みデータをページ間で共有（標準はsessionStorage）
 │   └── lib/
 │       ├── api.ts             # バックエンドAPI呼び出し
 │       ├── types.ts           # 型定義（バックエンドスキーマと対応）
 │       ├── parse.ts           # テキスト入力パース（数値・カテゴリ・行列）
-│       ├── dataStore.ts       # データセットのlocalStorage読み書き
+│       ├── dataStore.ts       # データセットのsessionStorage / 明示的localStorage保存
 │       └── dataUtils.ts       # 列抽出・グループ分割などCSVデータ変換ユーティリティ
 │
 ├── backend/                   # FastAPI
@@ -287,7 +287,7 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] **棒グラフ** — エラーバー付き（SD / SEM / 95%CI 切り替え）
 - [x] **カプランマイヤー曲線** — 打ち切りマーク・95%CIバンド・リスクテーブル・ログランク検定p値
 - [x] **ROC曲線** — AUC + 95%CI（Hanley & McNeil 1982）・最適カットオフ（Youden指数）・感度/特異度表示
-- [x] **CSVデータのページ間共有** — `DataContext`（React Context + localStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・グラフ（全6種）・Table 1 の各ページで「CSVから選択」⇄「手入力」を切り替え可能に。コピペで行き来する手間を解消（`frontend/contexts/DataContext.tsx` / `frontend/lib/dataStore.ts` / `frontend/lib/dataUtils.ts`）
+- [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・グラフ（全6種）・Table 1 の各ページで「CSVから選択」⇄「手入力」を切り替え可能に。コピペで行き来する手間を解消（`frontend/contexts/DataContext.tsx` / `frontend/lib/dataStore.ts` / `frontend/lib/dataUtils.ts`）
 
 ### 残候補
 - [ ] Supabase Auth 認証（ログインページ UI は完成済み、Auth 接続が未実装）

@@ -9,7 +9,7 @@ import { parseNullableNumbers, parseCategoricalValues } from "@/lib/parse";
 import type { Table1Result, Table1Variable } from "@/lib/types";
 import { exportTable1Csv } from "@/lib/exportCsv";
 import { useDataset } from "@/contexts/DataContext";
-import { categoricalColumns, findColumn } from "@/lib/dataUtils";
+import { analysisColumns, categoricalColumns, columnRole, findColumn } from "@/lib/dataUtils";
 
 type VarState = {
   id: number;
@@ -55,13 +55,13 @@ export default function Table1Page() {
     setInputMode("csv");
     setCsvSelectedCols((prev) => {
       const next: Record<string, boolean> = {};
-      for (const c of dataset.columns) next[c.name] = prev[c.name] ?? true;
+      for (const c of analysisColumns(dataset.columns)) next[c.name] = prev[c.name] ?? true;
       return next;
     });
     setCsvDisplayByCol((prev) => {
       const next: Record<string, "mean_sd" | "median_iqr"> = {};
       for (const c of dataset.columns) {
-        if (c.dtype === "continuous") next[c.name] = prev[c.name] ?? "mean_sd";
+        if (columnRole(c) === "continuous") next[c.name] = prev[c.name] ?? "mean_sd";
       }
       return next;
     });
@@ -88,10 +88,10 @@ export default function Table1Page() {
       let group_name: string;
 
       if (inputMode === "csv" && dataset) {
-        const selected = dataset.columns.filter((c) => csvSelectedCols[c.name] && c.name !== csvGroupCol);
+        const selected = analysisColumns(dataset.columns).filter((c) => csvSelectedCols[c.name] && c.name !== csvGroupCol);
         if (selected.length === 0) throw new Error("変数として使う列を選択してください。");
         variables = selected.map((c) =>
-          c.dtype === "continuous"
+          columnRole(c) === "continuous"
             ? { name: c.name, type: "continuous", values: c.values, display: csvDisplayByCol[c.name] ?? "mean_sd" }
             : { name: c.name, type: "categorical", values: c.cat_values }
         );
@@ -123,14 +123,14 @@ export default function Table1Page() {
 
   function copyAsTsv() {
     if (!result) return;
-    const cols = result.group_names ? ["変数", "全体", ...result.group_names, "p値", "検定"] : ["変数", "全体"];
+    const cols = result.group_names ? ["変数", "全体", "欠損", ...result.group_names, "p値", "検定"] : ["変数", "全体", "欠損"];
     const headerN = result.group_names
-      ? ["", `n = ${result.n_overall}`, ...result.group_names.map((g) => `n = ${result.n_by_group?.[g] ?? ""}`), "", ""]
-      : ["", `n = ${result.n_overall}`];
+      ? ["", `n = ${result.n_overall}`, "", ...result.group_names.map((g) => `n = ${result.n_by_group?.[g] ?? ""}`), "", ""]
+      : ["", `n = ${result.n_overall}`, ""];
     const lines = [cols.join("\t"), headerN.join("\t")];
     for (const row of result.rows) {
       const label = row.indent ? `  ${row.variable}` : row.variable;
-      const cells = [label, row.overall];
+      const cells = [label, row.overall, row.indent ? "" : String(row.missing)];
       if (result.group_names) {
         for (const g of result.group_names) cells.push(row.groups?.[g] ?? "");
         cells.push(row.indent ? "" : (row.p_value ?? ""));
@@ -179,7 +179,7 @@ export default function Table1Page() {
               Table 1 に含める列を選択してください。連続変数は表示形式（平均±SD / 中央値(IQR)）を切り替えられます。
             </p>
             <div className="space-y-1.5">
-              {dataset.columns.map((c) => (
+              {analysisColumns(dataset.columns).map((c) => (
                 <div key={c.name} className="flex items-center gap-2">
                   <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
                     <input
@@ -191,13 +191,13 @@ export default function Table1Page() {
                     />
                     <span className="text-[13px] text-gray-700 dark:text-neutral-300 truncate">{c.name}</span>
                     <span className="text-[11px] text-gray-400 dark:text-neutral-600 shrink-0">
-                      （{c.dtype === "continuous" ? "連続" : "カテゴリ"} / 有効 {c.n_valid} / 欠損 {c.n_missing}）
+                      （{columnRole(c) === "continuous" ? "連続" : columnRole(c) === "ordinal" ? "順序" : "カテゴリ"} / 有効 {c.n_valid} / 欠損 {c.n_missing}）
                     </span>
                     {c.name === csvGroupCol && (
                       <span className="text-[11px] text-gray-400 dark:text-neutral-600 shrink-0">— 群変数として使用中</span>
                     )}
                   </label>
-                  {c.dtype === "continuous" && c.name !== csvGroupCol && (
+                  {columnRole(c) === "continuous" && c.name !== csvGroupCol && (
                     <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden shrink-0">
                       {([["mean_sd", "平均±SD"], ["median_iqr", "中央値(IQR)"]] as const).map(([val, label]) => (
                         <button
@@ -372,6 +372,10 @@ export default function Table1Page() {
             </div>
           </div>
           <Table1View result={result} />
+          <p className="mt-2 text-[11px] text-gray-400 dark:text-neutral-600">
+            欠損数は変数ごとに表示しています。
+            {result.group_missing > 0 && ` 群分け列の欠損により ${result.group_missing} 件は群別集計から除外されました。`}
+          </p>
         </div>
       )}
     </div>
@@ -390,6 +394,7 @@ function Table1View({ result }: { result: Table1Result }) {
             <th className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">
               全体<br /><span className="font-normal text-[11px]">n = {result.n_overall}</span>
             </th>
+            <th className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">欠損</th>
             {hasGroups && result.group_names!.map((g) => (
               <th key={g} className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">
                 {g}<br /><span className="font-normal text-[11px]">n = {result.n_by_group?.[g] ?? ""}</span>
@@ -416,6 +421,9 @@ function Table1View({ result }: { result: Table1Result }) {
               </td>
               <td className="text-center px-4 py-2 text-gray-700 dark:text-neutral-300 tabular-nums">
                 {row.overall}
+              </td>
+              <td className={`text-center px-4 py-2 tabular-nums ${row.missing > 0 ? "text-orange-600 dark:text-orange-400" : "text-gray-400 dark:text-neutral-600"}`}>
+                {row.indent ? "" : row.missing}
               </td>
               {hasGroups && result.group_names!.map((g) => (
                 <td key={g} className="text-center px-4 py-2 text-gray-700 dark:text-neutral-300 tabular-nums">
