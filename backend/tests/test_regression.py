@@ -46,6 +46,37 @@ def test_simple_regression_perfect_fit_standardized() -> None:
 
 # ── 重回帰（共変量調整） ──────────────────────────────────────────────────────
 
+def test_multiple_regression_standardized_known_values() -> None:
+    # 非共線な2説明変数（corr≈0.47）。z標準化OLSと一致する既知の標準偏回帰係数を検証。
+    result = run_linear_regression(_req(
+        outcome=[2.0, 4.0, 3.0, 6.0, 5.0, 8.0, 7.0, 10.0],
+        predictors=[
+            {"name": "x1", "values": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]},
+            {"name": "x2", "values": [5.0, 3.0, 6.0, 2.0, 7.0, 4.0, 9.0, 6.0]},
+        ],
+    ))
+    assert _coef(result, "x1").coef == pytest.approx(1.204156, abs=1e-5)
+    assert _coef(result, "x2").coef == pytest.approx(-0.448586, abs=1e-5)
+    assert _coef(result, "x1").std_coef == pytest.approx(1.105009, abs=1e-5)
+    assert _coef(result, "x2").std_coef == pytest.approx(-0.378459, abs=1e-5)
+    assert result.adj_r_squared == pytest.approx(0.964134, abs=1e-5)
+
+
+def test_model_fit_fields_and_interpretation() -> None:
+    # 強い線形関係 → F検定が <0.001、各統計量は有限、解釈文が生成される
+    result = run_linear_regression(_req(
+        outcome_name="スコア",
+        outcome=[2.0, 4.1, 5.9, 8.2, 9.8, 12.1, 14.0, 15.9],
+        predictors=[{"name": "用量", "values": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]}],
+    ))
+    import math as _math
+    assert _math.isfinite(result.f_statistic)
+    assert _math.isfinite(result.f_pvalue)
+    assert _math.isfinite(result.adj_r_squared)
+    assert "<0.001" in result.interpretation
+    assert "スコア" in result.interpretation
+
+
 def test_multiple_regression_structure() -> None:
     result = run_linear_regression(_req(
         outcome_name="血圧",
@@ -114,3 +145,33 @@ def test_duplicate_predictor_names_raises() -> None:
                 {"name": "x", "values": [4.0, 3.0, 2.0, 1.0]},
             ],
         )
+
+
+# ── ルーターのHTTPコントラクト ────────────────────────────────────────────────
+
+def test_router_maps_importerror_to_503(monkeypatch) -> None:
+    from fastapi import HTTPException
+
+    from backend.routers import regression as router
+
+    def _boom(_req):
+        raise ImportError("statsmodels missing")
+
+    monkeypatch.setattr(router, "run_linear_regression", _boom)
+    req = _req(outcome=[1.0, 2.0, 3.0, 4.0], predictors=[{"name": "x", "values": [1.0, 2.0, 3.0, 4.0]}])
+    with pytest.raises(HTTPException) as exc:
+        router.linear(req)
+    assert exc.value.status_code == 503
+    assert "analysis" in exc.value.detail
+
+
+def test_router_maps_valueerror_to_422() -> None:
+    from fastapi import HTTPException
+
+    from backend.routers import regression as router
+
+    # 定数説明変数はサービスで ValueError → 422 にマップされる
+    req = _req(outcome=[1.0, 2.0, 3.0, 4.0], predictors=[{"name": "x", "values": [5.0, 5.0, 5.0, 5.0]}])
+    with pytest.raises(HTTPException) as exc:
+        router.linear(req)
+    assert exc.value.status_code == 422

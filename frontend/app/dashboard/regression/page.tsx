@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { inputCls, textareaCls } from "@/components/ui/formStyles";
 import { parseNullableNumbers } from "@/lib/parse";
 import type { LinearRegressionRequest, LinearRegressionResult } from "@/lib/types";
 import { useDataset } from "@/contexts/DataContext";
@@ -13,11 +14,6 @@ import { continuousColumns, findColumn } from "@/lib/dataUtils";
 
 type PredState = { id: number; name: string; rawText: string };
 type InputMode = "csv" | "manual";
-
-const inputCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
-const textareaCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
 
 let _id = 0;
 function nextId() { return ++_id; }
@@ -79,8 +75,9 @@ export default function RegressionPage() {
       } else {
         const outcome = parseNullableNumbers(outcomeText);
         const predictors = preds
+          .map((p, i) => ({ name: p.name.trim() || `説明変数${i + 1}`, rawText: p.rawText }))
           .filter((p) => p.rawText.trim() !== "")
-          .map((p, i) => ({ name: p.name.trim() || `説明変数${i + 1}`, values: parseNullableNumbers(p.rawText) }));
+          .map((p) => ({ name: p.name, values: parseNullableNumbers(p.rawText) }));
         if (predictors.length === 0) throw new Error("説明変数を1つ以上入力してください。");
         req = { outcome_name: outcomeName.trim() || "目的変数", outcome, predictors };
       }

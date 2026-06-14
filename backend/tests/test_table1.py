@@ -158,25 +158,59 @@ def test_smd_on_by_default_for_two_groups() -> None:
 
 def test_smd_continuous_value() -> None:
     # A=[10,20] mean=15 var=50; B=[30,40] mean=35 var=50
-    # pooled SD = sqrt((50+50)/2)=sqrt(50)=7.0711; SMD=(15-35)/7.0711=-2.83
+    # pooled SD = sqrt((50+50)/2)=sqrt(50)=7.0711; SMD=|15-35|/7.0711=2.83
+    # SMDは絶対値（非負の効果量）で報告する。
     req = _req(
         variables=[{"name": "x", "type": "continuous", "values": [10.0, 20.0, 30.0, 40.0]}],
         group_values=["A", "A", "B", "B"],
     )
     result = build_table1(req)
-    assert result.rows[0].smd == "-2.83"
+    assert result.rows[0].smd == "2.83"
 
 
 def test_smd_binary_categorical_value() -> None:
     # 参照カテゴリは最頻の陰性。A: 陰性2/4=0.5, B: 陰性4/4=1.0
-    # denom=(0.5*0.5 + 0)/2=0.125; SMD=(0.5-1.0)/sqrt(0.125)=-1.41
+    # denom=(0.5*0.5 + 0)/2=0.125; SMD=|0.5-1.0|/sqrt(0.125)=1.41（絶対値）
     req = _req(
         variables=[{"name": "結果", "type": "categorical",
                     "values": ["陽性", "陽性", "陰性", "陰性", "陰性", "陰性", "陰性", "陰性"]}],
         group_values=["A", "A", "A", "A", "B", "B", "B", "B"],
     )
     result = build_table1(req)
-    assert result.rows[0].smd == "-1.41"
+    assert result.rows[0].smd == "1.41"
+
+
+def test_smd_multinomial_three_categories() -> None:
+    # 3カテゴリの多項SMD（Yang & Dalton 2012）。
+    # A: a3,b1,c1 / B: a1,b1,c3 → 既知の答え ≈ 1.00
+    from backend.services.stats.table1 import _smd_categorical
+
+    smd = _smd_categorical([3, 1, 1], [1, 1, 3])
+    assert smd == pytest.approx(1.0, abs=1e-6)
+    # 群間で分布が一致 → 偏り0
+    assert _smd_categorical([2, 2, 2], [3, 3, 3]) == pytest.approx(0.0, abs=1e-9)
+
+
+def test_smd_multinomial_complete_separation_is_none() -> None:
+    # 完全分離（有限のSMDが定義できない）は 0 ではなく未算出(None)とする
+    from backend.services.stats.table1 import _smd_categorical
+
+    assert _smd_categorical([5, 0, 0], [0, 0, 5]) is None
+
+
+def test_smd_multinomial_via_build_table1() -> None:
+    # build_table1 経由でも多項SMDが算出される（非負）
+    req = _req(
+        variables=[{"name": "血液型", "type": "categorical",
+                    "values": ["A", "A", "A", "B", "O",
+                               "A", "B", "O", "O", "O"]}],
+        group_values=["G1", "G1", "G1", "G1", "G1",
+                      "G2", "G2", "G2", "G2", "G2"],
+    )
+    result = build_table1(req)
+    smd = result.rows[0].smd
+    assert smd is not None
+    assert float(smd) >= 0.0
 
 
 def test_smd_off_when_disabled() -> None:

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { inputCls, textareaCls } from "@/components/ui/formStyles";
 import { parseNullableNumbers, parseCategoricalValues } from "@/lib/parse";
 import type { Table1Result, Table1Variable } from "@/lib/types";
 import { exportTable1Csv } from "@/lib/exportCsv";
@@ -21,11 +22,6 @@ type VarState = {
 };
 
 type InputMode = "csv" | "manual";
-
-const inputCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
-const textareaCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
 
 let _id = 0;
 function nextId() { return ++_id; }

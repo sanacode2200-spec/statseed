@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 const STATS = [
-  { label: "テスト項目", value: "100+", sub: "backend/tests/" },
-  { label: "APIエンドポイント", value: "14", sub: "実装済み" },
+  { label: "テスト項目", value: "140+", sub: "backend/tests/" },
+  { label: "APIエンドポイント", value: "25+", sub: "実装済み" },
   { label: "統計検定", value: "9種", sub: "t / ANOVA / χ² …" },
   { label: "グラフ形式", value: "3種", sub: "PNG / SVG / PDF" },
 ];
@@ -25,6 +25,22 @@ const FEATURES = [
     icon: FlaskIcon,
   },
   {
+    href: "/dashboard/regression",
+    title: "回帰分析",
+    desc: "単回帰・重回帰（共変量調整）。95%CI・標準化係数・解釈文",
+    color: "#0072B2",
+    tags: ["線形回帰", "重回帰"],
+    icon: RegressionIcon,
+  },
+  {
+    href: "/dashboard/table1",
+    title: "Table 1",
+    desc: "背景データ表を自動生成。SMD・n(%)・mean±SD",
+    color: "#373737",
+    tags: ["論文向け", "群間比較"],
+    icon: TableIcon,
+  },
+  {
     href: "/dashboard/graph",
     title: "グラフ作成",
     desc: "300dpi PNG / SVG / PDF。フォントプリセット対応",
@@ -35,7 +51,7 @@ const FEATURES = [
   {
     href: "/dashboard/guide",
     title: "検定選択ガイド",
-    desc: "5ステップで最適な検定を提案",
+    desc: "いくつかの質問に答えるだけで最適な検定を提案",
     color: "#CC79A7",
     tags: ["初学者向け"],
     icon: CompassIcon,
@@ -180,6 +196,12 @@ function CompassIcon() {
 }
 function FolderIcon() {
   return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>;
+}
+function RegressionIcon() {
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="21" x2="21" y2="3" /><circle cx="6" cy="17" r="1.4" /><circle cx="10" cy="15" r="1.4" /><circle cx="14" cy="9" r="1.4" /><circle cx="18" cy="8" r="1.4" /></svg>;
+}
+function TableIcon() {
+  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /><line x1="9" y1="9" x2="9" y2="21" /></svg>;
 }
 function ChevronRight() {
   return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 dark:text-neutral-800 group-hover:text-gray-400 dark:group-hover:text-neutral-600 transition-colors"><polyline points="9 18 15 12 9 6" /></svg>;

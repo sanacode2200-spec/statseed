@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { inputCls, textareaCls } from "@/components/ui/formStyles";
 import { AnalysisSampleInfoCard, CorrelationResultCard, TestResultCard } from "@/components/stats/TestResultCard";
 import { PosthocResultTable } from "@/components/stats/PosthocResultTable";
 import { parseIntegerMatrix, parseNumbers } from "@/lib/parse";
@@ -60,12 +61,6 @@ const TEST_OPTIONS: { value: TestType; label: string; category: string }[] = [
   { value: "pearson", label: "Pearson相関係数", category: "相関" },
   { value: "spearman", label: "Spearman順位相関係数", category: "相関" },
 ];
-
-const inputCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
-
-const textareaCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-2 text-[13px] font-mono bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700 resize-y";
 
 function ColSelect({
   label,

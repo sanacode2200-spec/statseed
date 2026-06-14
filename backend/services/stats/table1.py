@@ -279,9 +279,11 @@ def _categorical_pvalue(
 # Table 1 の群間比較では、検出力に依存するp値より、サンプルサイズに依存しない
 # 効果量である標準化平均差（standardized mean difference）が推奨される。
 # 慣例として |SMD| > 0.1 で群間に意味のある偏りがあると判断される。
+# 多項SMDは符号を持たない（Mahalanobis型）ため、連続・2値も含め
+# すべて絶対値（非負の効果量）で統一して報告する（tableone 等の慣例に準拠）。
 
 def _smd_continuous(g1: list[float], g2: list[float]) -> float | None:
-    """連続変数の2群間SMD = (mean1 - mean2) / pooled SD"""
+    """連続変数の2群間SMD = |mean1 - mean2| / pooled SD"""
     if len(g1) < 2 or len(g2) < 2:
         return None
     m1, m2 = statistics.fmean(g1), statistics.fmean(g2)
@@ -289,7 +291,7 @@ def _smd_continuous(g1: list[float], g2: list[float]) -> float | None:
     pooled = math.sqrt((v1 + v2) / 2)
     if pooled == 0:
         return None
-    return (m1 - m2) / pooled
+    return abs(m1 - m2) / pooled
 
 
 def _smd_categorical(counts1: list[int], counts2: list[int]) -> float | None:
@@ -306,7 +308,7 @@ def _smd_categorical(counts1: list[int], counts2: list[int]) -> float | None:
         denom = (a * (1 - a) + b * (1 - b)) / 2
         if denom == 0:
             return None
-        return (a - b) / math.sqrt(denom)
+        return abs(a - b) / math.sqrt(denom)
 
     # 多項SMD: numpy が無ければ算出しない（軽量起動を優先）
     try:
@@ -316,12 +318,18 @@ def _smd_categorical(counts1: list[int], counts2: list[int]) -> float | None:
     pv1 = np.array(p1[:-1])  # 最後のカテゴリは線形従属のため除外
     pv2 = np.array(p2[:-1])
     diff = pv1 - pv2
+    if not bool(np.any(np.abs(diff) > 1e-12)):
+        return 0.0  # 群間で分布が完全一致 → 偏りなし
     s = (np.diag(pv1) - np.outer(pv1, pv1) + np.diag(pv2) - np.outer(pv2, pv2)) / 2
     try:
         val = float(diff @ np.linalg.pinv(s) @ diff)
     except Exception:
         return None
-    return math.sqrt(val) if val > 0 else 0.0
+    # 共分散が特異（例: 完全分離）で偏りがあるのに val<=0 になる場合は
+    # 有限のSMDを算出できないため 0 ではなく未算出（None）として表示する
+    if val <= 0:
+        return None
+    return math.sqrt(val)
 
 
 def _fmt_smd(smd: float | None) -> str | None:

@@ -130,18 +130,6 @@ export default function LoginPage() {
         )}
       </div>
 
-      {/* Footer links */}
-      <div className="mt-6 text-[12px] text-gray-500 dark:text-neutral-500 flex items-center gap-1">
-        <span>Don&apos;t have an account?</span>
-        <span className="mx-1 text-gray-300 dark:text-neutral-700">·</span>
-        <Link
-          href="/signup"
-          className="text-gray-700 dark:text-neutral-300 hover:underline font-medium"
-        >
-          Sign up
-        </Link>
-      </div>
-
       {/* Bottom nav */}
       <div className="mt-8 flex items-center gap-4 text-[12px] text-gray-400 dark:text-neutral-600">
         <Link href="/" className="hover:text-gray-600 dark:hover:text-neutral-400 transition-colors">
