@@ -102,7 +102,7 @@ statseed/
 │   ├── main.py
 │   ├── routers/
 │   │   ├── descriptive.py     # 記述統計API
-│   │   ├── test.py            # 検定API（9種 + 事後検定）
+│   │   ├── test.py            # 検定API（9種 + 事後検定 + 反復測定ANOVA）
 │   │   ├── graph.py           # グラフ出力API
 │   │   ├── table1.py          # Table 1 API
 │   │   ├── regression.py      # 回帰分析API（線形・ロジスティック回帰）
@@ -111,7 +111,7 @@ statseed/
 │   ├── services/
 │   │   ├── stats/
 │   │   │   ├── descriptive.py
-│   │   │   ├── hypothesis.py  # 検定 + 事後検定（Tukey/Bonferroni/Holm/Dunn）
+│   │   │   ├── hypothesis.py  # 検定 + 事後検定（Tukey/Bonferroni/Holm/Dunn）+ 反復測定ANOVA
 │   │   │   ├── table1.py      # Table 1 生成
 │   │   │   └── regression.py  # 線形回帰（OLS）+ ロジスティック回帰（Logit・OR）
 │   │   ├── graph/
@@ -125,7 +125,7 @@ statseed/
 │   ├── schemas/               # Pydanticスキーマ
 │   │   ├── common.py          # FiniteFloat（NaN/Inf拒否）
 │   │   ├── descriptive.py
-│   │   ├── test.py            # 検定 + PosthocRequest/Result
+│   │   ├── test.py            # 検定 + Posthoc + RepeatedMeasures
 │   │   ├── graph.py           # グラフ各種リクエスト/レスポンス
 │   │   ├── table1.py          # Table1Variable（discriminated union）
 │   │   ├── regression.py      # 線形・ロジスティック回帰リクエスト/結果
@@ -314,7 +314,7 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] **棒グラフ** — エラーバー付き（SD / SEM / 95%CI 切り替え）
 - [x] **カプランマイヤー曲線** — 打ち切りマーク・95%CIバンド・リスクテーブル・ログランク検定p値
 - [x] **ROC曲線** — AUC + 95%CI（Hanley & McNeil 1982）・最適カットオフ（Youden指数）・感度/特異度表示
-- [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・グラフ（全7種）・Table 1・回帰分析 の各ページで「CSVから選択」⇄「手入力」を切り替え可能
+- [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・反復測定ANOVA・回帰分析（線形/ロジスティック/ポアソン）・グラフ（全7種）・Table 1 の各ページで「CSVから選択」⇄「手入力」を切り替え可能
 - [x] **レスポンシブUI** — モバイルヘッダー・ドロワーナビ、フォーム縦積み、結果カード・操作行の折り返し、表の横スクロール対応
 
 ## 次の開発候補
