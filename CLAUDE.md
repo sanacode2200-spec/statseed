@@ -9,6 +9,7 @@
 | 項目 | 内容 |
 |------|------|
 | アプリ名 | Statseed |
+| 公開URL | https://statseed.vercel.app/dashboard |
 | ターゲット | コメディカル（PT/OT/ST/看護師/臨床検査技師など） |
 | 提供形態 | 無料公開 Webアプリ |
 | 最大の差別化 | 論文品質グラフ出力 + 完全日本語UI + 検定選択ガイド |
@@ -24,7 +25,7 @@ Backend    FastAPI (Python 3.11+)
 グラフ     Plotly（画面表示） + matplotlib / seaborn（論文用出力・必要時のみ）
 DB         未接続（将来候補: PostgreSQL / Supabase）
 認証       未接続（Supabase Auth用ログインUIのみ実装済み）
-インフラ   Vercel (Frontend) + Docker対応バックエンド
+インフラ   Vercel (Frontend) + Render (Backend, Docker対応)
 フォント   LINESeed JP（ローカル読み込み、woff2）
 ```
 
