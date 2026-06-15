@@ -316,13 +316,15 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] **ROC曲線** — AUC + 95%CI（Hanley & McNeil 1982）・最適カットオフ（Youden指数）・感度/特異度表示
 - [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・反復測定ANOVA・回帰分析（線形/ロジスティック/ポアソン）・グラフ（全7種）・Table 1 の各ページで「CSVから選択」⇄「手入力」を切り替え可能
 - [x] **レスポンシブUI** — モバイルヘッダー・ドロワーナビ、フォーム縦積み、結果カード・操作行の折り返し、表の横スクロール対応
+- [x] **主要ワークフローE2Eテスト** — Playwrightで手入力記述統計、CSV読込 → 対応あり検定 → グラフ引き継ぎ、モバイルナビを検証
 
 ## 次の開発候補
 
 - [ ] Supabase Auth 認証（ログインページ UI は完成済み、Auth 接続が未実装）
 - [ ] 分析履歴・再実行可能な設定JSON・解析パッケージ出力
 - [ ] 回帰分析の拡張 — 混合効果モデル・他のGLM族（線形 / ロジスティック / ポアソン・反復測定ANOVA は実装済み）
-- [ ] アクセシビリティ監査・主要ワークフローE2Eテスト
+- [ ] アクセシビリティ監査・E2Eテスト対象の拡張
+  - フォームの `label` と `input` / `select` の関連付け（`htmlFor` / `id`）を含む
 
 ---
 
@@ -392,6 +394,9 @@ cd frontend && npm run dev
 
 # テスト実行
 STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/pytest backend/tests/ -v
+
+# フルスタックE2Eテスト（Next.js / FastAPI はPlaywrightが自動起動）
+cd frontend && npm run test:e2e
 ```
 
 ---
