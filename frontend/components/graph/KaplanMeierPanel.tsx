@@ -59,7 +59,7 @@ export function KaplanMeierPanel({
       {csvMode ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">生存時間の列</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">生存時間の列</label>
             <select value={csvKmTimeCol} onChange={(e) => setCsvKmTimeCol(e.target.value)} className={`${inputCls} w-full`}>
               {csvCont.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
@@ -67,7 +67,7 @@ export function KaplanMeierPanel({
             </select>
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">イベントの列（1=発生, 0=打ち切り）</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">イベントの列（1=発生, 0=打ち切り）</label>
             <select value={csvKmEventCol} onChange={(e) => setCsvKmEventCol(e.target.value)} className={`${inputCls} w-full`}>
               {csvNumeric.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
@@ -75,7 +75,7 @@ export function KaplanMeierPanel({
             </select>
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群ラベルの列（任意）</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群ラベルの列（任意）</label>
             <select value={csvKmGroupCol} onChange={(e) => setCsvKmGroupCol(e.target.value)} className={`${inputCls} w-full`}>
               <option value="">（指定なし）</option>
               {csvCat.map((c) => (
@@ -88,14 +88,14 @@ export function KaplanMeierPanel({
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+              <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                 生存時間（1行1データ）
               </label>
               <textarea value={kmTimesText} onChange={(e) => setKmTimesText(e.target.value)}
                 rows={7} className={textareaCls} placeholder={"例：\n12\n18\n24\n30\n6"} />
             </div>
             <div>
-              <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+              <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                 イベント（1=発生, 0=打ち切り）
               </label>
               <textarea value={kmEventsText} onChange={(e) => setKmEventsText(e.target.value)}
@@ -103,7 +103,7 @@ export function KaplanMeierPanel({
             </div>
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
               群ラベル（任意・複数群比較）
             </label>
             <textarea value={kmGroupText} onChange={(e) => setKmGroupText(e.target.value)}
@@ -113,21 +113,21 @@ export function KaplanMeierPanel({
       )}
       <div className="flex gap-4 flex-wrap">
         <div>
-          <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
+          <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
           <input type="text" value={kmTimeLabel} onChange={(e) => setKmTimeLabel(e.target.value)}
             className={`${inputCls} w-32`} placeholder="時間" />
         </div>
         <div>
-          <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
+          <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
           <input type="text" value={kmSurvLabel} onChange={(e) => setKmSurvLabel(e.target.value)}
             className={`${inputCls} w-32`} placeholder="生存率" />
         </div>
         <div className="flex flex-col gap-1.5 justify-end">
-          <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+          <label className="flex items-center gap-1.5 text-[14px] text-gray-500 dark:text-neutral-500 cursor-pointer">
             <input type="checkbox" checked={kmShowCi} onChange={(e) => setKmShowCi(e.target.checked)} className="rounded" />
             95%CI表示
           </label>
-          <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+          <label className="flex items-center gap-1.5 text-[14px] text-gray-500 dark:text-neutral-500 cursor-pointer">
             <input type="checkbox" checked={kmShowRisk} onChange={(e) => setKmShowRisk(e.target.checked)} className="rounded" />
             リスクテーブル表示
           </label>

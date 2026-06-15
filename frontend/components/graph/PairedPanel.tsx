@@ -43,13 +43,13 @@ export function PairedPanel({
       {csvMode ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入前・1時点目</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入前・1時点目</label>
             <select value={csvPairedBeforeCol} onChange={(e) => { setCsvPairedBeforeCol(e.target.value); setPairedBeforeLabel(e.target.value); }} className={`${inputCls} w-full`}>
               {csvCont.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入後・2時点目</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">介入後・2時点目</label>
             <select value={csvPairedAfterCol} onChange={(e) => { setCsvPairedAfterCol(e.target.value); setPairedAfterLabel(e.target.value); }} className={`${inputCls} w-full`}>
               {csvCont.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
             </select>

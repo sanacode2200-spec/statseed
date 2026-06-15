@@ -156,8 +156,8 @@ export default function Table1Page() {
   return (
     <div className="max-w-5xl">
       <div className="mb-5">
-        <h1 className="text-[20px] font-semibold text-gray-900 dark:text-white">Table 1 自動生成</h1>
-        <p className="text-[13px] text-gray-400 dark:text-neutral-500 mt-1">
+        <h1 className="text-[24px] font-semibold text-gray-900 dark:text-white">Table 1 自動生成</h1>
+        <p className="text-[16px] text-gray-400 dark:text-neutral-500 mt-1">
           論文の背景データ表（Table 1）を自動生成します。連続・カテゴリ変数を混在できます。
         </p>
       </div>
@@ -178,7 +178,7 @@ export default function Table1Page() {
       {inputMode === "csv" && dataset ? (
         <div className="space-y-3">
           <Card className="p-4">
-            <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-3">
+            <p className="text-[14px] text-gray-400 dark:text-neutral-600 mb-3">
               Table 1 に含める列を選択してください。連続変数は表示形式（平均±SD / 中央値(IQR)）を切り替えられます。
             </p>
             <div className="space-y-1.5">
@@ -192,12 +192,12 @@ export default function Table1Page() {
                       onChange={() => toggleCsvCol(c.name)}
                       className="rounded shrink-0"
                     />
-                    <span className="text-[13px] text-gray-700 dark:text-neutral-300 truncate">{c.name}</span>
-                    <span className="text-[11px] text-gray-400 dark:text-neutral-600 shrink-0">
+                    <span className="text-[16px] text-gray-700 dark:text-neutral-300 truncate">{c.name}</span>
+                    <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">
                       （{columnRole(c) === "continuous" ? "連続" : columnRole(c) === "ordinal" ? "順序" : "カテゴリ"} / 有効 {c.n_valid} / 欠損 {c.n_missing}）
                     </span>
                     {c.name === csvGroupCol && (
-                      <span className="text-[11px] text-gray-400 dark:text-neutral-600 shrink-0">— 群変数として使用中</span>
+                      <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">— 群変数として使用中</span>
                     )}
                   </label>
                   {columnRole(c) === "continuous" && c.name !== csvGroupCol && (
@@ -207,7 +207,7 @@ export default function Table1Page() {
                           key={val}
                           type="button"
                           onClick={() => setCsvDisplayByCol((prev) => ({ ...prev, [c.name]: val }))}
-                          className={`px-3 py-1 text-[11px] transition-colors ${
+                          className={`px-3 py-1 text-[13px] transition-colors ${
                             (csvDisplayByCol[c.name] ?? "mean_sd") === val
                               ? "bg-white text-black"
                               : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-900"
@@ -224,7 +224,7 @@ export default function Table1Page() {
           </Card>
 
           <Card className="p-4">
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
               群分け（任意・p値を計算）
             </label>
             <select
@@ -245,7 +245,7 @@ export default function Table1Page() {
         {vars.map((v, idx) => (
           <Card key={v.id} className="p-4">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="text-[11px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</span>
+              <span className="text-[13px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</span>
               <input
                 className={inputCls + " flex-1"}
                 placeholder="変数名"
@@ -258,7 +258,7 @@ export default function Table1Page() {
                   <button
                     key={t}
                     onClick={() => updateVar(v.id, { type: t })}
-                    className={`px-3 py-1 text-[11px] transition-colors ${
+                    className={`px-3 py-1 text-[13px] transition-colors ${
                       v.type === t
                         ? "bg-white text-black"
                         : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-900"
@@ -275,7 +275,7 @@ export default function Table1Page() {
                     <button
                       key={val}
                       onClick={() => updateVar(v.id, { display: val })}
-                      className={`px-3 py-1 text-[11px] transition-colors ${
+                      className={`px-3 py-1 text-[13px] transition-colors ${
                         v.display === val
                           ? "bg-white text-black"
                           : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-900"
@@ -289,7 +289,7 @@ export default function Table1Page() {
               {vars.length > 1 && (
                 <button
                   onClick={() => removeVar(v.id)}
-                  className="text-gray-300 dark:text-neutral-700 hover:text-red-400 transition-colors text-[18px] leading-none shrink-0"
+                  className="text-gray-300 dark:text-neutral-700 hover:text-red-400 transition-colors text-[22px] leading-none shrink-0"
                   title="削除"
                 >
                   ×
@@ -308,9 +308,9 @@ export default function Table1Page() {
 
         <button
           onClick={addVar}
-          className="flex items-center gap-1.5 text-[12px] text-white hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-[14px] text-white hover:text-white transition-colors"
         >
-          <span className="text-[16px] leading-none">+</span> 変数を追加
+          <span className="text-[19px] leading-none">+</span> 変数を追加
         </button>
 
         {/* 群分け */}
@@ -323,7 +323,7 @@ export default function Table1Page() {
                 onChange={(e) => setUseGroup(e.target.checked)}
                 className="rounded"
               />
-              <span className="text-[13px] text-gray-700 dark:text-neutral-300">群別に比較する（p値を計算）</span>
+              <span className="text-[16px] text-gray-700 dark:text-neutral-300">群別に比較する（p値を計算）</span>
             </label>
             {useGroup && (
               <input
@@ -349,18 +349,18 @@ export default function Table1Page() {
 
       {((inputMode === "csv" && dataset && !!csvGroupCol) || (inputMode === "manual" && useGroup)) && (
         <Card className="mt-3 p-4">
-          <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-2.5">群間比較の指標</p>
+          <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-2.5">群間比較の指標</p>
           <div className="flex flex-col gap-2.5 sm:flex-row sm:gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={showSmd} onChange={(e) => setShowSmd(e.target.checked)} className="rounded" />
-              <span className="text-[13px] text-gray-700 dark:text-neutral-300">標準化平均差（SMD）を表示</span>
+              <span className="text-[16px] text-gray-700 dark:text-neutral-300">標準化平均差（SMD）を表示</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={showPvalue} onChange={(e) => setShowPvalue(e.target.checked)} className="rounded" />
-              <span className="text-[13px] text-gray-700 dark:text-neutral-300">p値を表示</span>
+              <span className="text-[16px] text-gray-700 dark:text-neutral-300">p値を表示</span>
             </label>
           </div>
-          <p className="mt-2.5 text-[11px] text-gray-400 dark:text-neutral-600">
+          <p className="mt-2.5 text-[13px] text-gray-400 dark:text-neutral-600">
             背景特性表（Table 1）では検出力に依存するp値より、サンプルサイズに依存しない効果量であるSMDが推奨されます（|SMD| &gt; 0.1 で群間の偏りの目安）。SMDは2群比較時のみ算出されます。
           </p>
         </Card>
@@ -377,24 +377,24 @@ export default function Table1Page() {
       {result && (
         <div className="mt-6">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-[15px] font-semibold text-gray-800 dark:text-neutral-200">Table 1</h2>
+            <h2 className="text-[18px] font-semibold text-gray-800 dark:text-neutral-200">Table 1</h2>
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={copyAsTsv}
-                className="text-[12px] text-white hover:text-white transition-colors"
+                className="text-[14px] text-white hover:text-white transition-colors"
               >
                 TSVでコピー（Excel/Word用）
               </button>
               <button
                 onClick={() => exportTable1Csv(result)}
-                className="text-[12px] text-white hover:text-white transition-colors"
+                className="text-[14px] text-white hover:text-white transition-colors"
               >
                 CSVダウンロード
               </button>
             </div>
           </div>
           <Table1View result={result} />
-          <p className="mt-2 text-[11px] text-gray-400 dark:text-neutral-600">
+          <p className="mt-2 text-[13px] text-gray-400 dark:text-neutral-600">
             欠損数は変数ごとに表示しています。
             {result.group_missing > 0 && ` 群分け列の欠損により ${result.group_missing} 件は群別集計から除外されました。`}
           </p>
@@ -411,17 +411,17 @@ function Table1View({ result }: { result: Table1Result }) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[16px]">
         <thead>
           <tr className="border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950">
             <th className="text-left px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500 w-48">変数</th>
             <th className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">
-              全体<br /><span className="font-normal text-[11px]">n = {result.n_overall}</span>
+              全体<br /><span className="font-normal text-[13px]">n = {result.n_overall}</span>
             </th>
             <th className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">欠損</th>
             {hasGroups && result.group_names!.map((g) => (
               <th key={g} className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">
-                {g}<br /><span className="font-normal text-[11px]">n = {result.n_by_group?.[g] ?? ""}</span>
+                {g}<br /><span className="font-normal text-[13px]">n = {result.n_by_group?.[g] ?? ""}</span>
               </th>
             ))}
             {hasSmd && (
@@ -430,7 +430,7 @@ function Table1View({ result }: { result: Table1Result }) {
             {hasPvalue && (
               <>
                 <th className="text-center px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">p値</th>
-                <th className="text-left px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500 text-[11px]">検定</th>
+                <th className="text-left px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500 text-[13px]">検定</th>
               </>
             )}
           </tr>
@@ -475,7 +475,7 @@ function Table1View({ result }: { result: Table1Result }) {
                   }`}>
                     {row.p_value ?? (row.indent ? "" : "—")}
                   </td>
-                  <td className="px-4 py-2 text-[11px] text-gray-400 dark:text-neutral-600">
+                  <td className="px-4 py-2 text-[13px] text-gray-400 dark:text-neutral-600">
                     {row.indent ? "" : (row.test_name ?? "")}
                   </td>
                 </>

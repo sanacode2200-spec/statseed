@@ -102,11 +102,11 @@ export default function DescriptivePage() {
 
   return (
     <div>
-      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+      <div className="text-[13px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
         解析
       </div>
-      <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">記述統計</h1>
-      <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">
+      <h1 className="text-[24px] font-bold text-gray-900 dark:text-white mb-1">記述統計</h1>
+      <p className="text-[16px] text-gray-400 dark:text-neutral-600 mb-5">
         データを入力すると統計量を自動計算します。
       </p>
 
@@ -120,7 +120,7 @@ export default function DescriptivePage() {
             key={opt.value}
             type="button"
             onClick={() => switchMode(opt.value)}
-            className={`px-3 py-1 rounded-md text-[12px] font-medium border transition-colors ${
+            className={`px-3 py-1 rounded-md text-[14px] font-medium border transition-colors ${
               mode === opt.value
                 ? "text-white border-transparent"
                 : "text-gray-500 dark:text-neutral-500 border-gray-200 dark:border-neutral-800 bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-900"
@@ -148,11 +148,11 @@ export default function DescriptivePage() {
 
           {inputMode === "csv" && dataset ? (
             <div>
-              <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+              <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                 {mode === "continuous" ? "連続変数の列" : "カテゴリ変数の列"}
               </label>
               {csvCols.length === 0 ? (
-                <p className="text-[12px] text-orange-500 dark:text-orange-400">
+                <p className="text-[14px] text-orange-500 dark:text-orange-400">
                   {mode === "continuous" ? "連続変数の列が見つかりません。" : "カテゴリ変数の列が見つかりません。"}
                 </p>
               ) : (
@@ -172,7 +172,7 @@ export default function DescriptivePage() {
           ) : (
             <>
               <div>
-                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
+                <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
                 <input
                   type="text"
                   value={variableName}
@@ -183,13 +183,13 @@ export default function DescriptivePage() {
               </div>
 
               <div>
-                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
+                <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
                 {mode === "continuous" ? (
-                  <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-1.5">
+                  <p className="text-[14px] text-gray-400 dark:text-neutral-600 mb-1.5">
                     数値を改行・スペース・カンマのいずれかで区切って入力してください。欠損値はNA、- で表せます。
                   </p>
                 ) : (
-                  <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-1.5">
+                  <p className="text-[14px] text-gray-400 dark:text-neutral-600 mb-1.5">
                     カテゴリ値を1行1件（またはカンマ・タブ区切り）で入力してください。欠損値はNA、- で表せます。
                   </p>
                 )}
@@ -224,7 +224,7 @@ export default function DescriptivePage() {
                 if (mode === "continuous" && continuousResult) exportDescriptiveCsv(continuousResult);
                 if (mode === "categorical" && categoricalResult) exportCategoricalCsv(categoricalResult);
               }}
-              className="text-[12px] text-white hover:text-white transition-colors"
+              className="text-[14px] text-white hover:text-white transition-colors"
             >
               CSVダウンロード
             </button>
@@ -236,8 +236,8 @@ export default function DescriptivePage() {
             <CategoricalResultTable result={categoricalResult} />
           )}
           <Card>
-            <h3 className="text-[12px] font-semibold text-gray-500 dark:text-neutral-500 uppercase tracking-wider mb-2">解釈</h3>
-            <p className="text-[13px] text-gray-600 dark:text-neutral-400 leading-relaxed">{result.interpretation}</p>
+            <h3 className="text-[14px] font-semibold text-gray-500 dark:text-neutral-500 uppercase tracking-wider mb-2">解釈</h3>
+            <p className="text-[16px] text-gray-600 dark:text-neutral-400 leading-relaxed">{result.interpretation}</p>
           </Card>
         </div>
       )}

@@ -14,7 +14,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "inline-flex min-h-11 items-center justify-center rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed sm:min-h-0";
+    "inline-flex min-h-11 items-center justify-center rounded-md px-3 py-1.5 text-[16px] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed sm:min-h-0";
   const styles =
     variant === "primary"
       ? "bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-100"

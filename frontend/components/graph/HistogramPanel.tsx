@@ -29,7 +29,7 @@ export function HistogramPanel({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
+        <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
         <input
           type="text"
           value={histXLabel}
@@ -40,7 +40,7 @@ export function HistogramPanel({
       </div>
       {csvMode ? (
         <div>
-          <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データの列</label>
+          <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データの列</label>
           <select value={csvHistCol} onChange={(e) => setCsvHistCol(e.target.value)} className={`${inputCls} w-full`}>
             {csvCont.map((c) => (
               <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
@@ -49,7 +49,7 @@ export function HistogramPanel({
         </div>
       ) : (
         <div>
-          <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
+          <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
           <textarea
             value={histText}
             onChange={(e) => setHistText(e.target.value)}
@@ -59,7 +59,7 @@ export function HistogramPanel({
           />
         </div>
       )}
-      <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+      <label className="flex items-center gap-1.5 text-[14px] text-gray-500 dark:text-neutral-500 cursor-pointer">
         <input
           type="checkbox"
           checked={histShowNormal}

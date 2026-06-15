@@ -43,7 +43,7 @@ export function ScatterPanel({
       {csvMode ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸の列</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸の列</label>
             <select value={csvScatterXCol} onChange={(e) => setCsvScatterXCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
               {csvCont.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
@@ -53,7 +53,7 @@ export function ScatterPanel({
               placeholder="X軸ラベル" className={`${inputCls} w-full`} />
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸の列</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸の列</label>
             <select value={csvScatterYCol} onChange={(e) => setCsvScatterYCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
               {csvCont.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
@@ -88,7 +88,7 @@ export function ScatterPanel({
           ))}
         </div>
       )}
-      <label className="flex items-center gap-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+      <label className="flex items-center gap-1.5 text-[14px] text-gray-500 dark:text-neutral-500 cursor-pointer">
         <input
           type="checkbox"
           checked={scShowReg}

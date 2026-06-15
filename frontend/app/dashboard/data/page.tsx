@@ -34,7 +34,7 @@ function CopyButton({ values }: { values: (number | null)[] }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-[12px] text-white dark:text-[#56B4E9] hover:underline whitespace-nowrap"
+      className="text-[14px] text-white dark:text-[#56B4E9] hover:underline whitespace-nowrap"
     >
       {copied ? "コピー済み ✓" : "値をコピー"}
     </button>
@@ -136,11 +136,11 @@ export default function DataPage() {
 
   return (
     <div>
-      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+      <div className="text-[13px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
         データ
       </div>
-      <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">データ読み込み</h1>
-      <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">
+      <h1 className="text-[24px] font-bold text-gray-900 dark:text-white mb-1">データ読み込み</h1>
+      <p className="text-[16px] text-gray-400 dark:text-neutral-600 mb-5">
         CSV または Excel ファイルをアップロードすると、列ごとの概要を確認できます。
         読み込んだデータは記述統計・検定・グラフ・Table 1 の各ページで列を選ぶだけで使えます。
       </p>
@@ -158,10 +158,10 @@ export default function DataPage() {
         }`}
       >
         <div className="text-3xl">📂</div>
-        <p className="text-[13px] font-medium text-gray-500 dark:text-neutral-500">
+        <p className="text-[16px] font-medium text-gray-500 dark:text-neutral-500">
           クリックまたはドラッグ＆ドロップでファイルを選択
         </p>
-        <p className="text-[12px] text-gray-400 dark:text-neutral-600">CSV・Excel（.xlsx / .xls）対応 / 最大10MB</p>
+        <p className="text-[14px] text-gray-400 dark:text-neutral-600">CSV・Excel（.xlsx / .xls）対応 / 最大10MB</p>
         <input
           ref={inputRef}
           type="file"
@@ -172,7 +172,7 @@ export default function DataPage() {
       </div>
 
       {loading && (
-        <div className="text-center text-[13px] text-gray-400 dark:text-neutral-600 py-8">読み込み中...</div>
+        <div className="text-center text-[16px] text-gray-400 dark:text-neutral-600 py-8">読み込み中...</div>
       )}
 
       {error && <ErrorMessage message={error} />}
@@ -183,17 +183,17 @@ export default function DataPage() {
             <div className="rounded-xl border border-orange-300 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/20 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-[14px] font-semibold text-orange-800 dark:text-orange-300">
+                  <h2 className="text-[17px] font-semibold text-orange-800 dark:text-orange-300">
                     個人識別情報を含む可能性があります
                   </h2>
-                  <p className="mt-1 text-[12px] text-orange-700 dark:text-orange-400">
+                  <p className="mt-1 text-[14px] text-orange-700 dark:text-orange-400">
                     端末保存や画面共有の前に確認してください。解析から除外しても元データ内の値は削除されません。
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={excludePrivacyRiskColumns}
-                  className="rounded-md border border-orange-300 dark:border-orange-800 px-3 py-1.5 text-[12px] font-medium text-orange-800 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-950/40"
+                  className="rounded-md border border-orange-300 dark:border-orange-800 px-3 py-1.5 text-[14px] font-medium text-orange-800 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-950/40"
                 >
                   候補列を解析から一括除外
                 </button>
@@ -204,23 +204,23 @@ export default function DataPage() {
                     key={column.name}
                     className="flex flex-wrap items-center gap-2 rounded-md bg-white/70 dark:bg-black/20 px-3 py-2"
                   >
-                    <span className="text-[12px] font-medium text-orange-900 dark:text-orange-200">
+                    <span className="text-[14px] font-medium text-orange-900 dark:text-orange-200">
                       {column.name}
                     </span>
-                    <span className="min-w-0 flex-1 text-[11px] text-orange-700 dark:text-orange-400">
+                    <span className="min-w-0 flex-1 text-[13px] text-orange-700 dark:text-orange-400">
                       {column.privacy_reason}
                     </span>
                     <button
                       type="button"
                       onClick={() => updateRole(column.name, "id")}
-                      className="text-[11px] text-orange-800 dark:text-orange-300 hover:underline"
+                      className="text-[13px] text-orange-800 dark:text-orange-300 hover:underline"
                     >
                       IDとして扱う
                     </button>
                     <button
                       type="button"
                       onClick={() => updateRole(column.name, "exclude")}
-                      className="text-[11px] text-orange-800 dark:text-orange-300 hover:underline"
+                      className="text-[13px] text-orange-800 dark:text-orange-300 hover:underline"
                     >
                       解析から除外
                     </button>
@@ -233,17 +233,17 @@ export default function DataPage() {
           {/* サマリー */}
           <Card>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">
+              <h2 className="text-[17px] font-semibold text-gray-800 dark:text-neutral-200">
                 {displayed.filename}
               </h2>
               <div className="flex items-center gap-3">
-                <span className="text-[12px] text-gray-400 dark:text-neutral-600">
+                <span className="text-[14px] text-gray-400 dark:text-neutral-600">
                   {displayed.n_rows} 行 × {displayed.n_cols} 列
                 </span>
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                  className="text-[14px] text-gray-400 dark:text-neutral-600 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 >
                   クリア
                 </button>
@@ -251,16 +251,16 @@ export default function DataPage() {
             </div>
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 px-3 py-2.5">
               <div>
-                <p className="text-[12px] font-medium text-gray-700 dark:text-neutral-300">
+                <p className="text-[14px] font-medium text-gray-700 dark:text-neutral-300">
                   {storageMode === "persistent" ? "この端末に保存中" : "このタブ内だけに保存中"}
                 </p>
-                <p className="mt-0.5 text-[11px] text-gray-400 dark:text-neutral-600">
+                <p className="mt-0.5 text-[13px] text-gray-400 dark:text-neutral-600">
                   {storageMode === "persistent"
                     ? "ブラウザを閉じてもデータが残ります。共有端末では使用しないでください。"
                     : "ページ更新では保持され、タブを閉じると削除されます。"}
                 </p>
               </div>
-              <label className="flex items-center gap-2 text-[12px] text-gray-600 dark:text-neutral-400 cursor-pointer">
+              <label className="flex items-center gap-2 text-[14px] text-gray-600 dark:text-neutral-400 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={storageMode === "persistent"}
@@ -270,7 +270,7 @@ export default function DataPage() {
                 この端末に保存する
               </label>
             </div>
-            <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-4">
+            <p className="text-[14px] text-gray-400 dark:text-neutral-600 mb-4">
               解析前に各列の役割を確認してください。ID・日付・除外にした列は解析候補に表示されません。
               {" "}
               <Link href="/dashboard/descriptive" className="text-white hover:underline">記述統計</Link>
@@ -285,14 +285,14 @@ export default function DataPage() {
 
             {/* 列一覧 */}
             <div className="overflow-x-auto">
-              <table className="w-full text-[13px]">
+              <table className="w-full text-[16px]">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-neutral-800 text-left">
-                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">列名</th>
-                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">解析上の役割</th>
-                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">有効数</th>
-                    <th className="pb-2 pr-4 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">欠損数</th>
-                    <th className="pb-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600"></th>
+                    <th className="pb-2 pr-4 text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">列名</th>
+                    <th className="pb-2 pr-4 text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">解析上の役割</th>
+                    <th className="pb-2 pr-4 text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">有効数</th>
+                    <th className="pb-2 pr-4 text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 text-right">欠損数</th>
+                    <th className="pb-2 text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -312,14 +312,14 @@ export default function DataPage() {
                         {col.name}
                         {col.privacy_risk && (
                           <span
-                            className="ml-2 rounded bg-orange-100 dark:bg-orange-950/40 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:text-orange-400"
+                            className="ml-2 rounded bg-orange-100 dark:bg-orange-950/40 px-1.5 py-0.5 text-[12px] font-medium text-orange-700 dark:text-orange-400"
                             title={col.privacy_reason ?? undefined}
                           >
                             要確認
                           </span>
                         )}
                         {activeCol === col.name && (
-                          <span className="ml-2 text-[11px] text-gray-400 dark:text-neutral-600">▶ 選択中</span>
+                          <span className="ml-2 text-[13px] text-gray-400 dark:text-neutral-600">▶ 選択中</span>
                         )}
                       </td>
                       <td className="py-2 pr-4 min-w-52">
@@ -327,7 +327,7 @@ export default function DataPage() {
                           value={role}
                           onClick={(e) => e.stopPropagation()}
                           onChange={(e) => updateRole(col.name, e.target.value as ColumnRole)}
-                          className="rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[12px] bg-white dark:bg-[#111] text-gray-700 dark:text-neutral-300 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
+                          className="rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[14px] bg-white dark:bg-[#111] text-gray-700 dark:text-neutral-300 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
                           aria-label={`${col.name} の役割`}
                         >
                           {ROLE_OPTIONS.map((option) => (
@@ -341,7 +341,7 @@ export default function DataPage() {
                           ))}
                         </select>
                         {col.role_reason && (
-                          <p className="mt-1 text-[10px] leading-tight text-gray-400 dark:text-neutral-600">
+                          <p className="mt-1 text-[12px] leading-tight text-gray-400 dark:text-neutral-600">
                             {col.role_reason}
                           </p>
                         )}
@@ -373,15 +373,15 @@ export default function DataPage() {
           {activeColInfo && (
             <Card>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-[14px] font-semibold text-gray-700 dark:text-neutral-300">
+                <h3 className="text-[17px] font-semibold text-gray-700 dark:text-neutral-300">
                   {activeColInfo.name} — 値のプレビュー
                 </h3>
                 <CopyButton values={activeColInfo.values} />
               </div>
-              <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-3">
+              <p className="text-[14px] text-gray-400 dark:text-neutral-600 mb-3">
                 「値をコピー」→ 記述統計や検定ページに貼り付けて解析できます
               </p>
-              <div className="font-mono text-[13px] bg-gray-50 dark:bg-[#111] rounded-md p-3 max-h-48 overflow-y-auto leading-relaxed text-gray-600 dark:text-neutral-400">
+              <div className="font-mono text-[16px] bg-gray-50 dark:bg-[#111] rounded-md p-3 max-h-48 overflow-y-auto leading-relaxed text-gray-600 dark:text-neutral-400">
                 {activeColInfo.values.slice(0, 50).map((v, i) => (
                   <span key={i} className="mr-2">
                     {v === null ? <span className="text-orange-400">NA</span> : v}
@@ -396,11 +396,11 @@ export default function DataPage() {
 
           {/* データプレビューテーブル */}
           <Card>
-            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 mb-3">
+            <h3 className="text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 mb-3">
               先頭 {displayed.preview_rows.length} 行
             </h3>
             <div className="overflow-x-auto">
-              <table className="text-[12px] min-w-full">
+              <table className="text-[14px] min-w-full">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-neutral-800">
                     {displayed.columns.map((col) => (

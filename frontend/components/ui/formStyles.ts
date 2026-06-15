@@ -3,7 +3,7 @@
 // （Vercel 風ミニマル：アクセントカラーなし・ダーク既定・neutral 階調のみ）
 
 const FIELD_BASE =
-  "rounded-md border border-gray-200 dark:border-neutral-800 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
+  "rounded-md border border-gray-200 dark:border-neutral-800 text-[16px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
 
 /** 幅いっぱいの input / select 用。 */
 export const inputCls = `w-full px-3 py-1.5 ${FIELD_BASE}`;

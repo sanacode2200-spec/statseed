@@ -8,7 +8,7 @@ export function TextCopyBlock({ title, text }: { title: string; text: string }) 
   return (
     <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 p-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[12px] font-semibold text-gray-600 dark:text-neutral-400">{title}</p>
+        <p className="text-[14px] font-semibold text-gray-600 dark:text-neutral-400">{title}</p>
         <button
           type="button"
           onClick={() =>
@@ -17,12 +17,12 @@ export function TextCopyBlock({ title, text }: { title: string; text: string }) 
               setTimeout(() => setCopied(false), 1200);
             })
           }
-          className="text-[11px] text-gray-500 hover:underline"
+          className="text-[13px] text-gray-500 hover:underline"
         >
           {copied ? "コピー済み" : "コピー"}
         </button>
       </div>
-      <p className="text-[12px] leading-relaxed text-gray-600 dark:text-neutral-400">{text}</p>
+      <p className="text-[14px] leading-relaxed text-gray-600 dark:text-neutral-400">{text}</p>
     </div>
   );
 }

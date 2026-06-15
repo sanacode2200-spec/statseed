@@ -120,8 +120,8 @@ export default function RegressionPage() {
   return (
     <div className="max-w-5xl">
       <div className="mb-5">
-        <h1 className="text-[20px] font-semibold text-gray-900 dark:text-white">回帰分析</h1>
-        <p className="text-[13px] text-gray-400 dark:text-neutral-500 mt-1">
+        <h1 className="text-[24px] font-semibold text-gray-900 dark:text-white">回帰分析</h1>
+        <p className="text-[16px] text-gray-400 dark:text-neutral-500 mt-1">
           {isLogistic
             ? "0/1 の2値アウトカム（1=イベント発生）を説明変数で予測します。各説明変数のオッズ比(OR)と95%CIを算出します。"
             : isPoisson
@@ -158,7 +158,7 @@ export default function RegressionPage() {
       {inputMode === "csv" && dataset ? (
         <div className="space-y-3">
           <Card className="p-4">
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
               {isLogistic ? "アウトカム（0/1 の列）" : isPoisson ? "件数（カウントの列）" : "目的変数（連続変数）"}
             </label>
             <select
@@ -173,7 +173,7 @@ export default function RegressionPage() {
           </Card>
 
           <Card className="p-4">
-            <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-2.5">
+            <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-2.5">
               説明変数（連続変数・複数選択可）
             </p>
             <div className="space-y-1.5">
@@ -185,8 +185,8 @@ export default function RegressionPage() {
                     onChange={() => setCsvPredCols((prev) => ({ ...prev, [c.name]: !prev[c.name] }))}
                     className="rounded shrink-0"
                   />
-                  <span className="text-[13px] text-gray-700 dark:text-neutral-300 truncate">{c.name}</span>
-                  <span className="text-[11px] text-gray-400 dark:text-neutral-600 shrink-0">
+                  <span className="text-[16px] text-gray-700 dark:text-neutral-300 truncate">{c.name}</span>
+                  <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">
                     （有効 {c.n_valid} / 欠損 {c.n_missing}）
                   </span>
                 </label>
@@ -198,7 +198,7 @@ export default function RegressionPage() {
         <div className="space-y-3">
           <Card className="p-4">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="text-[12px] text-gray-500 dark:text-neutral-500 shrink-0">{isLogistic ? "アウトカム" : isPoisson ? "件数" : "目的変数"}</span>
+              <span className="text-[14px] text-gray-500 dark:text-neutral-500 shrink-0">{isLogistic ? "アウトカム" : isPoisson ? "件数" : "目的変数"}</span>
               <input
                 className={inputCls + " flex-1 min-w-[8rem]"}
                 placeholder={isLogistic ? "アウトカム名（例：再入院）" : isPoisson ? "件数名（例：転倒回数）" : "目的変数名"}
@@ -222,7 +222,7 @@ export default function RegressionPage() {
           {preds.map((p, idx) => (
             <Card key={p.id} className="p-4">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="text-[11px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</span>
+                <span className="text-[13px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</span>
                 <input
                   className={inputCls + " flex-1 min-w-[8rem]"}
                   placeholder={`説明変数${idx + 1}の名前`}
@@ -232,7 +232,7 @@ export default function RegressionPage() {
                 {preds.length > 1 && (
                   <button
                     onClick={() => removePred(p.id)}
-                    className="text-gray-300 dark:text-neutral-700 hover:text-red-400 transition-colors text-[18px] leading-none shrink-0"
+                    className="text-gray-300 dark:text-neutral-700 hover:text-red-400 transition-colors text-[22px] leading-none shrink-0"
                     title="削除"
                   >
                     ×
@@ -251,9 +251,9 @@ export default function RegressionPage() {
 
           <button
             onClick={addPred}
-            className="flex items-center gap-1.5 text-[12px] text-white hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-[14px] text-white hover:text-white transition-colors"
           >
-            <span className="text-[16px] leading-none">+</span> 説明変数を追加
+            <span className="text-[19px] leading-none">+</span> 説明変数を追加
           </button>
         </div>
       )}
@@ -296,8 +296,8 @@ export default function RegressionPage() {
 function InterpretationCard({ text }: { text: string }) {
   return (
     <Card className="p-4">
-      <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">結果の解釈</p>
-      <p className="text-[13px] leading-relaxed text-gray-700 dark:text-neutral-300">{text}</p>
+      <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">結果の解釈</p>
+      <p className="text-[16px] leading-relaxed text-gray-700 dark:text-neutral-300">{text}</p>
     </Card>
   );
 }
@@ -322,12 +322,12 @@ function ModelFit({ result }: { result: LinearRegressionResult }) {
   ];
   return (
     <Card className="p-4">
-      <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>
+      <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>
       <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 sm:grid-cols-3">
         {items.map(([label, val]) => (
           <div key={label}>
-            <div className="text-[11px] text-gray-400 dark:text-neutral-600">{label}</div>
-            <div className="text-[15px] font-semibold text-gray-800 dark:text-neutral-200 tabular-nums">{val}</div>
+            <div className="text-[13px] text-gray-400 dark:text-neutral-600">{label}</div>
+            <div className="text-[18px] font-semibold text-gray-800 dark:text-neutral-200 tabular-nums">{val}</div>
           </div>
         ))}
       </div>
@@ -346,12 +346,12 @@ function LogitModelFit({ result }: { result: LogisticRegressionResult }) {
   ];
   return (
     <Card className="p-4">
-      <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>
+      <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>
       <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 sm:grid-cols-3">
         {items.map(([label, val]) => (
           <div key={label}>
-            <div className="text-[11px] text-gray-400 dark:text-neutral-600">{label}</div>
-            <div className="text-[15px] font-semibold text-gray-800 dark:text-neutral-200 tabular-nums">{val}</div>
+            <div className="text-[13px] text-gray-400 dark:text-neutral-600">{label}</div>
+            <div className="text-[18px] font-semibold text-gray-800 dark:text-neutral-200 tabular-nums">{val}</div>
           </div>
         ))}
       </div>
@@ -362,7 +362,7 @@ function LogitModelFit({ result }: { result: LogisticRegressionResult }) {
 function OddsTable({ result }: { result: LogisticRegressionResult }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[16px]">
         <thead>
           <tr className="border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 text-gray-500 dark:text-neutral-500">
             <th className="text-left px-4 py-2.5 font-medium">項目</th>
@@ -405,12 +405,12 @@ function PoissonModelFit({ result }: { result: PoissonRegressionResult }) {
   ];
   return (
     <Card className="p-4">
-      <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>
+      <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>
       <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 sm:grid-cols-3">
         {items.map(([label, val]) => (
           <div key={label}>
-            <div className="text-[11px] text-gray-400 dark:text-neutral-600">{label}</div>
-            <div className="text-[15px] font-semibold text-gray-800 dark:text-neutral-200 tabular-nums">{val}</div>
+            <div className="text-[13px] text-gray-400 dark:text-neutral-600">{label}</div>
+            <div className="text-[18px] font-semibold text-gray-800 dark:text-neutral-200 tabular-nums">{val}</div>
           </div>
         ))}
       </div>
@@ -421,7 +421,7 @@ function PoissonModelFit({ result }: { result: PoissonRegressionResult }) {
 function RateTable({ result }: { result: PoissonRegressionResult }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[16px]">
         <thead>
           <tr className="border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 text-gray-500 dark:text-neutral-500">
             <th className="text-left px-4 py-2.5 font-medium">項目</th>
@@ -456,7 +456,7 @@ function RateTable({ result }: { result: PoissonRegressionResult }) {
 function CoefTable({ result }: { result: LinearRegressionResult }) {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800">
-      <table className="w-full text-[13px]">
+      <table className="w-full text-[16px]">
         <thead>
           <tr className="border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 text-gray-500 dark:text-neutral-500">
             <th className="text-left px-4 py-2.5 font-medium">項目</th>

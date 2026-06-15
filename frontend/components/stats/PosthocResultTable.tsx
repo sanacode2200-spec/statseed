@@ -7,16 +7,16 @@ export function PosthocResultTable({ result }: { result: PosthocResult }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <span className="text-[12px] text-gray-400 dark:text-neutral-500">検定法: </span>
-          <span className="text-[13px] font-medium text-gray-700 dark:text-neutral-300">{result.method}</span>
+          <span className="text-[14px] text-gray-400 dark:text-neutral-500">検定法: </span>
+          <span className="text-[16px] font-medium text-gray-700 dark:text-neutral-300">{result.method}</span>
         </div>
-        <span className="text-[12px] text-gray-400 dark:text-neutral-500">
+        <span className="text-[14px] text-gray-400 dark:text-neutral-500">
           {result.n_comparisons}ペア比較 · α = 0.05
         </span>
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800">
-        <table className="w-full text-[13px]">
+        <table className="w-full text-[16px]">
           <thead>
             <tr className="border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950">
               <th className="text-left px-4 py-2.5 font-medium text-gray-500 dark:text-neutral-500">比較ペア</th>
@@ -66,11 +66,11 @@ export function PosthocResultTable({ result }: { result: PosthocResult }) {
                 </td>
                 <td className="text-center px-4 py-2.5">
                   {pair.significant ? (
-                    <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-neutral-800 text-white">
+                    <span className="inline-block px-2 py-0.5 rounded text-[13px] font-semibold bg-neutral-800 text-white">
                       *
                     </span>
                   ) : (
-                    <span className="text-gray-300 dark:text-neutral-700 text-[11px]">n.s.</span>
+                    <span className="text-gray-300 dark:text-neutral-700 text-[13px]">n.s.</span>
                   )}
                 </td>
               </tr>
@@ -79,7 +79,7 @@ export function PosthocResultTable({ result }: { result: PosthocResult }) {
         </table>
       </div>
 
-      <div className="rounded-md bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 px-4 py-3 text-[13px] text-gray-600 dark:text-neutral-400">
+      <div className="rounded-md bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 px-4 py-3 text-[16px] text-gray-600 dark:text-neutral-400">
         {result.interpretation}
       </div>
     </div>

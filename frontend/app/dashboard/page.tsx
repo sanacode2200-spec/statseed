@@ -45,9 +45,9 @@ export default function DashboardHome() {
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-8">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600">ホーム</p>
-        <h1 className="mt-2 text-[26px] font-bold tracking-tight text-gray-900 dark:text-white">何から始めますか？</h1>
-        <p className="mt-2 text-[13px] text-gray-500 dark:text-neutral-500">データの準備状況に合わせて、最初の操作を選んでください。</p>
+        <p className="text-[13px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600">ホーム</p>
+        <h1 className="mt-2 text-[31px] font-bold tracking-tight text-gray-900 dark:text-white">何から始めますか？</h1>
+        <p className="mt-2 text-[16px] text-gray-500 dark:text-neutral-500">データの準備状況に合わせて、最初の操作を選んでください。</p>
       </div>
 
       <section>
@@ -63,12 +63,12 @@ export default function DashboardHome() {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className={`text-[10px] font-semibold tracking-wider ${primary ? "text-neutral-400 dark:text-neutral-500" : "text-gray-400 dark:text-neutral-600"}`}>{eyebrow}</span>
+                <span className={`text-[12px] font-semibold tracking-wider ${primary ? "text-neutral-400 dark:text-neutral-500" : "text-gray-400 dark:text-neutral-600"}`}>{eyebrow}</span>
                 <Icon />
               </div>
-              <h2 className="mt-8 text-[16px] font-bold">{title}</h2>
-              <p className={`mt-2 text-[12px] leading-6 ${primary ? "text-neutral-300 dark:text-neutral-600" : "text-gray-500 dark:text-neutral-500"}`}>{desc}</p>
-              <span className="mt-5 inline-block text-[12px] font-semibold">始める →</span>
+              <h2 className={`mt-8 text-[19px] font-bold ${primary ? "dark:text-black" : ""}`}>{title}</h2>
+              <p className={`mt-2 text-[14px] leading-6 ${primary ? "text-neutral-300 dark:text-neutral-600" : "text-gray-500 dark:text-neutral-500"}`}>{desc}</p>
+              <span className="mt-5 inline-block text-[14px] font-semibold">始める →</span>
             </Link>
           ))}
         </div>
@@ -76,14 +76,14 @@ export default function DashboardHome() {
 
       <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <div>
-          <h2 className="mb-3 text-[13px] font-semibold text-gray-800 dark:text-neutral-200">目的から選ぶ</h2>
+          <h2 className="mb-3 text-[16px] font-semibold text-gray-800 dark:text-neutral-200">目的から選ぶ</h2>
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-neutral-800 dark:bg-[#111]">
             {WORKFLOWS.map(({ href, title, desc, icon: Icon }) => (
               <Link key={href} href={href} className="group flex items-center gap-3 border-b border-gray-100 px-4 py-3.5 last:border-0 hover:bg-gray-50 dark:border-neutral-900 dark:hover:bg-neutral-950">
                 <span className="text-gray-400 dark:text-neutral-600"><Icon /></span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-semibold text-gray-800 dark:text-neutral-200">{title}</span>
-                  <span className="mt-0.5 block text-[11px] text-gray-400 dark:text-neutral-600">{desc}</span>
+                  <span className="block text-[16px] font-semibold text-gray-800 dark:text-neutral-200">{title}</span>
+                  <span className="mt-0.5 block text-[13px] text-gray-400 dark:text-neutral-600">{desc}</span>
                 </span>
                 <span className="text-gray-300 group-hover:text-gray-500 dark:text-neutral-700">→</span>
               </Link>
@@ -92,15 +92,15 @@ export default function DashboardHome() {
         </div>
 
         <div>
-          <h2 className="mb-3 text-[13px] font-semibold text-gray-800 dark:text-neutral-200">Statseedの基準</h2>
+          <h2 className="mb-3 text-[16px] font-semibold text-gray-800 dark:text-neutral-200">Statseedの基準</h2>
           <div className="space-y-3">
             {STANDARDS.map(([title, text], index) => (
               <div key={title} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-neutral-800 dark:bg-[#111]">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] text-gray-300 dark:text-neutral-700">0{index + 1}</span>
-                  <h3 className="text-[12px] font-semibold text-gray-800 dark:text-neutral-200">{title}</h3>
+                  <span className="font-mono text-[12px] text-gray-300 dark:text-neutral-700">0{index + 1}</span>
+                  <h3 className="text-[14px] font-semibold text-gray-800 dark:text-neutral-200">{title}</h3>
                 </div>
-                <p className="mt-2 text-[11px] leading-5 text-gray-400 dark:text-neutral-600">{text}</p>
+                <p className="mt-2 text-[13px] leading-5 text-gray-400 dark:text-neutral-600">{text}</p>
               </div>
             ))}
           </div>

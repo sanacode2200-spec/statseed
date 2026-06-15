@@ -75,9 +75,9 @@ function ColSelect({
 }) {
   return (
     <div>
-      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">{label}</label>
+      <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">{label}</label>
       {columns.length === 0 ? (
-        <p className="text-[12px] text-orange-500 dark:text-orange-400">該当する列が見つかりません。</p>
+        <p className="text-[14px] text-orange-500 dark:text-orange-400">該当する列が見つかりません。</p>
       ) : (
         <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
           {columns.map((c) => (
@@ -403,17 +403,17 @@ export default function TestPage() {
 
   return (
     <div>
-      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+      <div className="text-[13px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
         解析
       </div>
-      <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">統計検定</h1>
-      <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">検定を選んでデータを入力してください。</p>
+      <h1 className="text-[24px] font-bold text-gray-900 dark:text-white mb-1">統計検定</h1>
+      <p className="text-[16px] text-gray-400 dark:text-neutral-600 mb-5">検定を選んでデータを入力してください。</p>
 
       <Card className="mb-5">
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 検定選択 */}
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">検定の種類</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">検定の種類</label>
             <select
               value={testType}
               onChange={(e) => {
@@ -457,7 +457,7 @@ export default function TestPage() {
           {/* 変数名（テーブル系以外・手入力時のみ） */}
           {!isTable && !(inputMode === "csv" && dataset) && (
             <div>
-              <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
+              <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
               <input
                 type="text"
                 value={variableName}
@@ -479,13 +479,13 @@ export default function TestPage() {
                 {csvGroupOptions.length > 0 && (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群A</label>
+                      <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群A</label>
                       <select value={csvGroupA} onChange={(e) => setCsvGroupA(e.target.value)} className={inputCls}>
                         {csvGroupOptions.map((g) => <option key={g} value={g}>{g}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群B</label>
+                      <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群B</label>
                       <select value={csvGroupB} onChange={(e) => setCsvGroupB(e.target.value)} className={inputCls}>
                         {csvGroupOptions.map((g) => <option key={g} value={g}>{g}</option>)}
                       </select>
@@ -533,7 +533,7 @@ export default function TestPage() {
                   { label: "介入後", text: afterText, setText: setAfterText },
                 ].map(({ label, text, setText }) => (
                   <div key={label}>
-                    <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</p>
+                    <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</p>
                     <textarea
                       value={text}
                       onChange={(e) => setText(e.target.value)}
@@ -554,7 +554,7 @@ export default function TestPage() {
                 <ColSelect label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
                 <ColSelect label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
                 {csvGroupOptions.length > 0 && (
-                  <p className="col-span-2 text-[12px] text-gray-400 dark:text-neutral-600">
+                  <p className="col-span-2 text-[14px] text-gray-400 dark:text-neutral-600">
                     検出されたグループ: {csvGroupOptions.join(" / ")}
                   </p>
                 )}
@@ -569,13 +569,13 @@ export default function TestPage() {
                         type="text"
                         value={multiGroupNames[i]}
                         onChange={(e) => updateMultiGroupName(i, e.target.value)}
-                        className="w-28 rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
+                        className="w-28 rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[16px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
                       />
                       {multiGroupTexts.length > 3 && (
                         <button
                           type="button"
                           onClick={() => removeGroup(i)}
-                          className="text-[12px] text-red-500 dark:text-red-400 hover:underline"
+                          className="text-[14px] text-red-500 dark:text-red-400 hover:underline"
                         >
                           削除
                         </button>
@@ -594,7 +594,7 @@ export default function TestPage() {
               <button
                 type="button"
                 onClick={addGroup}
-                className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
+                className="text-[14px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
               >
                 + 群を追加
               </button>
@@ -611,10 +611,10 @@ export default function TestPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                   クロス集計表
                 </label>
-                <p className="text-[12px] text-gray-400 dark:text-neutral-600 mb-1.5">
+                <p className="text-[14px] text-gray-400 dark:text-neutral-600 mb-1.5">
                   行を改行で、列をスペース/タブ/カンマで区切って入力してください。
                 </p>
                 <textarea
@@ -677,7 +677,7 @@ export default function TestPage() {
             {inputMode === "csv" && dataset && !isTable && (
               <button
                 onClick={createGraphFromResult}
-                className="mr-4 text-[12px] font-medium text-white dark:text-[#56B4E9] hover:underline"
+                className="mr-4 text-[14px] font-medium text-white dark:text-[#56B4E9] hover:underline"
               >
                 この結果からグラフを作成
               </button>
@@ -688,7 +688,7 @@ export default function TestPage() {
                 else if ("r" in result) exportCorrelationCsv(result as CorrelationResult);
                 else exportTestResultCsv(result as TestResult);
               }}
-              className="text-[12px] text-white hover:text-white transition-colors"
+              className="text-[14px] text-white hover:text-white transition-colors"
             >
               CSVダウンロード
             </button>

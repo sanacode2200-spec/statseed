@@ -602,7 +602,7 @@ export default function GraphPage() {
   ];
 
   const toggleBtn = (active: boolean) =>
-    `px-3 py-1 rounded-md text-[12px] font-medium border transition-colors ${
+    `px-3 py-1 rounded-md text-[14px] font-medium border transition-colors ${
       active
         ? "text-white border-transparent"
         : "text-gray-500 dark:text-neutral-500 border-gray-200 dark:border-neutral-800 bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-neutral-900"
@@ -610,11 +610,11 @@ export default function GraphPage() {
 
   return (
     <div>
-      <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
+      <div className="text-[13px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-1">
         解析
       </div>
-      <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">グラフ作成</h1>
-      <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">
+      <h1 className="text-[24px] font-bold text-gray-900 dark:text-white mb-1">グラフ作成</h1>
+      <p className="text-[16px] text-gray-400 dark:text-neutral-600 mb-5">
         個別値が伝わるグラフを作成し、論文や発表に使いやすいPNG・SVG・PDFで出力できます。
       </p>
 
@@ -622,7 +622,7 @@ export default function GraphPage() {
         <form onSubmit={handleDraw} className="space-y-4">
           {/* グラフ種別 */}
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">グラフの種類</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">グラフの種類</label>
             <div className="flex flex-wrap gap-1.5">
               {CHART_OPTIONS.map((opt) => (
                 <button
@@ -644,7 +644,7 @@ export default function GraphPage() {
 
           {/* タイトル */}
           {includedGroups && (chartType === "boxplot" || chartType === "barplot") && (
-            <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 px-3 py-2 text-[12px] text-gray-500 dark:text-neutral-500">
+            <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 px-3 py-2 text-[14px] text-gray-500 dark:text-neutral-500">
               検定結果から引き継いだ群: {includedGroups.join(" / ")}
               <button type="button" onClick={() => setIncludedGroups(null)} className="ml-3 hover:underline">全群を使用</button>
             </div>
@@ -652,7 +652,7 @@ export default function GraphPage() {
 
           {/* タイトル */}
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">タイトル（任意）</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">タイトル（任意）</label>
             <input
               type="text"
               value={title}
@@ -860,10 +860,10 @@ export default function GraphPage() {
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <div>
-                  <p className="text-[12px] font-semibold text-gray-600 dark:text-neutral-400">群間比較結果</p>
-                  <p className="text-[11px] text-gray-400 dark:text-neutral-600 mt-0.5">{bpComparison.method}</p>
+                  <p className="text-[14px] font-semibold text-gray-600 dark:text-neutral-400">群間比較結果</p>
+                  <p className="text-[13px] text-gray-400 dark:text-neutral-600 mt-0.5">{bpComparison.method}</p>
                 </div>
-                <div className="flex flex-wrap gap-3 text-[11px] text-gray-500 dark:text-neutral-500">
+                <div className="flex flex-wrap gap-3 text-[13px] text-gray-500 dark:text-neutral-500">
                   {bpComparison.omnibus_p_value !== null && (
                     <span>全体: {formatGraphP(bpComparison.omnibus_p_value)}</span>
                   )}
@@ -873,7 +873,7 @@ export default function GraphPage() {
                 </div>
               </div>
               <div className="overflow-x-auto rounded-md border border-gray-200 dark:border-neutral-800">
-                <table className="w-full text-[12px]">
+                <table className="w-full text-[14px]">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
                       <th className="px-3 py-2 text-left font-medium text-gray-500 dark:text-neutral-500">比較</th>
@@ -892,7 +892,7 @@ export default function GraphPage() {
                   </tbody>
                 </table>
               </div>
-              <p className="mt-2 text-[11px] text-gray-400 dark:text-neutral-600">
+              <p className="mt-2 text-[13px] text-gray-400 dark:text-neutral-600">
                 {bpComparison.note} p値は差の大きさや臨床的重要性を示しません。効果量とデータ分布も確認してください。
               </p>
             </div>
@@ -902,15 +902,15 @@ export default function GraphPage() {
           {rocStats && (
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[12px] font-semibold text-gray-500 dark:text-neutral-500">ROC解析結果</p>
+                <p className="text-[14px] font-semibold text-gray-500 dark:text-neutral-500">ROC解析結果</p>
                 <button
                   onClick={() => exportRocCsv(rocStats, rocStats.fpr, rocStats.tpr, rocStats.thresholds)}
-                  className="text-[12px] text-white hover:text-white transition-colors"
+                  className="text-[14px] text-white hover:text-white transition-colors"
                 >
                   CSVダウンロード（座標データ）
                 </button>
               </div>
-              <div className="mb-3 grid grid-cols-1 gap-x-8 gap-y-1 text-[13px] sm:grid-cols-2">
+              <div className="mb-3 grid grid-cols-1 gap-x-8 gap-y-1 text-[16px] sm:grid-cols-2">
                 <div className="grid grid-cols-[minmax(8rem,12rem)_auto] gap-x-4">
                   <span className="text-gray-400 dark:text-neutral-600">AUC</span>
                   <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.auc.toFixed(3)}</span>
@@ -938,7 +938,7 @@ export default function GraphPage() {
                   <span className="font-medium text-gray-800 dark:text-neutral-200">{rocStats.n_pos} / {rocStats.n_neg}</span>
                 </div>
               </div>
-              <p className="text-[12px] text-gray-500 dark:text-neutral-500 whitespace-pre-line">{rocStats.interpretation}</p>
+              <p className="text-[14px] text-gray-500 dark:text-neutral-500 whitespace-pre-line">{rocStats.interpretation}</p>
             </div>
           )}
 
@@ -953,7 +953,7 @@ export default function GraphPage() {
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-3">
             {/* フォントプリセット */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">フォント：</span>
+              <span className="text-[14px] text-gray-400 dark:text-neutral-600 mr-1">フォント：</span>
               {(["論文標準", "日本語対応", "ポスター", "カスタム"] as const).map((p) => (
                 <button
                   key={p}
@@ -985,13 +985,13 @@ export default function GraphPage() {
                   placeholder="サイズ"
                   className={`${inputCls} w-16`}
                 />
-                <span className="text-[12px] text-gray-400 dark:text-neutral-600">pt</span>
+                <span className="text-[14px] text-gray-400 dark:text-neutral-600">pt</span>
               </div>
             )}
 
             {/* 背景 */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">背景：</span>
+              <span className="text-[14px] text-gray-400 dark:text-neutral-600 mr-1">背景：</span>
               <button
                 type="button"
                 onClick={() => setExportTransparent(true)}
@@ -1012,7 +1012,7 @@ export default function GraphPage() {
 
             {/* フォーマット & ダウンロード */}
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">用途：</span>
+              <span className="text-[14px] text-gray-400 dark:text-neutral-600 mr-1">用途：</span>
               {([
                 ["single", "論文1段組"],
                 ["double", "論文2段組"],
@@ -1026,14 +1026,14 @@ export default function GraphPage() {
 
             {exportPreviewUrl && exportFormat !== "pdf" && (
               <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-white p-3">
-                <p className="mb-2 text-[11px] text-gray-500">最終出力プレビュー</p>
+                <p className="mb-2 text-[13px] text-gray-500">最終出力プレビュー</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={exportPreviewUrl} alt="最終出力プレビュー" className="mx-auto max-h-[420px] max-w-full" />
               </div>
             )}
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[12px] text-gray-400 dark:text-neutral-600 mr-1">形式：</span>
+              <span className="text-[14px] text-gray-400 dark:text-neutral-600 mr-1">形式：</span>
               {(["png", "svg", "pdf"] as const).map((fmt) => (
                 <button
                   key={fmt}

@@ -107,14 +107,14 @@ export function Sidebar() {
         className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-neutral-900
           hover:bg-gray-50 dark:hover:bg-neutral-950 transition-colors"
       >
-        <div className="w-5 h-5 rounded-sm overflow-hidden shrink-0">
-          <Image src="/sana2.png" alt="" width={20} height={20} className="w-full h-full object-cover" />
+        <div className="w-6 h-6 rounded-sm overflow-hidden shrink-0">
+          <Image src="/sana2.png" alt="" width={24} height={24} className="w-full h-full object-cover" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
+          <div className="text-[16px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
             Statseed
           </div>
-          <div className="text-[11px] text-gray-400 dark:text-neutral-600 leading-tight">医療統計ツール</div>
+          <div className="text-[13px] text-gray-400 dark:text-neutral-600 leading-tight">医療統計ツール</div>
         </div>
       </Link>
 
@@ -123,7 +123,7 @@ export function Sidebar() {
         <div
           className="mx-3 mt-2 flex items-center gap-1.5 px-2 py-1.5 rounded-md
             bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800
-            text-[11px]"
+            text-[13px]"
           title={dataset.filename}
         >
           <span className="text-emerald-500 dark:text-emerald-400 shrink-0">
@@ -133,7 +133,7 @@ export function Sidebar() {
             {dataset.filename}
           </Link>
           <span
-            className="shrink-0 rounded px-1 py-0.5 text-[10px] text-gray-500 dark:text-neutral-400 bg-gray-100 dark:bg-neutral-900"
+            className="shrink-0 rounded px-1 py-0.5 text-[12px] text-gray-500 dark:text-neutral-400 bg-gray-100 dark:bg-neutral-900"
             title={storageMode === "persistent" ? "この端末に保存中" : "このタブ内だけに保存中"}
           >
             {storageMode === "persistent" ? "保存: 端末" : "保存: タブ内"}
@@ -155,7 +155,7 @@ export function Sidebar() {
         {NAV_GROUPS.map((group, gi) => (
           <div key={gi} className={gi > 0 ? "mt-4" : ""}>
             {group.label && (
-              <div className="px-2 mb-1 text-[11px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">
+              <div className="px-2 mb-1 text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600">
                 {group.label}
               </div>
             )}
@@ -166,7 +166,7 @@ export function Sidebar() {
                   <Link
                     key={href}
                     href={href}
-                    className={`flex items-center gap-2 px-2 py-[6px] rounded-md text-[13px] transition-colors ${
+                    className={`flex items-center gap-2 px-2 py-[6px] rounded-md text-[16px] transition-colors ${
                       active
                         ? "bg-neutral-800 text-white font-medium"
                         : "text-gray-500 dark:text-neutral-500 hover:bg-gray-50 dark:hover:bg-neutral-950 hover:text-gray-800 dark:hover:text-neutral-300"
@@ -187,7 +187,7 @@ export function Sidebar() {
       {/* フッター */}
       <div className="px-3 py-2.5 border-t border-gray-100 dark:border-neutral-900
         flex items-center justify-between">
-        <span className="text-[11px] text-gray-300 dark:text-neutral-700">v1.0</span>
+        <span className="text-[13px] text-gray-300 dark:text-neutral-700">v1.0</span>
         <ThemeToggle className="min-h-7 min-w-7 border-0 bg-transparent dark:bg-transparent" />
       </div>
     </aside>
@@ -208,8 +208,8 @@ export function Sidebar() {
         >
           <MenuIcon />
         </button>
-        <Link href="/dashboard" className="flex items-center gap-2 text-[13px] font-semibold text-gray-900 dark:text-white">
-          <Image src="/sana2.png" alt="" width={22} height={22} className="h-[22px] w-[22px] rounded-sm object-cover" />
+        <Link href="/dashboard" className="flex items-center gap-2 text-[16px] font-semibold text-gray-900 dark:text-white">
+          <Image src="/sana2.png" alt="" width={26} height={26} className="h-[26px] w-[26px] rounded-sm object-cover" />
           Statseed
         </Link>
         <ThemeToggle className="min-h-9 min-w-9 border-0 bg-transparent dark:bg-transparent" />
@@ -249,7 +249,7 @@ export function Sidebar() {
 
 function HomeIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9 22 9 12 15 12 15 22" />
     </svg>
@@ -258,7 +258,7 @@ function HomeIcon() {
 
 function ChartBarIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="12" width="4" height="9" /><rect x="10" y="7" width="4" height="14" /><rect x="17" y="3" width="4" height="18" />
     </svg>
   );
@@ -266,7 +266,7 @@ function ChartBarIcon() {
 
 function FlaskIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 3h6m-6 0v7L4.5 19a1 1 0 0 0 .9 1.5h13.2a1 1 0 0 0 .9-1.5L15 10V3" />
     </svg>
   );
@@ -274,7 +274,7 @@ function FlaskIcon() {
 
 function GraphIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
     </svg>
   );
@@ -282,7 +282,7 @@ function GraphIcon() {
 
 function CompassIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
     </svg>
   );
@@ -290,7 +290,7 @@ function CompassIcon() {
 
 function RepeatedIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <polyline points="17 1 21 5 17 9" />
       <path d="M3 11V9a4 4 0 0 1 4-4h14" />
       <polyline points="7 23 3 19 7 15" />
@@ -301,7 +301,7 @@ function RepeatedIcon() {
 
 function RegressionIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <line x1="3" y1="21" x2="21" y2="3" />
       <circle cx="6" cy="17" r="1.4" /><circle cx="10" cy="15" r="1.4" /><circle cx="14" cy="9" r="1.4" /><circle cx="18" cy="8" r="1.4" />
     </svg>
@@ -310,7 +310,7 @@ function RegressionIcon() {
 
 function TableIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <line x1="3" y1="9" x2="21" y2="9" />
       <line x1="3" y1="15" x2="21" y2="15" />
@@ -321,7 +321,7 @@ function TableIcon() {
 
 function FolderIcon() {
   return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
     </svg>
   );

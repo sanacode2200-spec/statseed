@@ -7,7 +7,7 @@ import type { PlotlyFigure } from "@/lib/types";
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center w-full h-full bg-gray-50 dark:bg-neutral-950 rounded-lg text-[15px] text-gray-400">
+    <div className="flex items-center justify-center w-full h-full bg-gray-50 dark:bg-neutral-950 rounded-lg text-[18px] text-gray-400">
       グラフを読み込み中...
     </div>
   ),

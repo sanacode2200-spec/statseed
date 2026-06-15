@@ -30,7 +30,7 @@ export function SegmentedControl<T extends string>({
           type="button"
           onClick={() => onChange(option.value)}
           aria-pressed={value === option.value}
-          className={`rounded px-3 py-1 text-[12px] font-medium transition-colors ${
+          className={`rounded px-3 py-1 text-[14px] font-medium transition-colors ${
             value === option.value
               ? "bg-white text-black shadow-sm dark:bg-neutral-800 dark:text-white"
               : "text-gray-500 hover:text-gray-700 dark:text-neutral-500 dark:hover:text-neutral-300"

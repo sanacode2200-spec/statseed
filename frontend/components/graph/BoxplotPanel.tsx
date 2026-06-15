@@ -71,7 +71,7 @@ export function BoxplotPanel({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
+        <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
         <input
           type="text"
           value={bpYLabel}
@@ -83,7 +83,7 @@ export function BoxplotPanel({
       {csvMode ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
             <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
               {csvCont.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
@@ -91,7 +91,7 @@ export function BoxplotPanel({
             </select>
           </div>
           <div>
-            <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
+            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
             <select value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
               {csvCat.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
@@ -108,13 +108,13 @@ export function BoxplotPanel({
                   type="text"
                   value={bpGroupNames[i]}
                   onChange={(e) => updateBpName(i, e.target.value)}
-                  className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
+                  className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[16px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
                 />
                 {bpGroupTexts.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeBpGroup(i)}
-                    className="text-[12px] text-red-400 dark:text-red-500 hover:text-red-600"
+                    className="text-[14px] text-red-400 dark:text-red-500 hover:text-red-600"
                   >
                     ✕
                   </button>
@@ -136,7 +136,7 @@ export function BoxplotPanel({
           <button
             type="button"
             onClick={addBpGroup}
-            className="text-[12px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
+            className="text-[14px] text-gray-400 dark:text-neutral-600 hover:text-gray-600 dark:hover:text-neutral-400 transition-colors"
           >
             + 群を追加
           </button>
@@ -146,8 +146,8 @@ export function BoxplotPanel({
       <div className="rounded-lg border border-gray-200 dark:border-neutral-800 p-3 space-y-3">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-[12px] font-medium text-gray-600 dark:text-neutral-400">表示スタイル</span>
-            <span className="text-[11px] text-gray-400 dark:text-neutral-600">個別値の点サイズはデータ数に合わせて調整されます</span>
+            <span className="text-[14px] font-medium text-gray-600 dark:text-neutral-400">表示スタイル</span>
+            <span className="text-[13px] text-gray-400 dark:text-neutral-600">個別値の点サイズはデータ数に合わせて調整されます</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {([
@@ -164,8 +164,8 @@ export function BoxplotPanel({
                     : "border-gray-200 dark:border-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-900"
                 }`}
               >
-                <span className="block text-[12px] font-medium text-gray-700 dark:text-neutral-300">{label}</span>
-                <span className="block mt-0.5 text-[10px] text-gray-400 dark:text-neutral-600">{description}</span>
+                <span className="block text-[14px] font-medium text-gray-700 dark:text-neutral-300">{label}</span>
+                <span className="block mt-0.5 text-[12px] text-gray-400 dark:text-neutral-600">{description}</span>
               </button>
             ))}
           </div>
@@ -173,14 +173,14 @@ export function BoxplotPanel({
 
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">配色</label>
+            <label className="block text-[13px] text-gray-400 dark:text-neutral-600 mb-1">配色</label>
             <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
               {([["color", "カラー"], ["monochrome", "白黒"]] as const).map(([value, label]) => (
                 <button
                   key={value}
                   type="button"
                   onClick={() => setBpColorMode(value)}
-                  className={`px-3 py-1.5 text-[12px] transition-colors ${
+                  className={`px-3 py-1.5 text-[14px] transition-colors ${
                     bpColorMode === value
                       ? "bg-gray-900 text-white dark:bg-neutral-100 dark:text-black"
                       : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500"
@@ -191,22 +191,22 @@ export function BoxplotPanel({
               ))}
             </div>
           </div>
-          <label className="flex items-center gap-1.5 pb-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+          <label className="flex items-center gap-1.5 pb-1.5 text-[14px] text-gray-500 dark:text-neutral-500 cursor-pointer">
             <input type="checkbox" checked={bpShowN} onChange={(e) => setBpShowN(e.target.checked)} className="rounded" />
             サンプル数を表示
           </label>
-          <label className="flex items-center gap-1.5 pb-1.5 text-[12px] text-gray-500 dark:text-neutral-500 cursor-pointer">
+          <label className="flex items-center gap-1.5 pb-1.5 text-[14px] text-gray-500 dark:text-neutral-500 cursor-pointer">
             <input type="checkbox" checked={bpShowGrid} onChange={(e) => setBpShowGrid(e.target.checked)} className="rounded" />
             補助線を表示
           </label>
           <div className="flex flex-wrap gap-2">
             <div>
-              <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最小</label>
+              <label className="block text-[13px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最小</label>
               <input type="number" value={bpYMin} onChange={(e) => setBpYMin(e.target.value)}
                 className={`${inputCls} w-24`} placeholder="自動" step="any" />
             </div>
             <div>
-              <label className="block text-[11px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最大</label>
+              <label className="block text-[13px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最大</label>
               <input type="number" value={bpYMax} onChange={(e) => setBpYMax(e.target.value)}
                 className={`${inputCls} w-24`} placeholder="自動" step="any" />
             </div>
@@ -214,7 +214,7 @@ export function BoxplotPanel({
         </div>
 
         <div className="border-t border-gray-100 dark:border-neutral-800 pt-3">
-          <label className="flex items-center gap-2 text-[12px] font-medium text-gray-600 dark:text-neutral-400 cursor-pointer">
+          <label className="flex items-center gap-2 text-[14px] font-medium text-gray-600 dark:text-neutral-400 cursor-pointer">
             <input
               type="checkbox"
               checked={bpShowComparison}
@@ -225,7 +225,7 @@ export function BoxplotPanel({
           </label>
           {bpShowComparison && (
             <div className="mt-2 flex flex-wrap items-center gap-3">
-              <span className="text-[11px] text-gray-400 dark:text-neutral-600">データの扱い：</span>
+              <span className="text-[13px] text-gray-400 dark:text-neutral-600">データの扱い：</span>
               <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
                 {([
                   ["parametric", "平均値を比較", "Welch / ANOVA + Tukey"],
@@ -236,7 +236,7 @@ export function BoxplotPanel({
                     type="button"
                     title={detail}
                     onClick={() => setBpComparisonMethod(value)}
-                    className={`px-3 py-1.5 text-[12px] transition-colors ${
+                    className={`px-3 py-1.5 text-[14px] transition-colors ${
                       bpComparisonMethod === value
                         ? "bg-gray-900 text-white dark:bg-neutral-100 dark:text-black"
                         : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500"
@@ -246,7 +246,7 @@ export function BoxplotPanel({
                   </button>
                 ))}
               </div>
-              <span className="text-[11px] text-gray-400 dark:text-neutral-600">
+              <span className="text-[13px] text-gray-400 dark:text-neutral-600">
                 {bpComparisonMethod === "parametric"
                   ? "平均値の差を検定します"
                   : "外れ値や非正規分布の影響を受けにくい方法です"}
