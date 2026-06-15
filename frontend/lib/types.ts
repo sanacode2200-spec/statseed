@@ -301,6 +301,61 @@ export interface LogisticRegressionResult {
   interpretation: string;
 }
 
+export interface PoissonRegressionRequest {
+  outcome_name?: string;
+  outcome: (number | null)[];
+  predictors: RegressionPredictor[];
+}
+
+export interface RateRatio {
+  name: string;
+  coef: number;
+  rate_ratio: number;
+  std_err: number;
+  p_value: number;
+  rr_ci95_low: number;
+  rr_ci95_high: number;
+}
+
+export interface PoissonRegressionResult {
+  outcome_name: string;
+  coefficients: RateRatio[];
+  n_total: number;
+  n_used: number;
+  n_excluded: number;
+  pseudo_r_squared: number;
+  log_likelihood: number;
+  ll_null: number;
+  lr_pvalue: number;
+  deviance: number;
+  interpretation: string;
+}
+
+// --- 反復測定 ANOVA ---
+
+export interface RepeatedCondition {
+  name: string;
+  values: (number | null)[];
+}
+
+export interface RepeatedMeasuresRequest {
+  variable_name?: string;
+  condition_label?: string;
+  conditions: RepeatedCondition[];
+}
+
+export interface RepeatedMeasuresResult {
+  test_name: string;
+  f_statistic: number;
+  df_num: number;
+  df_den: number;
+  p_value: number;
+  n_subjects: number;
+  n_excluded: number;
+  condition_means: Record<string, number>;
+  interpretation: string;
+}
+
 // --- グラフ ---
 
 export interface KaplanMeierRequest {

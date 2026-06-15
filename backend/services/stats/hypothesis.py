@@ -11,6 +11,8 @@ from backend.schemas.test import (
     PairwiseComparison,
     PosthocRequest,
     PosthocResult,
+    RepeatedMeasuresRequest,
+    RepeatedMeasuresResult,
     TestResult,
     TwoGroupRequest,
 )
@@ -19,6 +21,110 @@ from backend.schemas.test import (
 def _require_finite_result(**values: float) -> None:
     if any(not math.isfinite(value) for value in values.values()):
         raise ValueError("データのばらつきがないため、この検定は計算できません")
+
+
+# ── 反復測定（対応あり3条件以上）ANOVA ────────────────────────────────────────
+
+def run_repeated_anova(request: RepeatedMeasuresRequest) -> RepeatedMeasuresResult:
+    """同一対象を3条件以上で測定した反復測定一元配置分散分析。
+
+    計算は statsmodels.stats.anova.AnovaRM を直接利用する。
+    全条件がそろった対象（完全ケース）のみを使用する。
+    """
+    import pandas as pd
+    from statsmodels.stats.anova import AnovaRM
+
+    conditions = request.conditions
+    n = len(conditions[0].values)
+
+    # 全条件で値がそろっている対象だけを使う
+    keep = [
+        i for i in range(n)
+        if all(c.values[i] is not None for c in conditions)
+    ]
+    n_subjects = len(keep)
+    n_excluded = n - n_subjects
+
+    if n_subjects < 2:
+        raise ValueError("全条件がそろった対象が2名以上必要です")
+
+    all_values = [float(c.values[i]) for c in conditions for i in keep]
+    if not _has_variance(all_values):
+        raise ValueError("データのばらつきがないため、この検定は計算できません")
+
+    rows = [
+        {"subject": i, "cond": c.name, "val": float(c.values[i])}
+        for c in conditions
+        for i in keep
+    ]
+    df = pd.DataFrame(rows)
+    table = AnovaRM(df, "val", "subject", within=["cond"]).fit().anova_table
+    row = table.iloc[0]
+    f_stat = float(row["F Value"])
+    p_value = float(row["Pr > F"])
+    df_num = float(row["Num DF"])
+    df_den = float(row["Den DF"])
+    _require_finite_result(statistic=f_stat, p_value=p_value)
+
+    condition_means = {
+        c.name: statistics.fmean([float(c.values[i]) for i in keep])
+        for c in conditions
+    }
+
+    interpretation = _interpret_repeated(
+        request, f_stat, p_value, df_num, df_den, condition_means, n_subjects, n_excluded
+    )
+
+    return RepeatedMeasuresResult(
+        test_name="反復測定一元配置分散分析",
+        f_statistic=f_stat,
+        df_num=df_num,
+        df_den=df_den,
+        p_value=p_value,
+        n_subjects=n_subjects,
+        n_excluded=n_excluded,
+        condition_means=condition_means,
+        interpretation=interpretation,
+    )
+
+
+def _interpret_repeated(
+    request: RepeatedMeasuresRequest,
+    f_stat: float,
+    p_value: float,
+    df_num: float,
+    df_den: float,
+    condition_means: dict[str, float],
+    n_subjects: int,
+    n_excluded: int,
+) -> str:
+    lines: list[str] = []
+    k = len(request.conditions)
+    fdf = f"F({df_num:.0f}, {df_den:.0f}) = {f_stat:.2f}, p = {_fmt_pval(p_value)}"
+    lines.append(
+        f"同一対象を{k}条件（{request.condition_label}）で測定した"
+        f"{request.variable_name}の反復測定分散分析です（n={n_subjects}名）。"
+    )
+    if p_value < 0.05:
+        lines.append(
+            f"{fdf} で、条件によって{request.variable_name}に統計的に有意な差があります。"
+            f"どの条件間に差があるかは事後検定（多重比較）で確認してください。"
+        )
+    else:
+        lines.append(
+            f"{fdf} で、条件による{request.variable_name}の差は"
+            f"統計的に有意ではありませんでした。"
+        )
+    means_str = "、".join(f"{name} {m:.2f}" for name, m in condition_means.items())
+    lines.append(f"各条件の平均値: {means_str}。")
+    if n_excluded > 0:
+        lines.append(f"一部条件が欠損のため {n_excluded}名を除外しました。")
+    lines.append("※ 球面性の仮定を満たす前提です（満たさない場合は補正が必要）。")
+    return " ".join(lines)
+
+
+def _fmt_pval(p: float) -> str:
+    return "<0.001" if p < 0.001 else f"{p:.3f}"
 
 
 def _has_variance(values: list[float]) -> bool:

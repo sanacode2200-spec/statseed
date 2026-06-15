@@ -17,6 +17,10 @@ import type {
   LinearRegressionResult,
   LogisticRegressionRequest,
   LogisticRegressionResult,
+  PoissonRegressionRequest,
+  PoissonRegressionResult,
+  RepeatedMeasuresRequest,
+  RepeatedMeasuresResult,
   MultiGroupRequest,
   PairedRequest,
   PairedPlotRequest,
@@ -155,4 +159,10 @@ export const api = {
 
   regressionLogistic: (req: LogisticRegressionRequest) =>
     post<LogisticRegressionResult>("/api/regression/logistic", req),
+
+  regressionPoisson: (req: PoissonRegressionRequest) =>
+    post<PoissonRegressionResult>("/api/regression/poisson", req),
+
+  testRepeatedAnova: (req: RepeatedMeasuresRequest) =>
+    post<RepeatedMeasuresResult>("/api/test/repeated-anova", req),
 };

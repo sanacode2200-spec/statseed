@@ -79,6 +79,8 @@ statseed/
 │   │       ├── page.tsx       # メインダッシュボード
 │   │       ├── descriptive/   # 記述統計
 │   │       ├── test/          # 統計検定（9種）
+│   │       ├── repeated/      # 反復測定ANOVA
+│   │       ├── regression/    # 回帰分析（線形/ロジスティック/ポアソン）
 │   │       ├── graph/         # グラフ作成
 │   │       ├── guide/         # 検定選択ガイド（ウィザード）
 │   │       └── data/          # データ読み込み（CSV/Excel）
@@ -100,7 +102,7 @@ statseed/
 │   ├── main.py
 │   ├── routers/
 │   │   ├── descriptive.py     # 記述統計API
-│   │   ├── test.py            # 検定API（9種 + 事後検定）
+│   │   ├── test.py            # 検定API（9種 + 事後検定 + 反復測定ANOVA）
 │   │   ├── graph.py           # グラフ出力API
 │   │   ├── table1.py          # Table 1 API
 │   │   ├── regression.py      # 回帰分析API（線形・ロジスティック回帰）
@@ -109,7 +111,7 @@ statseed/
 │   ├── services/
 │   │   ├── stats/
 │   │   │   ├── descriptive.py
-│   │   │   ├── hypothesis.py  # 検定 + 事後検定（Tukey/Bonferroni/Holm/Dunn）
+│   │   │   ├── hypothesis.py  # 検定 + 事後検定（Tukey/Bonferroni/Holm/Dunn）+ 反復測定ANOVA
 │   │   │   ├── table1.py      # Table 1 生成
 │   │   │   └── regression.py  # 線形回帰（OLS）+ ロジスティック回帰（Logit・OR）
 │   │   ├── graph/
@@ -123,13 +125,13 @@ statseed/
 │   ├── schemas/               # Pydanticスキーマ
 │   │   ├── common.py          # FiniteFloat（NaN/Inf拒否）
 │   │   ├── descriptive.py
-│   │   ├── test.py            # 検定 + PosthocRequest/Result
+│   │   ├── test.py            # 検定 + Posthoc + RepeatedMeasures
 │   │   ├── graph.py           # グラフ各種リクエスト/レスポンス
 │   │   ├── table1.py          # Table1Variable（discriminated union）
 │   │   ├── regression.py      # 線形・ロジスティック回帰リクエスト/結果
 │   │   ├── upload.py
 │   │   └── guide.py
-│   └── tests/                 # 計算・API契約検証テスト（157本）
+│   └── tests/                 # 計算・API契約検証テスト（171本）
 │
 ├── pyproject.toml
 └── CLAUDE.md                  # このファイル
@@ -284,6 +286,8 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] 相関: Pearson（95%CI付き） / Spearman
 - [x] **回帰分析（線形回帰）** — 単回帰 / 重回帰（共変量調整）。statsmodels OLS、偏回帰係数+95%CI+標準化係数、R²/調整済みR²/F検定、欠損リストワイズ除外、結果の日本語解釈
 - [x] **回帰分析（ロジスティック回帰）** — 2値アウトカム。statsmodels Logit、オッズ比(OR)+95%CI、McFadden擬似R²/尤度比検定、完全分離の検出、結果の日本語解釈
+- [x] **回帰分析（ポアソン回帰・GLM）** — カウントアウトカム。statsmodels GLM(Poisson)、発生率比(IRR)+95%CI、McFadden擬似R²/尤度比検定/逸脱度、結果の日本語解釈
+- [x] **反復測定分散分析** — 同一対象3条件以上（対応あり一元配置ANOVA）。statsmodels AnovaRM、F/自由度/p・各条件平均、完全ケースのみ使用、結果の日本語解釈
 - [x] **検定選択ガイド** — 研究目的・推定対象・対応関係・分布を確認して検定を提案
 - [x] CSV解析結果へ元データ数・使用数・除外数・除外理由を表示
 - [x] Welch検定・対応t検定へ推定値と95%CIを表示
@@ -310,15 +314,17 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 - [x] **棒グラフ** — エラーバー付き（SD / SEM / 95%CI 切り替え）
 - [x] **カプランマイヤー曲線** — 打ち切りマーク・95%CIバンド・リスクテーブル・ログランク検定p値
 - [x] **ROC曲線** — AUC + 95%CI（Hanley & McNeil 1982）・最適カットオフ（Youden指数）・感度/特異度表示
-- [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・グラフ（全7種）・Table 1・回帰分析 の各ページで「CSVから選択」⇄「手入力」を切り替え可能
+- [x] **CSVデータのページ間共有** — `DataContext`（React Context + sessionStorage、明示的オプトイン時のみlocalStorage）でアップロード済みCSV/Excelを保持し、記述統計・検定・反復測定ANOVA・回帰分析（線形/ロジスティック/ポアソン）・グラフ（全7種）・Table 1 の各ページで「CSVから選択」⇄「手入力」を切り替え可能
 - [x] **レスポンシブUI** — モバイルヘッダー・ドロワーナビ、フォーム縦積み、結果カード・操作行の折り返し、表の横スクロール対応
+- [x] **主要ワークフローE2Eテスト** — Playwrightで手入力記述統計、CSV読込 → 対応あり検定 → グラフ引き継ぎ、モバイルナビを検証
 
 ## 次の開発候補
 
 - [ ] Supabase Auth 認証（ログインページ UI は完成済み、Auth 接続が未実装）
 - [ ] 分析履歴・再実行可能な設定JSON・解析パッケージ出力
-- [ ] 回帰分析の拡張 — 反復測定・一般化線形モデル（線形回帰・ロジスティック回帰は実装済み）
-- [ ] アクセシビリティ監査・主要ワークフローE2Eテスト
+- [ ] 回帰分析の拡張 — 混合効果モデル・他のGLM族（線形 / ロジスティック / ポアソン・反復測定ANOVA は実装済み）
+- [ ] アクセシビリティ監査・E2Eテスト対象の拡張
+  - フォームの `label` と `input` / `select` の関連付け（`htmlFor` / `id`）を含む
 
 ---
 
@@ -355,11 +361,13 @@ POST /api/upload/excel         # Excelアップロード（最大10MB）
 POST /api/guide/suggest        # 検定選択ガイド
 
 POST /api/test/posthoc         # 多重比較（Tukey/Bonferroni/Holm/Dunn+Holm）
+POST /api/test/repeated-anova  # 反復測定一元配置ANOVA（対応あり3条件以上）
 
 POST /api/table1               # Table 1 生成
 
 POST /api/regression/linear    # 線形回帰（単回帰 / 重回帰・共変量調整）
 POST /api/regression/logistic  # ロジスティック回帰（オッズ比 + 95%CI）
+POST /api/regression/poisson   # ポアソン回帰（発生率比 IRR + 95%CI）
 ```
 
 ---
@@ -368,7 +376,7 @@ POST /api/regression/logistic  # ロジスティック回帰（オッズ比 + 95
 
 1. **日本語を優先** — エラーメッセージ・結果解釈・UIテキストはすべて日本語
 2. **グラフは妥協しない** — デザイン仕様から逸脱しない。テーマファイルを必ず使う
-3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証（現在157テスト）
+3. **計算は必ずテストを書く** — `backend/tests/` に既知の答えで検証（現在171テスト）
 4. **型安全** — TypeScript / Pydantic を徹底する
 5. **コメディカル視点** — 医療統計初学者が迷わない設計を常に意識する
 6. **高速起動を維持** — 本番ランタイムで不要な依存・不要なimport・不要なAPIドキュメント生成を避ける
@@ -386,6 +394,9 @@ cd frontend && npm run dev
 
 # テスト実行
 STATSEED_ENABLE_SCIPY=1 /home/haru/dev/statseed/.venv/bin/pytest backend/tests/ -v
+
+# フルスタックE2Eテスト（Next.js / FastAPI はPlaywrightが自動起動）
+cd frontend && npm run test:e2e
 ```
 
 ---

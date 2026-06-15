@@ -19,6 +19,7 @@ const NAV_GROUPS = [
       { href: "/dashboard/guide", label: "Guide", exact: false, icon: CompassIcon },
       { href: "/dashboard/descriptive", label: "Descriptive", exact: false, icon: ChartBarIcon },
       { href: "/dashboard/test", label: "Tests", exact: false, icon: FlaskIcon },
+      { href: "/dashboard/repeated", label: "Repeated", exact: false, icon: RepeatedIcon },
       { href: "/dashboard/regression", label: "Regression", exact: false, icon: RegressionIcon },
     ],
   },
@@ -313,6 +314,17 @@ function CompassIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+    </svg>
+  );
+}
+
+function RepeatedIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="17 1 21 5 17 9" />
+      <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+      <polyline points="7 23 3 19 7 15" />
+      <path d="M21 13v2a4 4 0 0 1-4 4H3" />
     </svg>
   );
 }

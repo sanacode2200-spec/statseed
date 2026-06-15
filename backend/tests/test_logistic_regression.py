@@ -134,3 +134,80 @@ def test_router_maps_valueerror_to_422() -> None:
     with pytest.raises(HTTPException) as exc:
         router.logistic(req)
     assert exc.value.status_code == 422
+
+
+# ── ポアソン回帰（GLM） ───────────────────────────────────────────────────────
+
+from backend.schemas.regression import PoissonRegressionRequest
+from backend.services.stats.regression import run_poisson_regression
+
+
+def _preq(**kwargs) -> PoissonRegressionRequest:
+    return PoissonRegressionRequest(**kwargs)
+
+
+def test_poisson_known_values() -> None:
+    result = run_poisson_regression(_preq(
+        outcome=[1.0, 2.0, 1.0, 3.0, 4.0, 5.0, 3.0, 6.0],
+        predictors=[{"name": "x", "values": [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]}],
+    ))
+    c = next(c for c in result.coefficients if c.name == "x")
+    assert c.coef == pytest.approx(0.211502, abs=1e-4)
+    assert c.rate_ratio == pytest.approx(1.235533, abs=1e-3)
+    assert c.rr_ci95_low == pytest.approx(1.028443, abs=1e-3)
+    assert c.rr_ci95_high == pytest.approx(1.484323, abs=1e-3)
+    assert c.p_value == pytest.approx(0.023847, abs=1e-4)
+    assert result.deviance == pytest.approx(2.195559, abs=1e-3)
+    assert result.pseudo_r_squared == pytest.approx(0.17849, abs=1e-4)
+    assert result.n_used == 8
+    assert c.rate_ratio == pytest.approx(math.exp(c.coef), rel=1e-9)
+
+
+def test_poisson_negative_outcome_raises() -> None:
+    with pytest.raises(ValueError):
+        run_poisson_regression(_preq(
+            outcome=[1.0, -1.0, 2.0, 3.0, 4.0],
+            predictors=[{"name": "x", "values": [1.0, 2.0, 3.0, 4.0, 5.0]}],
+        ))
+
+
+def test_poisson_non_integer_outcome_raises() -> None:
+    with pytest.raises(ValueError):
+        run_poisson_regression(_preq(
+            outcome=[1.0, 2.5, 2.0, 3.0, 4.0],
+            predictors=[{"name": "x", "values": [1.0, 2.0, 3.0, 4.0, 5.0]}],
+        ))
+
+
+def test_poisson_listwise_deletion() -> None:
+    result = run_poisson_regression(_preq(
+        outcome=[1.0, None, 2.0, 3.0, 4.0, 5.0, 2.0],
+        predictors=[{"name": "x", "values": [1.0, 2.0, None, 4.0, 5.0, 6.0, 7.0]}],
+    ))
+    assert result.n_total == 7
+    assert result.n_used == 5
+    assert result.n_excluded == 2
+
+
+def test_poisson_router_503(monkeypatch) -> None:
+    from fastapi import HTTPException
+    from backend.routers import regression as router
+
+    def _boom(_req):
+        raise ImportError("statsmodels missing")
+
+    monkeypatch.setattr(router, "run_poisson_regression", _boom)
+    req = _preq(outcome=[1.0, 2.0, 0.0, 3.0], predictors=[{"name": "x", "values": [1.0, 2.0, 3.0, 4.0]}])
+    with pytest.raises(HTTPException) as exc:
+        router.poisson(req)
+    assert exc.value.status_code == 503
+
+
+def test_poisson_router_422() -> None:
+    from fastapi import HTTPException
+    from backend.routers import regression as router
+
+    req = _preq(outcome=[1.0, -2.0, 0.0, 3.0], predictors=[{"name": "x", "values": [1.0, 2.0, 3.0, 4.0]}])
+    with pytest.raises(HTTPException) as exc:
+        router.poisson(req)
+    assert exc.value.status_code == 422
