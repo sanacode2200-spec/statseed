@@ -11,6 +11,8 @@ from backend.schemas.test import (
     PairedRequest,
     PosthocRequest,
     PosthocResult,
+    RepeatedMeasuresRequest,
+    RepeatedMeasuresResult,
     TestResult,
     TwoGroupRequest,
 )
@@ -22,6 +24,7 @@ from backend.services.stats.hypothesis import (
     run_kruskal,
     run_mannwhitney,
     run_posthoc,
+    run_repeated_anova,
     run_ttest_ind,
     run_ttest_paired,
     run_wilcoxon,
@@ -91,3 +94,8 @@ def correlation(request: CorrelationRequest) -> CorrelationResult:
 @router.post("/posthoc", response_model=PosthocResult)
 def posthoc(request: PosthocRequest) -> PosthocResult:
     return _run_or_422(lambda: run_posthoc(request))
+
+
+@router.post("/repeated-anova", response_model=RepeatedMeasuresResult)
+def repeated_anova(request: RepeatedMeasuresRequest) -> RepeatedMeasuresResult:
+    return _run_or_422(lambda: run_repeated_anova(request))

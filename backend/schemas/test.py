@@ -130,3 +130,43 @@ class CorrelationResult(BaseModel):
     ci95_low: float | None = None
     ci95_high: float | None = None
     interpretation: str
+
+
+# ── 反復測定（対応あり3条件以上）ANOVA ────────────────────────────────────────
+
+class RepeatedCondition(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    values: list[FiniteFloat | None] = Field(min_length=2)
+
+
+class RepeatedMeasuresRequest(BaseModel):
+    variable_name: str = Field(default="測定値", min_length=1, max_length=80)
+    condition_label: str = Field(default="条件", min_length=1, max_length=40)
+    conditions: list[RepeatedCondition] = Field(min_length=3)
+
+    @model_validator(mode="after")
+    def check_request(self) -> "RepeatedMeasuresRequest":
+        n = len(self.conditions[0].values)
+        names: list[str] = []
+        for c in self.conditions:
+            if len(c.values) != n:
+                raise ValueError(
+                    f"条件「{c.name}」のデータ数({len(c.values)}件)が"
+                    f"他の条件({n}件)と一致しません（同一対象を各条件で測定してください）"
+                )
+            names.append(c.name)
+        if len(set(names)) != len(names):
+            raise ValueError("条件名が重複しています")
+        return self
+
+
+class RepeatedMeasuresResult(BaseModel):
+    test_name: str
+    f_statistic: float
+    df_num: float
+    df_den: float
+    p_value: float
+    n_subjects: int
+    n_excluded: int
+    condition_means: dict[str, float]
+    interpretation: str

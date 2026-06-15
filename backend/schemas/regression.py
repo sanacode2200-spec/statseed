@@ -102,3 +102,51 @@ class LogisticRegressionResult(BaseModel):
     ll_null: float
     lr_pvalue: float  # 尤度比検定
     interpretation: str
+
+
+# ── ポアソン回帰（一般化線形モデル / カウントデータ） ─────────────────────────
+
+class PoissonRegressionRequest(BaseModel):
+    outcome_name: str = Field(default="件数", min_length=1, max_length=80)
+    # 0以上の整数カウント（例: 転倒回数・再入院回数）
+    outcome: list[FiniteFloat | None] = Field(min_length=3)
+    predictors: list[Predictor] = Field(min_length=1, max_length=20)
+
+    @model_validator(mode="after")
+    def check_request(self) -> "PoissonRegressionRequest":
+        n = len(self.outcome)
+        names: list[str] = []
+        for p in self.predictors:
+            if len(p.values) != n:
+                raise ValueError(
+                    f"説明変数「{p.name}」のデータ数({len(p.values)}件)が"
+                    f"目的変数({n}件)と一致しません"
+                )
+            names.append(p.name)
+        if len(set(names)) != len(names):
+            raise ValueError("説明変数名が重複しています")
+        return self
+
+
+class RateRatio(BaseModel):
+    name: str
+    coef: float  # 対数率比（回帰係数）
+    rate_ratio: float  # exp(coef) = 発生率比 (IRR)
+    std_err: float
+    p_value: float
+    rr_ci95_low: float
+    rr_ci95_high: float
+
+
+class PoissonRegressionResult(BaseModel):
+    outcome_name: str
+    coefficients: list[RateRatio]
+    n_total: int
+    n_used: int
+    n_excluded: int
+    pseudo_r_squared: float  # McFadden 擬似決定係数
+    log_likelihood: float
+    ll_null: float
+    lr_pvalue: float  # 尤度比検定
+    deviance: float
+    interpretation: str

@@ -5,10 +5,13 @@ from backend.schemas.regression import (
     LinearRegressionResult,
     LogisticRegressionRequest,
     LogisticRegressionResult,
+    PoissonRegressionRequest,
+    PoissonRegressionResult,
 )
 from backend.services.stats.regression import (
     run_linear_regression,
     run_logistic_regression,
+    run_poisson_regression,
 )
 
 router = APIRouter(prefix="/regression", tags=["regression"])
@@ -30,6 +33,16 @@ def linear(request: LinearRegressionRequest) -> LinearRegressionResult:
 def logistic(request: LogisticRegressionRequest) -> LogisticRegressionResult:
     try:
         return run_logistic_regression(request)
+    except ImportError:
+        raise HTTPException(status_code=503, detail=_DEP_ERROR)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.post("/poisson", response_model=PoissonRegressionResult)
+def poisson(request: PoissonRegressionRequest) -> PoissonRegressionResult:
+    try:
+        return run_poisson_regression(request)
     except ImportError:
         raise HTTPException(status_code=503, detail=_DEP_ERROR)
     except ValueError as e:

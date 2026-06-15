@@ -7,6 +7,9 @@ from backend.schemas.regression import (
     LogisticRegressionRequest,
     LogisticRegressionResult,
     OddsRatio,
+    PoissonRegressionRequest,
+    PoissonRegressionResult,
+    RateRatio,
 )
 
 _INTERCEPT_LABEL = "（切片）"
@@ -326,5 +329,155 @@ def _interpret_logistic(
     lines.append(f"{n_used}件中 {n_events}件 がイベント発生でした。")
     if n_excluded > 0:
         lines.append(f"欠損のため {n_excluded}件を除外しました。")
+
+    return " ".join(lines)
+
+
+# ── ポアソン回帰（GLM・カウントデータ） ──────────────────────────────────────
+
+def run_poisson_regression(
+    request: PoissonRegressionRequest,
+) -> PoissonRegressionResult:
+    """カウント（0以上の整数）アウトカムに対するポアソン回帰（GLM・log link）。
+
+    各説明変数の発生率比(IRR = exp(coef))と95%CIを返す。
+    欠損は行単位（リストワイズ）で除外する。
+    """
+    import numpy as np
+    import statsmodels.api as sm
+
+    n_total = len(request.outcome)
+    k = len(request.predictors)
+
+    y_list, x_rows = _listwise_rows(request.outcome, request.predictors)
+    n_used = len(y_list)
+    n_excluded = n_total - n_used
+
+    if any(v < 0 for v in y_list):
+        raise ValueError("件数（目的変数）に負の値は使えません。0以上のカウントを入力してください")
+    if any(abs(v - round(v)) > 1e-9 for v in y_list):
+        raise ValueError("件数（目的変数）は整数で入力してください（例: 0, 1, 2 …）")
+
+    if n_used < k + 2:
+        raise ValueError(
+            f"有効データ数({n_used}件)が説明変数の数({k}個)に対して不足しています。"
+            f"少なくとも{k + 2}件必要です。"
+        )
+
+    y = np.asarray(y_list, dtype=float)
+    x = np.asarray(x_rows, dtype=float)
+
+    for j, p in enumerate(request.predictors):
+        if float(np.ptp(x[:, j])) == 0.0:
+            raise ValueError(f"説明変数「{p.name}」の値がすべて同じため回帰できません")
+
+    design = sm.add_constant(x, has_constant="add")
+    try:
+        model = sm.GLM(y, design, family=sm.families.Poisson()).fit()
+        null_model = sm.GLM(
+            y, np.ones((n_used, 1)), family=sm.families.Poisson()
+        ).fit()
+    except Exception:
+        raise ValueError(
+            "ポアソン回帰が収束しませんでした。データや説明変数を確認してください。"
+        )
+
+    params = np.asarray(model.params, dtype=float)
+    bse = np.asarray(model.bse, dtype=float)
+    if not (np.all(np.isfinite(params)) and np.all(np.isfinite(bse))):
+        raise ValueError("推定が不安定です。説明変数間の多重共線性などを確認してください。")
+    if not all(math.isfinite(math.exp(c)) for c in params):
+        raise ValueError("発生率比が計算できませんでした。")
+
+    conf = model.conf_int(0.05)  # 対数率比のCI
+    names = [_INTERCEPT_LABEL] + [p.name for p in request.predictors]
+
+    coefficients: list[RateRatio] = []
+    for idx, name in enumerate(names):
+        coef = float(params[idx])
+        coefficients.append(
+            RateRatio(
+                name=name,
+                coef=coef,
+                rate_ratio=math.exp(coef),
+                std_err=float(bse[idx]),
+                p_value=float(model.pvalues[idx]),
+                rr_ci95_low=math.exp(float(conf[idx][0])),
+                rr_ci95_high=math.exp(float(conf[idx][1])),
+            )
+        )
+
+    llf = float(model.llf)
+    llnull = float(null_model.llf)
+    pseudo = 1.0 - llf / llnull if llnull != 0 else 0.0
+    from scipy import stats as sp
+
+    lr_stat = 2.0 * (llf - llnull)
+    lr_p = float(sp.chi2.sf(lr_stat, k)) if k > 0 else 1.0
+
+    interpretation = _interpret_poisson(
+        request, coefficients, pseudo, lr_p, n_used, n_excluded
+    )
+
+    return PoissonRegressionResult(
+        outcome_name=request.outcome_name,
+        coefficients=coefficients,
+        n_total=n_total,
+        n_used=n_used,
+        n_excluded=n_excluded,
+        pseudo_r_squared=pseudo,
+        log_likelihood=llf,
+        ll_null=llnull,
+        lr_pvalue=lr_p,
+        deviance=float(model.deviance),
+        interpretation=interpretation,
+    )
+
+
+def _interpret_poisson(
+    request: PoissonRegressionRequest,
+    coefficients: list[RateRatio],
+    pseudo: float,
+    lr_p: float,
+    n_used: int,
+    n_excluded: int,
+) -> str:
+    lines: list[str] = []
+    k = len(request.predictors)
+    if k == 1:
+        lines.append(
+            f"{request.outcome_name}（カウント）を「{request.predictors[0].name}」で"
+            f"予測するポアソン回帰モデルです。"
+            f"発生率比(IRR)は説明変数が1増えるごとの発生率の倍率を表します。"
+        )
+    else:
+        lines.append(
+            f"{request.outcome_name}（カウント）を{k}個の説明変数で予測する"
+            f"ポアソン回帰モデルです。各発生率比(IRR)は他の変数を一定としたときの"
+            f"独立した影響を表します。"
+        )
+
+    model_sig = "統計的に有意です" if lr_p < 0.05 else "統計的に有意ではありません"
+    lines.append(
+        f"McFadden 擬似R² = {pseudo:.3f}。"
+        f"モデル全体の尤度比検定は p = {_fmt_p(lr_p)} で、{model_sig}。"
+    )
+
+    sig = [c for c in coefficients if c.name != _INTERCEPT_LABEL and c.p_value < 0.05]
+    if sig:
+        parts = []
+        for c in sig:
+            direction = "増え" if c.rate_ratio > 1 else "減り"
+            parts.append(
+                f"「{c.name}」が1増えるごとに{request.outcome_name}の発生率が "
+                f"{c.rate_ratio:.2f}倍（95%CI {c.rr_ci95_low:.2f}–{c.rr_ci95_high:.2f}, "
+                f"p = {_fmt_p(c.p_value)}）= {direction}やすくなる"
+            )
+        lines.append("有意な説明変数: " + "、".join(parts) + "。")
+    else:
+        lines.append("個々の説明変数で統計的に有意なものはありませんでした。")
+
+    if n_excluded > 0:
+        lines.append(f"欠損のため {n_excluded}件を除外し、{n_used}件で解析しました。")
 
     return " ".join(lines)

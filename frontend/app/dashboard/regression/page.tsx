@@ -12,6 +12,7 @@ import type {
   LinearRegressionRequest,
   LinearRegressionResult,
   LogisticRegressionResult,
+  PoissonRegressionResult,
   RegressionPredictor,
 } from "@/lib/types";
 import { useDataset } from "@/contexts/DataContext";
@@ -19,7 +20,7 @@ import { continuousColumns, numericAnalysisColumns, findColumn } from "@/lib/dat
 
 type PredState = { id: number; name: string; rawText: string };
 type InputMode = "csv" | "manual";
-type ModelType = "linear" | "logistic";
+type ModelType = "linear" | "logistic" | "poisson";
 
 let _id = 0;
 function nextId() { return ++_id; }
@@ -43,11 +44,13 @@ export default function RegressionPage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LinearRegressionResult | null>(null);
   const [logitResult, setLogitResult] = useState<LogisticRegressionResult | null>(null);
+  const [poissonResult, setPoissonResult] = useState<PoissonRegressionResult | null>(null);
 
   const isLogistic = modelType === "logistic";
-  // ロジスティックのアウトカム列は 0/1 を想定し、数値列全体から選べるようにする
+  const isPoisson = modelType === "poisson";
+  // ロジスティック(0/1)・ポアソン(カウント)のアウトカムは数値列全体から選べるようにする
   const outcomeColumns = dataset
-    ? (isLogistic ? numericAnalysisColumns(dataset.columns) : continuousColumns(dataset.columns))
+    ? (modelType === "linear" ? continuousColumns(dataset.columns) : numericAnalysisColumns(dataset.columns))
     : [];
 
   useEffect(() => {
@@ -73,6 +76,7 @@ export default function RegressionPage() {
     setLoading(true);
     setResult(null);
     setLogitResult(null);
+    setPoissonResult(null);
     try {
       let outcome: (number | null)[];
       let predictors: RegressionPredictor[];
@@ -95,11 +99,13 @@ export default function RegressionPage() {
           .filter((p) => p.rawText.trim() !== "")
           .map((p) => ({ name: p.name, values: parseNullableNumbers(p.rawText) }));
         if (predictors.length === 0) throw new Error("説明変数を1つ以上入力してください。");
-        outName = outcomeName.trim() || (isLogistic ? "アウトカム" : "目的変数");
+        outName = outcomeName.trim() || (isLogistic ? "アウトカム" : isPoisson ? "件数" : "目的変数");
       }
 
       if (isLogistic) {
         setLogitResult(await api.regressionLogistic({ outcome_name: outName, outcome, predictors }));
+      } else if (isPoisson) {
+        setPoissonResult(await api.regressionPoisson({ outcome_name: outName, outcome, predictors }));
       } else {
         const req: LinearRegressionRequest = { outcome_name: outName, outcome, predictors };
         setResult(await api.regressionLinear(req));
@@ -118,6 +124,8 @@ export default function RegressionPage() {
         <p className="text-[13px] text-gray-400 dark:text-neutral-500 mt-1">
           {isLogistic
             ? "0/1 の2値アウトカム（1=イベント発生）を説明変数で予測します。各説明変数のオッズ比(OR)と95%CIを算出します。"
+            : isPoisson
+            ? "カウント（0以上の整数。例：転倒回数）を説明変数で予測します。各説明変数の発生率比(IRR)と95%CIを算出します。"
             : "1つの目的変数（連続変数）を1つ以上の説明変数で予測します。説明変数を複数指定すると重回帰（共変量調整）になります。"}
         </p>
       </div>
@@ -127,6 +135,7 @@ export default function RegressionPage() {
         options={[
           { value: "linear", label: "線形回帰" },
           { value: "logistic", label: "ロジスティック回帰" },
+          { value: "poisson", label: "ポアソン回帰" },
         ]}
         onChange={setModelType}
         ariaLabel="回帰の種類"
@@ -150,7 +159,7 @@ export default function RegressionPage() {
         <div className="space-y-3">
           <Card className="p-4">
             <label className="block text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
-              {isLogistic ? "アウトカム（0/1 の列）" : "目的変数（連続変数）"}
+              {isLogistic ? "アウトカム（0/1 の列）" : isPoisson ? "件数（カウントの列）" : "目的変数（連続変数）"}
             </label>
             <select
               value={csvOutcomeCol}
@@ -189,10 +198,10 @@ export default function RegressionPage() {
         <div className="space-y-3">
           <Card className="p-4">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="text-[12px] text-gray-500 dark:text-neutral-500 shrink-0">{isLogistic ? "アウトカム" : "目的変数"}</span>
+              <span className="text-[12px] text-gray-500 dark:text-neutral-500 shrink-0">{isLogistic ? "アウトカム" : isPoisson ? "件数" : "目的変数"}</span>
               <input
                 className={inputCls + " flex-1 min-w-[8rem]"}
-                placeholder={isLogistic ? "アウトカム名（例：再入院）" : "目的変数名"}
+                placeholder={isLogistic ? "アウトカム名（例：再入院）" : isPoisson ? "件数名（例：転倒回数）" : "目的変数名"}
                 value={outcomeName}
                 onChange={(e) => setOutcomeName(e.target.value)}
               />
@@ -202,6 +211,8 @@ export default function RegressionPage() {
               rows={3}
               placeholder={isLogistic
                 ? "0 / 1 を1行1件で入力（1=イベント発生, 0=非発生。欠損: NA, -）"
+                : isPoisson
+                ? "0以上の整数を1行1件で入力（例：転倒回数。欠損: NA, -）"
                 : "目的変数の数値をスペース・改行・カンマ区切りで入力（欠損: NA, -）"}
               value={outcomeText}
               onChange={(e) => setOutcomeText(e.target.value)}
@@ -268,6 +279,14 @@ export default function RegressionPage() {
           <LogitModelFit result={logitResult} />
           <OddsTable result={logitResult} />
           <InterpretationCard text={logitResult.interpretation} />
+        </div>
+      )}
+
+      {poissonResult && (
+        <div className="mt-6 space-y-4">
+          <PoissonModelFit result={poissonResult} />
+          <RateTable result={poissonResult} />
+          <InterpretationCard text={poissonResult.interpretation} />
         </div>
       )}
     </div>
@@ -360,6 +379,65 @@ function OddsTable({ result }: { result: LogisticRegressionResult }) {
               <td className="px-4 py-2 text-right tabular-nums text-gray-700 dark:text-neutral-300">{fmt(c.odds_ratio, 3)}</td>
               <td className="px-4 py-2 text-center tabular-nums text-gray-500 dark:text-neutral-500">
                 {fmt(c.or_ci95_low, 3)} – {fmt(c.or_ci95_high, 3)}
+              </td>
+              <td className="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-neutral-500">{fmt(c.coef, 4)}</td>
+              <td className={`px-4 py-2 text-right tabular-nums ${
+                c.p_value < 0.05 ? "font-semibold text-white" : "text-gray-500 dark:text-neutral-500"
+              }`}>
+                {fmtP(c.p_value)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function PoissonModelFit({ result }: { result: PoissonRegressionResult }) {
+  const items: [string, string][] = [
+    ["McFadden 擬似R²", fmt(result.pseudo_r_squared)],
+    ["尤度比検定 p値", fmtP(result.lr_pvalue)],
+    ["逸脱度 (deviance)", fmt(result.deviance, 2)],
+    ["解析に使用 / 全体", `${result.n_used} / ${result.n_total}`],
+    ["対数尤度", fmt(result.log_likelihood, 2)],
+    ["欠損で除外", String(result.n_excluded)],
+  ];
+  return (
+    <Card className="p-4">
+      <p className="text-[12px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 sm:grid-cols-3">
+        {items.map(([label, val]) => (
+          <div key={label}>
+            <div className="text-[11px] text-gray-400 dark:text-neutral-600">{label}</div>
+            <div className="text-[15px] font-semibold text-gray-800 dark:text-neutral-200 tabular-nums">{val}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function RateTable({ result }: { result: PoissonRegressionResult }) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800">
+      <table className="w-full text-[13px]">
+        <thead>
+          <tr className="border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 text-gray-500 dark:text-neutral-500">
+            <th className="text-left px-4 py-2.5 font-medium">項目</th>
+            <th className="text-right px-4 py-2.5 font-medium">発生率比 (IRR)</th>
+            <th className="text-center px-4 py-2.5 font-medium">IRR の 95%CI</th>
+            <th className="text-right px-4 py-2.5 font-medium">係数(対数)</th>
+            <th className="text-right px-4 py-2.5 font-medium">p値</th>
+          </tr>
+        </thead>
+        <tbody>
+          {result.coefficients.map((c, i) => (
+            <tr key={i} className="border-b border-gray-100 dark:border-neutral-900 last:border-0">
+              <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-200">{c.name}</td>
+              <td className="px-4 py-2 text-right tabular-nums text-gray-700 dark:text-neutral-300">{fmt(c.rate_ratio, 3)}</td>
+              <td className="px-4 py-2 text-center tabular-nums text-gray-500 dark:text-neutral-500">
+                {fmt(c.rr_ci95_low, 3)} – {fmt(c.rr_ci95_high, 3)}
               </td>
               <td className="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-neutral-500">{fmt(c.coef, 4)}</td>
               <td className={`px-4 py-2 text-right tabular-nums ${
