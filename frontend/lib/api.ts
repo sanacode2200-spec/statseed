@@ -15,6 +15,8 @@ import type {
   HistogramRequest,
   LinearRegressionRequest,
   LinearRegressionResult,
+  LogisticRegressionRequest,
+  LogisticRegressionResult,
   MultiGroupRequest,
   PairedRequest,
   PairedPlotRequest,
@@ -150,4 +152,7 @@ export const api = {
 
   regressionLinear: (req: LinearRegressionRequest) =>
     post<LinearRegressionResult>("/api/regression/linear", req),
+
+  regressionLogistic: (req: LogisticRegressionRequest) =>
+    post<LogisticRegressionResult>("/api/regression/logistic", req),
 };

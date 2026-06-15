@@ -271,6 +271,36 @@ export interface LinearRegressionResult {
   interpretation: string;
 }
 
+export interface LogisticRegressionRequest {
+  outcome_name?: string;
+  outcome: (number | null)[];
+  predictors: RegressionPredictor[];
+}
+
+export interface OddsRatio {
+  name: string;
+  coef: number;
+  odds_ratio: number;
+  std_err: number;
+  p_value: number;
+  or_ci95_low: number;
+  or_ci95_high: number;
+}
+
+export interface LogisticRegressionResult {
+  outcome_name: string;
+  coefficients: OddsRatio[];
+  n_total: number;
+  n_used: number;
+  n_excluded: number;
+  n_events: number;
+  pseudo_r_squared: number;
+  log_likelihood: number;
+  ll_null: number;
+  lr_pvalue: number;
+  interpretation: string;
+}
+
 // --- グラフ ---
 
 export interface KaplanMeierRequest {
