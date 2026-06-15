@@ -1,208 +1,119 @@
 import Link from "next/link";
 
-const STATS = [
-  { label: "テスト項目", value: "140+", sub: "backend/tests/" },
-  { label: "APIエンドポイント", value: "25+", sub: "実装済み" },
-  { label: "統計検定", value: "9種", sub: "t / ANOVA / χ² …" },
-  { label: "グラフ形式", value: "3種", sub: "PNG / SVG / PDF" },
-];
-
-const FEATURES = [
+const START_ACTIONS = [
   {
-    href: "/dashboard/descriptive",
-    title: "記述統計",
-    desc: "平均・SD・中央値・IQR・95%CI・カテゴリ頻度",
-    color: "#888888",
-    tags: ["連続変数", "カテゴリ変数"],
-    icon: ChartBarIcon,
-  },
-  {
-    href: "/dashboard/test",
-    title: "統計検定",
-    desc: "9種類の検定。効果量・解釈文を自動生成",
-    color: "#009E73",
-    tags: ["t検定", "ANOVA", "χ²", "相関"],
-    icon: FlaskIcon,
-  },
-  {
-    href: "/dashboard/regression",
-    title: "回帰分析",
-    desc: "単回帰・重回帰（共変量調整）。95%CI・標準化係数・解釈文",
-    color: "#0072B2",
-    tags: ["線形回帰", "重回帰"],
-    icon: RegressionIcon,
-  },
-  {
-    href: "/dashboard/table1",
-    title: "Table 1",
-    desc: "背景データ表を自動生成。SMD・n(%)・mean±SD",
-    color: "#373737",
-    tags: ["論文向け", "群間比較"],
-    icon: TableIcon,
-  },
-  {
-    href: "/dashboard/graph",
-    title: "グラフ作成",
-    desc: "300dpi PNG / SVG / PDF。フォントプリセット対応",
-    color: "#E69F00",
-    tags: ["箱ひげ図", "ヒストグラム", "散布図"],
-    icon: GraphIcon,
+    href: "/dashboard/data",
+    eyebrow: "データがある",
+    title: "データを読み込んで始める",
+    desc: "CSV・Excelを読み込み、列の種類や欠損値を確認してから解析します。",
+    icon: FolderIcon,
+    primary: true,
   },
   {
     href: "/dashboard/guide",
-    title: "検定選択ガイド",
-    desc: "いくつかの質問に答えるだけで最適な検定を提案",
-    color: "#CC79A7",
-    tags: ["初学者向け"],
+    eyebrow: "方法を相談したい",
+    title: "解析方法を選ぶ",
+    desc: "研究目的やデータについて答え、適した統計手法を確認します。",
     icon: CompassIcon,
+    primary: false,
   },
   {
-    href: "/dashboard/data",
-    title: "データ読み込み",
-    desc: "CSV・Excel をアップロードして変数確認",
-    color: "#56B4E9",
-    tags: ["CSV", "Excel", "欠損値検出"],
-    icon: FolderIcon,
+    href: "/dashboard/test",
+    eyebrow: "すぐ計算したい",
+    title: "手入力で解析する",
+    desc: "少量のデータを貼り付けて、統計検定をすぐに実行します。",
+    icon: FlaskIcon,
+    primary: false,
   },
 ];
 
-const FLOW = [
-  { n: "01", label: "データ読み込み", href: "/dashboard/data" },
-  { n: "02", label: "検定ガイド", href: "/dashboard/guide" },
-  { n: "03", label: "解析を実行", href: "/dashboard/test" },
-  { n: "04", label: "グラフ出力", href: "/dashboard/graph" },
+const WORKFLOWS = [
+  { href: "/dashboard/descriptive", title: "データを要約", desc: "平均・中央値・ばらつき・欠損を確認", icon: ChartBarIcon },
+  { href: "/dashboard/test", title: "群の差・関連を調べる", desc: "t検定・ANOVA・相関・カテゴリ比較", icon: FlaskIcon },
+  { href: "/dashboard/regression", title: "要因を調べる", desc: "線形回帰・ロジスティック回帰・ポアソン回帰", icon: RegressionIcon },
+  { href: "/dashboard/table1", title: "背景特性表を作る", desc: "SMD・n (%)・mean ± SDをまとめる", icon: TableIcon },
+  { href: "/dashboard/graph", title: "伝わるグラフを作る", desc: "個別値を示し、論文・発表向けに出力", icon: GraphIcon },
+];
+
+const STANDARDS = [
+  ["信頼できる計算", "SciPy・statsmodelsを利用し、効果量や95%信頼区間も表示します。"],
+  ["判断に必要な情報", "解析使用数、除外数、欠損や前提に関する注意を結果と一緒に示します。"],
+  ["伝わるグラフ", "色覚多様性や縮小表示に配慮し、PNG・SVG・PDFで出力できます。"],
 ];
 
 export default function DashboardHome() {
   return (
-    <div className="flex flex-col gap-6 items-stretch lg:flex-row lg:items-start">
+    <div className="mx-auto max-w-6xl">
+      <div className="mb-8">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600">ホーム</p>
+        <h1 className="mt-2 text-[26px] font-bold tracking-tight text-gray-900 dark:text-white">何から始めますか？</h1>
+        <p className="mt-2 text-[13px] text-gray-500 dark:text-neutral-500">データの準備状況に合わせて、最初の操作を選んでください。</p>
+      </div>
 
-      {/* ── 左カラム: 概要 ── */}
-      <div className="flex-1 min-w-0 space-y-5">
-
-        {/* ヘッダー */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600">
-              Overview
-            </span>
-            <span className="text-[11px] px-1.5 py-0.5 rounded-full font-medium"
-              style={{ color: "#009E73", backgroundColor: "rgba(0,158,115,0.1)", border: "1px solid rgba(0,158,115,0.3)" }}>
-              Phase 1 完了
-            </span>
-          </div>
-          <h1 className="text-[24px] font-bold text-gray-900 dark:text-white tracking-tight">
-            Statseed
-          </h1>
-          <p className="text-[13px] text-gray-400 dark:text-neutral-600 mt-0.5">
-            コメディカル向け医療統計 Web アプリ
-          </p>
-        </div>
-
-        {/* ステータスカード */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {STATS.map(({ label, value, sub }) => (
-            <div key={label}
-              className="bg-white dark:bg-[#111] border border-gray-200 dark:border-neutral-900 rounded-lg px-4 py-3">
-              <div className="text-[22px] font-bold text-gray-900 dark:text-white leading-tight">{value}</div>
-              <div className="text-[12px] font-medium text-gray-600 dark:text-neutral-400 mt-0.5">{label}</div>
-              <div className="text-[11px] text-gray-400 dark:text-neutral-600 mt-0.5 font-mono">{sub}</div>
-            </div>
+      <section>
+        <div className="grid gap-3 lg:grid-cols-3">
+          {START_ACTIONS.map(({ href, eyebrow, title, desc, icon: Icon, primary }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`group rounded-xl border p-5 transition-all hover:-translate-y-0.5 ${
+                primary
+                  ? "border-neutral-900 bg-neutral-900 text-white shadow-lg shadow-black/10 dark:border-white dark:bg-white dark:text-black"
+                  : "border-gray-200 bg-white hover:border-gray-300 dark:border-neutral-800 dark:bg-[#111] dark:hover:border-neutral-700"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-[10px] font-semibold tracking-wider ${primary ? "text-neutral-400 dark:text-neutral-500" : "text-gray-400 dark:text-neutral-600"}`}>{eyebrow}</span>
+                <Icon />
+              </div>
+              <h2 className="mt-8 text-[16px] font-bold">{title}</h2>
+              <p className={`mt-2 text-[12px] leading-6 ${primary ? "text-neutral-300 dark:text-neutral-600" : "text-gray-500 dark:text-neutral-500"}`}>{desc}</p>
+              <span className="mt-5 inline-block text-[12px] font-semibold">始める →</span>
+            </Link>
           ))}
         </div>
+      </section>
 
-        {/* 解析の流れ */}
+      <section className="mt-10 grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
-            Quick Start
-          </div>
-          <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-neutral-900 rounded-lg divide-y divide-gray-100 dark:divide-neutral-900">
-            {FLOW.map(({ n, label, href }) => (
-              <Link key={n} href={href}
-                className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-neutral-950 transition-colors group">
-                <span className="text-[11px] font-mono text-gray-300 dark:text-neutral-700 w-4 shrink-0">{n}</span>
-                <span className="text-[13px] text-gray-700 dark:text-neutral-300 flex-1">{label}</span>
-                <span className="text-gray-300 dark:text-neutral-800 group-hover:text-gray-500 dark:group-hover:text-neutral-500 transition-colors">
-                  <ChevronRight />
+          <h2 className="mb-3 text-[13px] font-semibold text-gray-800 dark:text-neutral-200">目的から選ぶ</h2>
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-neutral-800 dark:bg-[#111]">
+            {WORKFLOWS.map(({ href, title, desc, icon: Icon }) => (
+              <Link key={href} href={href} className="group flex items-center gap-3 border-b border-gray-100 px-4 py-3.5 last:border-0 hover:bg-gray-50 dark:border-neutral-900 dark:hover:bg-neutral-950">
+                <span className="text-gray-400 dark:text-neutral-600"><Icon /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold text-gray-800 dark:text-neutral-200">{title}</span>
+                  <span className="mt-0.5 block text-[11px] text-gray-400 dark:text-neutral-600">{desc}</span>
                 </span>
+                <span className="text-gray-300 group-hover:text-gray-500 dark:text-neutral-700">→</span>
               </Link>
             ))}
           </div>
         </div>
 
-        {/* 技術スタック */}
         <div>
-          <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
-            Stack
-          </div>
-          <div className="bg-white dark:bg-[#111] border border-gray-200 dark:border-neutral-900 rounded-lg divide-y divide-gray-100 dark:divide-neutral-900">
-            {[
-              { label: "Frontend", value: "Next.js 14 + TypeScript" },
-              { label: "Backend", value: "FastAPI (Python 3.11+)" },
-              { label: "計算", value: "scipy · statsmodels · pandas" },
-              { label: "インフラ", value: "Vercel + Railway" },
-            ].map(({ label, value }) => (
-              <div key={label} className="flex items-center px-4 py-2.5 gap-4">
-                <span className="text-[11px] font-medium text-gray-400 dark:text-neutral-600 w-20 shrink-0">{label}</span>
-                <span className="text-[12px] text-gray-600 dark:text-neutral-400 font-mono">{value}</span>
+          <h2 className="mb-3 text-[13px] font-semibold text-gray-800 dark:text-neutral-200">Statseedの基準</h2>
+          <div className="space-y-3">
+            {STANDARDS.map(([title, text], index) => (
+              <div key={title} className="rounded-xl border border-gray-200 bg-white p-4 dark:border-neutral-800 dark:bg-[#111]">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[10px] text-gray-300 dark:text-neutral-700">0{index + 1}</span>
+                  <h3 className="text-[12px] font-semibold text-gray-800 dark:text-neutral-200">{title}</h3>
+                </div>
+                <p className="mt-2 text-[11px] leading-5 text-gray-400 dark:text-neutral-600">{text}</p>
               </div>
             ))}
           </div>
         </div>
-      </div>
-
-      {/* ── 右カラム: 機能 ── */}
-      <div className="w-full shrink-0 space-y-3 lg:w-[300px]">
-        <div className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-neutral-600 mb-2">
-          機能
-        </div>
-        {FEATURES.map(({ href, title, desc, color, tags, icon: Icon }) => (
-          <Link key={href} href={href}
-            className="group block bg-white dark:bg-[#111] border border-gray-200 dark:border-neutral-900 rounded-lg px-4 py-3
-              hover:border-gray-300 dark:hover:border-neutral-700 transition-all">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span style={{ color }}><Icon /></span>
-              <span className="text-[13px] font-semibold text-gray-900 dark:text-white flex-1">{title}</span>
-              <ChevronRight />
-            </div>
-            <p className="text-[12px] text-gray-400 dark:text-neutral-600 leading-relaxed mb-2">{desc}</p>
-            <div className="flex flex-wrap gap-1">
-              {tags.map(t => (
-                <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-neutral-900 text-gray-400 dark:text-neutral-600">
-                  {t}
-                </span>
-              ))}
-            </div>
-          </Link>
-        ))}
-      </div>
-
+      </section>
     </div>
   );
 }
 
-/* ── SVG ── */
-function ChartBarIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="12" width="4" height="9" /><rect x="10" y="7" width="4" height="14" /><rect x="17" y="3" width="4" height="18" /></svg>;
-}
-function FlaskIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><path d="M9 3h6m-6 0v7L4.5 19a1 1 0 0 0 .9 1.5h13.2a1 1 0 0 0 .9-1.5L15 10V3" /></svg>;
-}
-function GraphIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>;
-}
-function CompassIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>;
-}
-function FolderIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>;
-}
-function RegressionIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="21" x2="21" y2="3" /><circle cx="6" cy="17" r="1.4" /><circle cx="10" cy="15" r="1.4" /><circle cx="14" cy="9" r="1.4" /><circle cx="18" cy="8" r="1.4" /></svg>;
-}
-function TableIcon() {
-  return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /><line x1="9" y1="9" x2="9" y2="21" /></svg>;
-}
-function ChevronRight() {
-  return <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="text-gray-300 dark:text-neutral-800 group-hover:text-gray-400 dark:group-hover:text-neutral-600 transition-colors"><polyline points="9 18 15 12 9 6" /></svg>;
-}
+function ChartBarIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="12" width="4" height="9" /><rect x="10" y="7" width="4" height="14" /><rect x="17" y="3" width="4" height="18" /></svg>; }
+function FlaskIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M9 3h6m-6 0v7L4.5 19a1 1 0 0 0 .9 1.5h13.2a1 1 0 0 0 .9-1.5L15 10V3" /></svg>; }
+function GraphIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>; }
+function CompassIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>; }
+function FolderIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" /></svg>; }
+function RegressionIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><line x1="3" y1="21" x2="21" y2="3" /><circle cx="6" cy="17" r="1.4" /><circle cx="10" cy="15" r="1.4" /><circle cx="14" cy="9" r="1.4" /><circle cx="18" cy="8" r="1.4" /></svg>; }
+function TableIcon() { return <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /><line x1="9" y1="9" x2="9" y2="21" /></svg>; }

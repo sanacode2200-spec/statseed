@@ -5,35 +5,31 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDataset } from "@/contexts/DataContext";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const NAV_GROUPS = [
   {
-    label: null,
+    label: "はじめる",
     items: [
-      { href: "/dashboard", label: "Overview", exact: true, icon: HomeIcon },
+      { href: "/dashboard", label: "ホーム", exact: true, icon: HomeIcon },
+      { href: "/dashboard/data", label: "データを読み込む", exact: false, icon: FolderIcon },
+      { href: "/dashboard/guide", label: "解析方法を選ぶ", exact: false, icon: CompassIcon },
     ],
   },
   {
-    label: "Analysis",
+    label: "解析する",
     items: [
-      { href: "/dashboard/guide", label: "Guide", exact: false, icon: CompassIcon },
-      { href: "/dashboard/descriptive", label: "Descriptive", exact: false, icon: ChartBarIcon },
-      { href: "/dashboard/test", label: "Tests", exact: false, icon: FlaskIcon },
-      { href: "/dashboard/repeated", label: "Repeated", exact: false, icon: RepeatedIcon },
-      { href: "/dashboard/regression", label: "Regression", exact: false, icon: RegressionIcon },
+      { href: "/dashboard/descriptive", label: "データを要約", exact: false, icon: ChartBarIcon },
+      { href: "/dashboard/test", label: "群の差・関連", exact: false, icon: FlaskIcon },
+      { href: "/dashboard/regression", label: "回帰分析", exact: false, icon: RegressionIcon },
+      { href: "/dashboard/repeated", label: "反復測定", exact: false, icon: RepeatedIcon },
     ],
   },
   {
-    label: "Report",
+    label: "仕上げる",
     items: [
-      { href: "/dashboard/table1", label: "Table 1", exact: false, icon: TableIcon },
-      { href: "/dashboard/graph", label: "Graphs", exact: false, icon: GraphIcon },
-    ],
-  },
-  {
-    label: "Data",
-    items: [
-      { href: "/dashboard/data", label: "Import", exact: false, icon: FolderIcon },
+      { href: "/dashboard/table1", label: "背景特性表", exact: false, icon: TableIcon },
+      { href: "/dashboard/graph", label: "グラフを作る", exact: false, icon: GraphIcon },
     ],
   },
 ];
@@ -41,14 +37,9 @@ const NAV_GROUPS = [
 export function Sidebar() {
   const pathname = usePathname();
   const { dataset, storageMode, clearDataset } = useDataset();
-  const [dark, setDark] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setDark(document.documentElement.classList.contains("dark"));
-  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -100,18 +91,6 @@ export function Sidebar() {
       trigger?.focus();
     };
   }, [mobileOpen]);
-
-  function toggleTheme() {
-    const next = !dark;
-    setDark(next);
-    if (next) {
-      document.documentElement.classList.add("dark");
-      localStorage.setItem("theme", "dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-      localStorage.setItem("theme", "light");
-    }
-  }
 
   function isActive(href: string, exact: boolean) {
     return exact ? pathname === href : pathname.startsWith(href);
@@ -209,14 +188,7 @@ export function Sidebar() {
       <div className="px-3 py-2.5 border-t border-gray-100 dark:border-neutral-900
         flex items-center justify-between">
         <span className="text-[11px] text-gray-300 dark:text-neutral-700">v1.0</span>
-        <button
-          onClick={toggleTheme}
-          className="p-1.5 rounded-md text-gray-400 dark:text-neutral-600
-            hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors"
-          title={dark ? "ライトモード" : "ダークモード"}
-        >
-          {dark ? <SunIcon /> : <MoonIcon />}
-        </button>
+        <ThemeToggle className="min-h-7 min-w-7 border-0 bg-transparent dark:bg-transparent" />
       </div>
     </aside>
   );
@@ -240,9 +212,7 @@ export function Sidebar() {
           <Image src="/sana2.png" alt="" width={22} height={22} className="h-[22px] w-[22px] rounded-sm object-cover" />
           Statseed
         </Link>
-        <span className="min-w-11 text-right text-[10px] text-gray-400 dark:text-neutral-600">
-          {dataset ? (storageMode === "persistent" ? "保存: 端末" : "保存: タブ内") : ""}
-        </span>
+        <ThemeToggle className="min-h-9 min-w-9 border-0 bg-transparent dark:bg-transparent" />
       </div>
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
@@ -361,26 +331,6 @@ function DotIcon() {
   return (
     <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
       <circle cx="12" cy="12" r="12" />
-    </svg>
-  );
-}
-
-function SunIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="5" />
-      <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-      <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-    </svg>
-  );
-}
-
-function MoonIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
     </svg>
   );
 }

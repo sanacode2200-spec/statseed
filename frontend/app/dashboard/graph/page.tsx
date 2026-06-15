@@ -615,7 +615,7 @@ export default function GraphPage() {
       </div>
       <h1 className="text-[20px] font-bold text-gray-900 dark:text-white mb-1">グラフ作成</h1>
       <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-5">
-        グラフを作成し、PNG・SVG・PDFで論文品質出力できます。
+        個別値が伝わるグラフを作成し、論文や発表に使いやすいPNG・SVG・PDFで出力できます。
       </p>
 
       <Card className="mb-5">

@@ -38,7 +38,7 @@ const lineSeedJP = localFont({
 
 export const metadata: Metadata = {
   title: "Statseed — コメディカル向け医療統計",
-  description: "PT・OT・ST・看護師など医療従事者向けの統計解析Webアプリ。論文品質グラフ出力対応。",
+  description: "PT・OT・ST・看護師など、医療従事者の研究を解析から報告まで支える統計解析Webアプリ。",
 };
 
 export default function RootLayout({
