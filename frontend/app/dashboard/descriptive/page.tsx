@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { inputCls } from "@/components/ui/formStyles";
 import { DescriptiveResultTable } from "@/components/stats/DescriptiveResultTable";
 import { CategoricalResultTable } from "@/components/stats/CategoricalResultTable";
 import {
@@ -19,9 +20,6 @@ import { categoricalColumns, continuousColumns, findColumn } from "@/lib/dataUti
 
 type Mode = "continuous" | "categorical";
 type InputMode = "csv" | "manual";
-
-const inputCls =
-  "w-full rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[13px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 placeholder-gray-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700";
 
 export default function DescriptivePage() {
   const { dataset } = useDataset();

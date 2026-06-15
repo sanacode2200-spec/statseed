@@ -25,9 +25,13 @@ def build_table1(request: Table1Request) -> Table1Result:
     rows: list[Table1Row] = []
     for var in request.variables:
         if isinstance(var, ContinuousVariable):
-            rows.extend(_continuous_rows(var, group_map, group_names))
+            rows.extend(_continuous_rows(
+                var, group_map, group_names, request.show_pvalue, request.show_smd
+            ))
         else:
-            rows.extend(_categorical_rows(var, group_map, group_names))
+            rows.extend(_categorical_rows(
+                var, group_map, group_names, request.show_pvalue, request.show_smd
+            ))
 
     return Table1Result(
         rows=rows,
@@ -69,6 +73,8 @@ def _continuous_rows(
     var: ContinuousVariable,
     group_map: dict[str, list[int]] | None,
     group_names: list[str] | None,
+    show_pvalue: bool,
+    show_smd: bool,
 ) -> list[Table1Row]:
     all_vals = _clean_continuous(var.values)
     overall = _fmt_continuous(all_vals, var.display)
@@ -77,6 +83,7 @@ def _continuous_rows(
     missing_by_group: dict[str, int] | None = None
     p_value: str | None = None
     test_name: str | None = None
+    smd: str | None = None
 
     if group_map is not None and group_names is not None:
         group_data = {
@@ -87,9 +94,14 @@ def _continuous_rows(
         missing_by_group = {
             g: len(group_map[g]) - len(group_data[g]) for g in group_names
         }
-        p_value, test_name = _continuous_pvalue(
-            [group_data[g] for g in group_names]
-        )
+        if show_pvalue:
+            p_value, test_name = _continuous_pvalue(
+                [group_data[g] for g in group_names]
+            )
+        if show_smd and len(group_names) == 2:
+            smd = _fmt_smd(_smd_continuous(
+                group_data[group_names[0]], group_data[group_names[1]]
+            ))
 
     return [Table1Row(
         variable=var.name,
@@ -97,6 +109,7 @@ def _continuous_rows(
         groups=groups,
         p_value=p_value,
         test_name=test_name,
+        smd=smd,
         missing=len(var.values) - len(all_vals),
         missing_by_group=missing_by_group,
     )]
@@ -147,6 +160,8 @@ def _categorical_rows(
     var: CategoricalVariable,
     group_map: dict[str, list[int]] | None,
     group_names: list[str] | None,
+    show_pvalue: bool,
+    show_smd: bool,
 ) -> list[Table1Row]:
     all_vals = _clean_categorical(var.values)
     n_all = len(all_vals)
@@ -154,6 +169,7 @@ def _categorical_rows(
 
     p_value: str | None = None
     test_name: str | None = None
+    smd: str | None = None
     group_counts_per_cat: dict[str, dict[str, int]] | None = None
     missing_by_group: dict[str, int] | None = None
 
@@ -169,7 +185,14 @@ def _categorical_rows(
         missing_by_group = {
             g: len(group_map[g]) - len(group_vals[g]) for g in group_names
         }
-        p_value, test_name = _categorical_pvalue(categories, group_names, group_counts_per_cat)
+        if show_pvalue:
+            p_value, test_name = _categorical_pvalue(categories, group_names, group_counts_per_cat)
+        if show_smd and len(group_names) == 2:
+            g1, g2 = group_names[0], group_names[1]
+            smd = _fmt_smd(_smd_categorical(
+                [group_counts_per_cat[cat][g1] for cat in categories],
+                [group_counts_per_cat[cat][g2] for cat in categories],
+            ))
 
     # ヘッダー行（変数名 + 全体N）
     rows: list[Table1Row] = [Table1Row(
@@ -178,6 +201,7 @@ def _categorical_rows(
         groups={g: f"n = {len(group_vals[g])}" for g in group_names} if group_map and group_names else None,
         p_value=p_value,
         test_name=test_name,
+        smd=smd,
         missing=len(var.values) - n_all,
         missing_by_group=missing_by_group,
     )]
@@ -249,6 +273,69 @@ def _categorical_pvalue(
         return _fmt_p(p), "χ²検定"
     except Exception:
         return None, None
+
+
+# ── 標準化平均差（SMD） ───────────────────────────────────────────────────────
+# Table 1 の群間比較では、検出力に依存するp値より、サンプルサイズに依存しない
+# 効果量である標準化平均差（standardized mean difference）が推奨される。
+# 慣例として |SMD| > 0.1 で群間に意味のある偏りがあると判断される。
+# 多項SMDは符号を持たない（Mahalanobis型）ため、連続・2値も含め
+# すべて絶対値（非負の効果量）で統一して報告する（tableone 等の慣例に準拠）。
+
+def _smd_continuous(g1: list[float], g2: list[float]) -> float | None:
+    """連続変数の2群間SMD = |mean1 - mean2| / pooled SD"""
+    if len(g1) < 2 or len(g2) < 2:
+        return None
+    m1, m2 = statistics.fmean(g1), statistics.fmean(g2)
+    v1, v2 = statistics.variance(g1), statistics.variance(g2)
+    pooled = math.sqrt((v1 + v2) / 2)
+    if pooled == 0:
+        return None
+    return abs(m1 - m2) / pooled
+
+
+def _smd_categorical(counts1: list[int], counts2: list[int]) -> float | None:
+    """カテゴリ変数の2群間SMD。2値は単純式、多値は多項SMD（Yang & Dalton 2012）。"""
+    n1, n2 = sum(counts1), sum(counts2)
+    k = len(counts1)
+    if n1 == 0 or n2 == 0 or k < 2:
+        return None
+    p1 = [c / n1 for c in counts1]
+    p2 = [c / n2 for c in counts2]
+
+    if k == 2:
+        a, b = p1[0], p2[0]
+        denom = (a * (1 - a) + b * (1 - b)) / 2
+        if denom == 0:
+            return None
+        return abs(a - b) / math.sqrt(denom)
+
+    # 多項SMD: numpy が無ければ算出しない（軽量起動を優先）
+    try:
+        import numpy as np
+    except ImportError:
+        return None
+    pv1 = np.array(p1[:-1])  # 最後のカテゴリは線形従属のため除外
+    pv2 = np.array(p2[:-1])
+    diff = pv1 - pv2
+    if not bool(np.any(np.abs(diff) > 1e-12)):
+        return 0.0  # 群間で分布が完全一致 → 偏りなし
+    s = (np.diag(pv1) - np.outer(pv1, pv1) + np.diag(pv2) - np.outer(pv2, pv2)) / 2
+    try:
+        val = float(diff @ np.linalg.pinv(s) @ diff)
+    except Exception:
+        return None
+    # 共分散が特異（例: 完全分離）で偏りがあるのに val<=0 になる場合は
+    # 有限のSMDを算出できないため 0 ではなく未算出（None）として表示する
+    if val <= 0:
+        return None
+    return math.sqrt(val)
+
+
+def _fmt_smd(smd: float | None) -> str | None:
+    if smd is None:
+        return None
+    return f"{smd:.2f}"
 
 
 # ── ユーティリティ ────────────────────────────────────────────────────────────

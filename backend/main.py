@@ -3,7 +3,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.routers import descriptive, graph, guide, table1, test, upload
+from backend.routers import descriptive, graph, guide, regression, table1, test, upload
 
 DEFAULT_CORS_ORIGIN_REGEX = (
     r"(?:https://.*\.vercel\.app|http://(?:localhost|127\.0\.0\.1)(?::\d+)?)"
@@ -49,6 +49,7 @@ app.include_router(graph.router, prefix="/api")
 app.include_router(upload.router, prefix="/api")
 app.include_router(guide.router, prefix="/api")
 app.include_router(table1.router, prefix="/api")
+app.include_router(regression.router, prefix="/api")
 
 
 @app.get("/health")

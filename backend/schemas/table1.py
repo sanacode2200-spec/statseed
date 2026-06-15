@@ -28,6 +28,10 @@ class Table1Request(BaseModel):
     variables: list[Table1Variable] = Field(min_length=1)
     group_values: list[str | None] | None = None
     group_name: str = Field(default="群", min_length=1, max_length=80)
+    # Table 1 では群間p値は推奨されないため既定でオフ。
+    show_pvalue: bool = False
+    # 標準化平均差（standardized mean difference, 2群時のみ）は既定でオン。
+    show_smd: bool = True
 
     @model_validator(mode="after")
     def check_group_length(self) -> "Table1Request":
@@ -50,6 +54,7 @@ class Table1Row(BaseModel):
     groups: dict[str, str] | None = None
     p_value: str | None = None
     test_name: str | None = None
+    smd: str | None = None
     missing: int = 0
     missing_by_group: dict[str, int] | None = None
 

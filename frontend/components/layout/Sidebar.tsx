@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDataset } from "@/contexts/DataContext";
 
 const NAV_GROUPS = [
@@ -16,11 +16,17 @@ const NAV_GROUPS = [
   {
     label: "Analysis",
     items: [
+      { href: "/dashboard/guide", label: "Guide", exact: false, icon: CompassIcon },
       { href: "/dashboard/descriptive", label: "Descriptive", exact: false, icon: ChartBarIcon },
       { href: "/dashboard/test", label: "Tests", exact: false, icon: FlaskIcon },
+      { href: "/dashboard/regression", label: "Regression", exact: false, icon: RegressionIcon },
+    ],
+  },
+  {
+    label: "Report",
+    items: [
       { href: "/dashboard/table1", label: "Table 1", exact: false, icon: TableIcon },
       { href: "/dashboard/graph", label: "Graphs", exact: false, icon: GraphIcon },
-      { href: "/dashboard/guide", label: "Guide", exact: false, icon: CompassIcon },
     ],
   },
   {
@@ -36,6 +42,8 @@ export function Sidebar() {
   const { dataset, storageMode, clearDataset } = useDataset();
   const [dark, setDark] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setDark(document.documentElement.classList.contains("dark"));
@@ -49,16 +57,46 @@ export function Sidebar() {
     if (!mobileOpen) return;
 
     const previousOverflow = document.body.style.overflow;
+    const trigger = triggerRef.current;
+
+    const focusable = () =>
+      Array.from(
+        drawerRef.current?.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input, select, [tabindex]:not([tabindex="-1"])'
+        ) ?? []
+      ).filter((el) => el.offsetParent !== null);
+
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMobileOpen(false);
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      // ドロワー内に Tab フォーカスを閉じ込める（背景の操作を防ぐ）
+      const items = focusable();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (event.shiftKey && (active === first || !drawerRef.current?.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
 
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", handleKeyDown);
+    // 開いたらドロワー内へフォーカスを移す
+    focusable()[0]?.focus();
 
     return () => {
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
+      // 閉じたらトリガー（ハンバーガー）へフォーカスを戻す
+      trigger?.focus();
     };
   }, [mobileOpen]);
 
@@ -83,32 +121,22 @@ export function Sidebar() {
       bg-white dark:bg-black
       border-r border-gray-200 dark:border-neutral-900">
 
-      {/* アカウント / ロゴ */}
-      <div className="px-3 py-3 border-b border-gray-100 dark:border-neutral-900">
-        <button className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md
-          hover:bg-gray-100 dark:hover:bg-neutral-900 transition-colors text-left">
-          <div className="w-5 h-5 rounded-sm overflow-hidden shrink-0">
-            <Image src="/sana2.png" alt="Statseed" width={20} height={20} className="w-full h-full object-cover" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
-              sana&apos;s team
-            </div>
-            <div className="text-[11px] text-gray-400 dark:text-neutral-600 leading-tight">Statseed</div>
-          </div>
-          <ChevronDown />
-        </button>
-      </div>
-
-      {/* 検索風バー */}
-      <div className="px-3 py-2 border-b border-gray-100 dark:border-neutral-900">
-        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md
-          bg-gray-50 dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800
-          text-gray-400 dark:text-neutral-600 text-[12px]">
-          <SearchIcon />
-          <span>Search...</span>
+      {/* ロゴ / プロダクト名 */}
+      <Link
+        href="/dashboard"
+        className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-neutral-900
+          hover:bg-gray-50 dark:hover:bg-neutral-950 transition-colors"
+      >
+        <div className="w-5 h-5 rounded-sm overflow-hidden shrink-0">
+          <Image src="/sana2.png" alt="" width={20} height={20} className="w-full h-full object-cover" />
         </div>
-      </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
+            Statseed
+          </div>
+          <div className="text-[11px] text-gray-400 dark:text-neutral-600 leading-tight">医療統計ツール</div>
+        </div>
+      </Link>
 
       {/* 読み込み中データ */}
       {dataset && (
@@ -125,10 +153,10 @@ export function Sidebar() {
             {dataset.filename}
           </Link>
           <span
-            className="shrink-0 text-gray-400 dark:text-neutral-600"
+            className="shrink-0 rounded px-1 py-0.5 text-[10px] text-gray-500 dark:text-neutral-400 bg-gray-100 dark:bg-neutral-900"
             title={storageMode === "persistent" ? "この端末に保存中" : "このタブ内だけに保存中"}
           >
-            {storageMode === "persistent" ? "端末保存" : "タブ内"}
+            {storageMode === "persistent" ? "保存: 端末" : "保存: タブ内"}
           </span>
           <button
             type="button"
@@ -197,10 +225,13 @@ export function Sidebar() {
       <div className="hidden md:block">{renderSidebar()}</div>
       <div className="fixed inset-x-0 top-0 z-30 flex h-12 items-center justify-between border-b border-gray-200 bg-white px-3 dark:border-neutral-900 dark:bg-black md:hidden">
         <button
+          ref={triggerRef}
           type="button"
           onClick={() => setMobileOpen(true)}
           className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-gray-600 dark:text-neutral-400"
           aria-label="メニューを開く"
+          aria-expanded={mobileOpen}
+          aria-haspopup="dialog"
         >
           <MenuIcon />
         </button>
@@ -209,7 +240,7 @@ export function Sidebar() {
           Statseed
         </Link>
         <span className="min-w-11 text-right text-[10px] text-gray-400 dark:text-neutral-600">
-          {dataset ? (storageMode === "persistent" ? "端末保存" : "タブ内") : ""}
+          {dataset ? (storageMode === "persistent" ? "保存: 端末" : "保存: タブ内") : ""}
         </span>
       </div>
       {mobileOpen && (
@@ -221,6 +252,7 @@ export function Sidebar() {
             aria-label="メニューを閉じる"
           />
           <div
+            ref={drawerRef}
             role="dialog"
             aria-modal="true"
             aria-label="ナビゲーション"
@@ -285,6 +317,15 @@ function CompassIcon() {
   );
 }
 
+function RegressionIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="21" x2="21" y2="3" />
+      <circle cx="6" cy="17" r="1.4" /><circle cx="10" cy="15" r="1.4" /><circle cx="14" cy="9" r="1.4" /><circle cx="18" cy="8" r="1.4" />
+    </svg>
+  );
+}
+
 function TableIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
@@ -308,23 +349,6 @@ function DotIcon() {
   return (
     <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor">
       <circle cx="12" cy="12" r="12" />
-    </svg>
-  );
-}
-
-function ChevronDown() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-      className="text-gray-300 dark:text-neutral-700 shrink-0">
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   );
 }
