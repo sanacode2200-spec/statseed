@@ -133,6 +133,14 @@ statseed/
 │   │   └── guide.py
 │   └── tests/                 # 計算・API契約検証テスト（171本）
 │
+├── verify/                    # 計算検証ハーネス（StatSeed実関数 vs R 突合）
+│   ├── run_all.sh             # data_gen → statseed_calc → compare を一括実行
+│   ├── data_gen.py            # シード固定（rng(42)）の共通ダミーデータ生成
+│   ├── statseed_calc.py       # StatSeed実バックエンド関数で計算しJSON出力
+│   ├── r_calc.R              # R側の基準計算（要 R + jsonlite）
+│   ├── compare.py            # PASS / DIFF / METHOD_DIFF を相対誤差で判定
+│   └── r_results.json        # R基準値スナップショット（commit対象・R無し環境用）
+│
 ├── pyproject.toml
 └── CLAUDE.md                  # このファイル
 ```
@@ -260,6 +268,23 @@ t_stat, p_value = stats.ttest_ind(group_a, group_b)
 # 悪い例（自前実装しない）
 # t_stat = (mean_a - mean_b) / ...  ← やらない
 ```
+
+### 外部突合検証ハーネス（`verify/`）
+
+`backend/tests/` の単体テストとは別に、**StatSeedの実バックエンド関数の計算結果をR（独立した正解）と突き合わせる**検証ハーネスを用意している。
+
+- `data_gen.py` がシード固定（`rng(42)`）で共通ダミーデータを生成 → どのマシンでも同一入力
+- `statseed_calc.py` が `backend.services.stats` の実関数を呼んで `statseed_results.json` を出力
+- `r_calc.R` がRで同じ計算を行い `r_results.json`（**commit対象の基準値スナップショット**）を出力
+- `compare.py` が相対誤差で `PASS / DIFF / METHOD_DIFF` を判定（scipyとRで既定手法が違う既知ケースは `METHOD_DIFF` として注記）
+
+実行（Rがあれば全工程、無ければ同梱の `r_results.json` を基準に突合）:
+
+```bash
+STATSEED_PATH=$(pwd) bash verify/run_all.sh
+```
+
+`r_results.json` のみRのあるマシンでR1回実行して生成・コミットしておく（`cd verify && Rscript r_calc.R`、要 `jsonlite`）。生成物（`verify/data/`・`statseed_results.json`）はgitignore済み。
 
 ---
 

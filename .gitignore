@@ -11,3 +11,6 @@ dist/
 build/
 *.egg-info/
 frontend/.env.local
+verify/data/
+verify/statseed_results.json
+verify/python_results.json
