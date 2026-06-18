@@ -251,6 +251,7 @@ def run_mannwhitney(request: TwoGroupRequest) -> TestResult:
         effect_size=r,
         effect_size_label="r",
         interpretation=interpretation,
+        note="国際標準の統計アルゴリズムを採用(scipy準拠)",
     )
 
 
@@ -338,6 +339,7 @@ def run_wilcoxon(request: PairedRequest) -> TestResult:
         effect_size=r,
         effect_size_label="r",
         interpretation=interpretation,
+        note="国際標準の統計アルゴリズムを採用(scipy準拠)",
     )
 
 
@@ -489,6 +491,7 @@ def run_fisher(request: ChiSquareRequest) -> TestResult:
         effect_size=finite_odds_ratio,
         effect_size_label="オッズ比",
         interpretation=interpretation,
+        note="国際標準の統計アルゴリズムを採用(scipy準拠)",
     )
 
 
@@ -531,6 +534,7 @@ def run_correlation(request: CorrelationRequest) -> CorrelationResult:
         ci95_low=ci_low,
         ci95_high=ci_high,
         interpretation=interpretation,
+        note="国際標準の統計アルゴリズムを採用(scipy準拠)" if request.method == "spearman" else None,
     )
 
 

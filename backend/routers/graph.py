@@ -95,6 +95,10 @@ def export(request: ExportRequest) -> Response:
             status_code=503,
             detail="論文出力には graph オプションが必要です（pip install '.[graph]'）",
         )
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=f"論文出力の生成に失敗しました: {e}")
 
     ext = request.format
     filename = f"statseed_graph.{ext}"

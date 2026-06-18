@@ -32,6 +32,41 @@ def _apply_theme(request: ExportRequest | None = None) -> None:
         mpl.rcParams["axes.titlesize"] = p["size"] + 1
 
 
+def _apply_overrides(fig, request: ExportRequest) -> None:
+    """グラフ編集パネルのオーバーライドをmatplotlib figureに適用する。"""
+    if not fig.axes:
+        return
+    ax = fig.axes[0]
+
+    if request.override_title is not None:
+        ax.set_title(request.override_title)
+    if request.override_x_label is not None:
+        ax.set_xlabel(request.override_x_label)
+    if request.override_y_label is not None:
+        ax.set_ylabel(request.override_y_label)
+    if request.override_x_range is not None:
+        ax.set_xlim(float(request.override_x_range[0]), float(request.override_x_range[1]))
+    if request.override_y_range is not None:
+        ax.set_ylim(float(request.override_y_range[0]), float(request.override_y_range[1]))
+
+    if request.override_show_legend is not None:
+        if not request.override_show_legend:
+            legend = ax.get_legend()
+            if legend is not None:
+                legend.remove()
+        else:
+            loc_map = {
+                "top-right": "upper right",
+                "top-left": "upper left",
+                "bottom-right": "lower right",
+                "bottom-left": "lower left",
+            }
+            loc = loc_map.get(request.override_legend_position or "top-right", "upper right")
+            handles, labels = ax.get_legend_handles_labels()
+            if handles:
+                ax.legend(loc=loc)
+
+
 def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
     import matplotlib
     matplotlib.use("Agg")
@@ -56,6 +91,8 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
         fig = _paired_fig(request.paired, plt)
     else:
         fig = _scatter_fig(request.scatter, plt)  # type: ignore[arg-type]
+
+    _apply_overrides(fig, request)
 
     if request.width_inches and request.height_inches:
         fig.set_size_inches(float(request.width_inches), float(request.height_inches))

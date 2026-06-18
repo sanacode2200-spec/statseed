@@ -488,6 +488,14 @@ export interface ExportRequest {
   barplot?: BarplotRequest;
   kaplan_meier?: KaplanMeierRequest;
   roc?: ROCRequest;
+  // グラフ編集パネルからのオーバーライド
+  override_title?: string | null;
+  override_x_label?: string | null;
+  override_y_label?: string | null;
+  override_x_range?: [number, number] | null;
+  override_y_range?: [number, number] | null;
+  override_show_legend?: boolean | null;
+  override_legend_position?: "top-right" | "top-left" | "bottom-right" | "bottom-left" | null;
 }
 
 export interface GraphHandoff {

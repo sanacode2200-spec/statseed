@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api";
 import type { AnalysisSampleInfo, BoxplotComparisonResult, ExportRequest, PlotlyFigure, ROCResponse } from "@/lib/types";
 import { exportRocCsv } from "@/lib/exportCsv";
@@ -19,6 +19,7 @@ import { PairedPanel } from "@/components/graph/PairedPanel";
 import { KaplanMeierPanel } from "@/components/graph/KaplanMeierPanel";
 import { BarplotPanel } from "@/components/graph/BarplotPanel";
 import { BoxplotPanel } from "@/components/graph/BoxplotPanel";
+import { GraphEditPanel, LEGEND_POSITION_MAP, type LegendPosition } from "@/components/graph/GraphEditPanel";
 import { AnalysisSampleInfoCard } from "@/components/stats/TestResultCard";
 import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
 import { useDataset } from "@/contexts/DataContext";
@@ -123,10 +124,76 @@ export default function GraphPage() {
   const [methodText, setMethodText] = useState("");
   const [captionText, setCaptionText] = useState("");
 
+  // グラフ編集パネル
+  const [editTitle, setEditTitle] = useState("");
+  const [editXLabel, setEditXLabel] = useState("");
+  const [editYLabel, setEditYLabel] = useState("");
+  const [editXMin, setEditXMin] = useState("");
+  const [editXMax, setEditXMax] = useState("");
+  const [editYMin, setEditYMin] = useState("");
+  const [editYMax, setEditYMax] = useState("");
+  const [editShowLegend, setEditShowLegend] = useState(true);
+  const [editLegendPos, setEditLegendPos] = useState<LegendPosition>("右上");
+
   // font preset
   const [fontPreset, setFontPreset] = useState<FontPreset>("論文標準");
   const [customFamily, setCustomFamily] = useState("");
   const [customSize, setCustomSize] = useState("9");
+
+  function initEditPanel(type: ChartType) {
+    setEditXMin(""); setEditXMax(""); setEditYMin(""); setEditYMax("");
+    setEditShowLegend(true);
+    setEditLegendPos("右上");
+    setEditTitle(title);
+    if (type === "scatter") { setEditXLabel(scXLabel); setEditYLabel(scYLabel); }
+    else if (type === "histogram") { setEditXLabel(histXLabel); setEditYLabel("度数"); }
+    else if (type === "kaplan_meier") { setEditXLabel(kmTimeLabel); setEditYLabel(kmSurvLabel); }
+    else if (type === "roc") { setEditXLabel("1 - 特異度（偽陽性率）"); setEditYLabel("感度（真陽性率）"); }
+    else if (type === "boxplot") { setEditXLabel(""); setEditYLabel(bpYLabel); }
+    else if (type === "barplot") { setEditXLabel(""); setEditYLabel(barYLabel); }
+    else if (type === "paired") { setEditXLabel(""); setEditYLabel(pairedYLabel); }
+  }
+
+  // 編集オーバーライドをPlotly layoutにマージ
+  const patchedFigure = useMemo(() => {
+    if (!figure) return null;
+    const layout: Record<string, unknown> = { ...figure.layout };
+
+    const titleObj = typeof layout.title === "object" && layout.title !== null ? { ...(layout.title as Record<string, unknown>) } : {};
+    layout.title = { ...titleObj, text: editTitle };
+
+    const xAxis: Record<string, unknown> = typeof layout.xaxis === "object" && layout.xaxis !== null ? { ...(layout.xaxis as Record<string, unknown>) } : {};
+    if (editXLabel !== "") {
+      const xTitleObj = typeof xAxis.title === "object" && xAxis.title !== null ? { ...(xAxis.title as Record<string, unknown>) } : {};
+      xAxis.title = { ...xTitleObj, text: editXLabel };
+    }
+    const xMin = parseFloat(editXMin), xMax = parseFloat(editXMax);
+    if (!isNaN(xMin) && !isNaN(xMax) && xMin < xMax) { xAxis.range = [xMin, xMax]; xAxis.autorange = false; }
+    layout.xaxis = xAxis;
+
+    const yAxis: Record<string, unknown> = typeof layout.yaxis === "object" && layout.yaxis !== null ? { ...(layout.yaxis as Record<string, unknown>) } : {};
+    if (editYLabel !== "") {
+      const yTitleObj = typeof yAxis.title === "object" && yAxis.title !== null ? { ...(yAxis.title as Record<string, unknown>) } : {};
+      yAxis.title = { ...yTitleObj, text: editYLabel };
+    }
+    const yMin = parseFloat(editYMin), yMax = parseFloat(editYMax);
+    if (!isNaN(yMin) && !isNaN(yMax) && yMin < yMax) { yAxis.range = [yMin, yMax]; yAxis.autorange = false; }
+    layout.yaxis = yAxis;
+
+    layout.showlegend = editShowLegend;
+    if (editShowLegend) {
+      const legendPositions: Record<string, Record<string, unknown>> = {
+        右上: { x: 0.99, y: 0.99, xanchor: "right", yanchor: "top" },
+        右下: { x: 0.99, y: 0.01, xanchor: "right", yanchor: "bottom" },
+        左上: { x: 0.01, y: 0.99, xanchor: "left", yanchor: "top" },
+        左下: { x: 0.01, y: 0.01, xanchor: "left", yanchor: "bottom" },
+      };
+      const pos = legendPositions[editLegendPos];
+      if (pos) layout.legend = { ...(typeof layout.legend === "object" && layout.legend !== null ? (layout.legend as Record<string, unknown>) : {}), ...pos };
+    }
+
+    return { ...figure, layout };
+  }, [figure, editTitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editShowLegend, editLegendPos]);
 
   const csvCont = dataset ? continuousColumns(dataset.columns) : [];
   const csvCat = dataset ? categoricalColumns(dataset.columns) : [];
@@ -446,6 +513,7 @@ export default function GraphPage() {
       }
       if (!captionText) setCaptionText(`${title || CHART_OPTIONS.find((option) => option.value === chartType)?.label || "グラフ"}。個別値または解析対象データを表示した。`);
       if (!methodText) setMethodText(`Statseedを用いて${CHART_OPTIONS.find((option) => option.value === chartType)?.label || "グラフ"}を作成した。欠損値は利用する変数の完全ケースで除外した。`);
+      initEditPanel(chartType);
     } catch (err) {
       setError(err instanceof Error ? err.message : "グラフ生成に失敗しました。");
     } finally {
@@ -568,13 +636,18 @@ export default function GraphPage() {
         body.scatter = { x, y, title, x_label: scXLabel, y_label: scYLabel, show_regression: scShowReg };
       }
 
-      const res = await fetch(api.graphExportUrl(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) throw new Error("エクスポートに失敗しました。");
-      const blob = await res.blob();
+      // 編集パネルのオーバーライドを反映
+      if (editTitle) body.override_title = editTitle;
+      if (editXLabel) body.override_x_label = editXLabel;
+      if (editYLabel) body.override_y_label = editYLabel;
+      const xMinEx = parseFloat(editXMin), xMaxEx = parseFloat(editXMax);
+      if (!isNaN(xMinEx) && !isNaN(xMaxEx) && xMinEx < xMaxEx) body.override_x_range = [xMinEx, xMaxEx];
+      const yMinEx = parseFloat(editYMin), yMaxEx = parseFloat(editYMax);
+      if (!isNaN(yMinEx) && !isNaN(yMaxEx) && yMinEx < yMaxEx) body.override_y_range = [yMinEx, yMaxEx];
+      body.override_show_legend = editShowLegend;
+      body.override_legend_position = LEGEND_POSITION_MAP[editLegendPos];
+
+      const blob = await api.graphExport(body);
       const url = URL.createObjectURL(blob);
       if (exportPreviewUrl) URL.revokeObjectURL(exportPreviewUrl);
       setExportPreviewUrl(url);
@@ -851,10 +924,29 @@ export default function GraphPage() {
 
       {error && <ErrorMessage message={error} />}
 
-      {figure && (
+      {patchedFigure && (
         <Card>
           {sampleInfo && <div className="mb-4"><AnalysisSampleInfoCard info={sampleInfo} /></div>}
-          <PlotlyChart figure={figure} aspectRatio={getAspectRatio(chartType, figure)} />
+
+          {/* グラフ + 編集パネル（デスクトップ横並び） */}
+          <div className="flex flex-col lg:flex-row gap-5">
+            <div className="flex-1 min-w-0">
+              <PlotlyChart figure={patchedFigure} aspectRatio={getAspectRatio(chartType, patchedFigure)} />
+            </div>
+            <div className="lg:w-60 xl:w-64 shrink-0 border-t border-gray-100 dark:border-neutral-800 pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5">
+              <GraphEditPanel
+                editTitle={editTitle} setEditTitle={setEditTitle}
+                editXLabel={editXLabel} setEditXLabel={setEditXLabel}
+                editYLabel={editYLabel} setEditYLabel={setEditYLabel}
+                editXMin={editXMin} setEditXMin={setEditXMin}
+                editXMax={editXMax} setEditXMax={setEditXMax}
+                editYMin={editYMin} setEditYMin={setEditYMin}
+                editYMax={editYMax} setEditYMax={setEditYMax}
+                editShowLegend={editShowLegend} setEditShowLegend={setEditShowLegend}
+                editLegendPos={editLegendPos} setEditLegendPos={setEditLegendPos}
+              />
+            </div>
+          </div>
 
           {bpComparison && (
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">

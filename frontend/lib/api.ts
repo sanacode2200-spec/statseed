@@ -35,9 +35,10 @@ import type {
   TestResult,
   TwoGroupRequest,
   UploadResponse,
+  ExportRequest,
 } from "./types";
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const BASE = "";
 
 function errorMessage(payload: unknown, fallback: string): string {
   if (typeof payload !== "object" || payload === null || !("detail" in payload)) {
@@ -83,6 +84,26 @@ async function _upload<T>(path: string, file: File): Promise<T> {
     throw await responseError(res, "アップロードエラー");
   }
   return res.json() as Promise<T>;
+}
+
+async function postBlob(path: string, body: unknown): Promise<Blob> {
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error("APIに接続できません。バックエンドが起動しているか、API_URL / NEXT_PUBLIC_API_URL の設定を確認してください。");
+    }
+    throw err;
+  }
+  if (!res.ok) {
+    throw await responseError(res, "エクスポートに失敗しました。");
+  }
+  return res.blob();
 }
 
 export const api = {
@@ -141,6 +162,7 @@ export const api = {
     post<ROCResult>("/api/graph/roc", req),
 
   graphExportUrl: () => `${BASE}/api/graph/export`,
+  graphExport: (req: ExportRequest) => postBlob("/api/graph/export", req),
 
   uploadCsv: (file: File) => _upload<UploadResponse>("/api/upload/csv", file),
   uploadExcel: (file: File) => _upload<UploadResponse>("/api/upload/excel", file),

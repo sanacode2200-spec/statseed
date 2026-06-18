@@ -182,6 +182,14 @@ class ExportRequest(BaseModel):
     barplot: BarplotRequest | None = None
     kaplan_meier: KaplanMeierRequest | None = None
     roc: ROCRequest | None = None
+    # グラフ編集パネルからのオーバーライド
+    override_title: str | None = Field(default=None, max_length=200)
+    override_x_label: str | None = Field(default=None, max_length=200)
+    override_y_label: str | None = Field(default=None, max_length=200)
+    override_x_range: list[FiniteFloat] | None = None
+    override_y_range: list[FiniteFloat] | None = None
+    override_show_legend: bool | None = None
+    override_legend_position: Literal["top-right", "top-left", "bottom-right", "bottom-left"] | None = None
 
     @model_validator(mode="after")
     def check_chart_data(self) -> "ExportRequest":
@@ -196,4 +204,14 @@ class ExportRequest(BaseModel):
         }
         if required[self.chart_type] is None:
             raise ValueError(f"chart_type='{self.chart_type}' のデータが含まれていません")
+        if self.override_x_range is not None:
+            if len(self.override_x_range) != 2:
+                raise ValueError("override_x_range は [最小, 最大] の2要素で指定してください")
+            if self.override_x_range[0] >= self.override_x_range[1]:
+                raise ValueError("override_x_range: 最小値は最大値より小さくしてください")
+        if self.override_y_range is not None:
+            if len(self.override_y_range) != 2:
+                raise ValueError("override_y_range は [最小, 最大] の2要素で指定してください")
+            if self.override_y_range[0] >= self.override_y_range[1]:
+                raise ValueError("override_y_range: 最小値は最大値より小さくしてください")
         return self
