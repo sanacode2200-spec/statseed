@@ -161,7 +161,6 @@ export const api = {
   graphRoc: (req: ROCRequest) =>
     post<ROCResult>("/api/graph/roc", req),
 
-  graphExportUrl: () => `${BASE}/api/graph/export`,
   graphExport: (req: ExportRequest) => postBlob("/api/graph/export", req),
 
   uploadCsv: (file: File) => _upload<UploadResponse>("/api/upload/csv", file),
