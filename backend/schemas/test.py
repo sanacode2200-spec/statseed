@@ -120,6 +120,7 @@ class TestResult(BaseModel):
     estimate: float | None = None
     estimate_label: str | None = None
     interpretation: str
+    note: str | None = None
 
 
 class CorrelationResult(BaseModel):
@@ -130,6 +131,7 @@ class CorrelationResult(BaseModel):
     ci95_low: float | None = None
     ci95_high: float | None = None
     interpretation: str
+    note: str | None = None
 
 
 # ── 反復測定（対応あり3条件以上）ANOVA ────────────────────────────────────────
