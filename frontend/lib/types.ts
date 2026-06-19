@@ -499,6 +499,7 @@ export interface ExportRequest {
   override_hide_title?: boolean | null;
   override_x_dtick?: number | null;
   override_y_dtick?: number | null;
+  override_show_value_labels?: boolean | null;
 }
 
 export interface GraphHandoff {

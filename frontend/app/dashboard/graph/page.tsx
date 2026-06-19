@@ -137,6 +137,7 @@ export default function GraphPage() {
   const [editShowTitle, setEditShowTitle] = useState(true);
   const [editXDtick, setEditXDtick] = useState("");
   const [editYDtick, setEditYDtick] = useState("");
+  const [editShowValueLabels, setEditShowValueLabels] = useState(false);
   const [editDirectMode, setEditDirectMode] = useState(false);
 
   // font preset
@@ -150,6 +151,7 @@ export default function GraphPage() {
     setEditLegendPos("右上");
     setEditShowTitle(true);
     setEditXDtick(""); setEditYDtick("");
+    setEditShowValueLabels(false);
     setEditDirectMode(false);
     setEditTitle(title);
     if (type === "scatter") { setEditXLabel(scXLabel); setEditYLabel(scYLabel); }
@@ -203,8 +205,25 @@ export default function GraphPage() {
       if (pos) layout.legend = { ...(typeof layout.legend === "object" && layout.legend !== null ? (layout.legend as Record<string, unknown>) : {}), ...pos };
     }
 
-    return { ...figure, layout };
-  }, [figure, editTitle, editShowTitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editXDtick, editYDtick, editShowLegend, editLegendPos]);
+    // データ値ラベル（棒グラフのバーに数値を表示）
+    let data = figure.data;
+    if (editShowValueLabels) {
+      data = figure.data.map((trace) => {
+        const t = trace as Record<string, unknown>;
+        if (t.type !== "bar") return trace;
+        const ys = Array.isArray(t.y) ? (t.y as number[]) : [];
+        return {
+          ...t,
+          text: ys.map((v) => (typeof v === "number" ? String(Number(v.toPrecision(3))) : "")),
+          textposition: "outside",
+          cliponaxis: false,
+          textfont: { size: 11, color: "#373737" },
+        };
+      });
+    }
+
+    return { ...figure, data, layout };
+  }, [figure, editTitle, editShowTitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editXDtick, editYDtick, editShowValueLabels, editShowLegend, editLegendPos]);
 
   const csvCont = dataset ? continuousColumns(dataset.columns) : [];
   const csvCat = dataset ? categoricalColumns(dataset.columns) : [];
@@ -654,6 +673,7 @@ export default function GraphPage() {
       if (!isNaN(xDtickEx) && xDtickEx > 0) body.override_x_dtick = xDtickEx;
       const yDtickEx = parseFloat(editYDtick);
       if (!isNaN(yDtickEx) && yDtickEx > 0) body.override_y_dtick = yDtickEx;
+      if (editShowValueLabels) body.override_show_value_labels = true;
       if (editXLabel) body.override_x_label = editXLabel;
       if (editYLabel) body.override_y_label = editYLabel;
       const xMinEx = parseFloat(editXMin), xMaxEx = parseFloat(editXMax);
@@ -971,6 +991,8 @@ export default function GraphPage() {
                 editXDtick={editXDtick} setEditXDtick={setEditXDtick}
                 editYDtick={editYDtick} setEditYDtick={setEditYDtick}
                 showXControls={["scatter", "histogram", "roc", "kaplan_meier"].includes(chartType)}
+                editShowValueLabels={editShowValueLabels} setEditShowValueLabels={setEditShowValueLabels}
+                showValueLabelsControl={chartType === "barplot"}
                 editShowLegend={editShowLegend} setEditShowLegend={setEditShowLegend}
                 editLegendPos={editLegendPos} setEditLegendPos={setEditLegendPos}
                 editDirectMode={editDirectMode} setEditDirectMode={setEditDirectMode}

@@ -163,6 +163,25 @@ def test_export_bytes_y_dtick_on_categorical_chart():
     assert len(data) > 0
 
 
+def test_export_bytes_barplot_value_labels():
+    from backend.schemas.graph import BarplotRequest
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    req = ExportRequest(
+        chart_type="barplot",
+        format="png",
+        barplot=BarplotRequest(groups=[[1, 2, 3, 4], [5, 6, 7, 8]], group_names=["前", "後"]),
+        override_show_value_labels=True,
+    )
+    data, mime = export_bytes(req)
+    assert len(data) > 0
+    assert mime == "image/png"
+
+
+def test_override_show_value_labels_default_none():
+    assert _hist_req().override_show_value_labels is None
+
+
 def test_export_bytes_legend_position_variants():
     from backend.services.graph.matplotlib_export import export_bytes
 

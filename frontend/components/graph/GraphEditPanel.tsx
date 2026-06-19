@@ -33,6 +33,9 @@ interface Props {
   editYDtick: string;
   setEditYDtick: (v: string) => void;
   showXControls: boolean;
+  editShowValueLabels: boolean;
+  setEditShowValueLabels: (v: boolean) => void;
+  showValueLabelsControl: boolean;
   editShowLegend: boolean;
   setEditShowLegend: (v: boolean) => void;
   editLegendPos: LegendPosition;
@@ -73,6 +76,8 @@ export function GraphEditPanel({
   editXDtick, setEditXDtick,
   editYDtick, setEditYDtick,
   showXControls,
+  editShowValueLabels, setEditShowValueLabels,
+  showValueLabelsControl,
   editShowLegend, setEditShowLegend,
   editLegendPos, setEditLegendPos,
   editDirectMode, setEditDirectMode,
@@ -214,6 +219,14 @@ export function GraphEditPanel({
           />
         </div>
       </div>
+
+      {/* データ値ラベル */}
+      {showValueLabelsControl && (
+        <div className="flex items-center justify-between gap-2">
+          <span className={`${labelCls} mb-0`}>データ値を表示</span>
+          <Toggle checked={editShowValueLabels} onChange={setEditShowValueLabels} />
+        </div>
+      )}
 
       {/* 凡例トグル */}
       <div className="flex items-center justify-between gap-2">

@@ -193,6 +193,7 @@ class ExportRequest(BaseModel):
     override_hide_title: bool | None = None
     override_x_dtick: FiniteFloat | None = Field(default=None, gt=0)
     override_y_dtick: FiniteFloat | None = Field(default=None, gt=0)
+    override_show_value_labels: bool | None = None
 
     @model_validator(mode="after")
     def check_chart_data(self) -> "ExportRequest":

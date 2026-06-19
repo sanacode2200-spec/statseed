@@ -59,6 +59,13 @@ def _apply_overrides(fig, request: ExportRequest) -> None:
         from matplotlib.ticker import MultipleLocator
         ax.yaxis.set_major_locator(MultipleLocator(float(request.override_y_dtick)))
 
+    # データ値ラベル（棒グラフの各バーに数値を表示）
+    if request.override_show_value_labels:
+        from matplotlib.container import BarContainer
+        for container in ax.containers:
+            if isinstance(container, BarContainer):
+                ax.bar_label(container, fmt="%.3g", padding=2, fontsize=8, color="#373737")
+
     if request.override_show_legend is not None:
         if not request.override_show_legend:
             legend = ax.get_legend()
