@@ -182,6 +182,35 @@ def test_override_show_value_labels_default_none():
     assert _hist_req().override_show_value_labels is None
 
 
+def test_slide_overrides_default_none():
+    req = _hist_req()
+    assert req.override_subtitle is None
+    assert req.override_background is None
+
+
+def test_export_bytes_with_subtitle():
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    req = _hist_req(override_title="主見出し", override_subtitle="補足の一文")
+    data, mime = export_bytes(req)
+    assert len(data) > 0
+    assert mime == "image/png"
+
+
+def test_export_bytes_background_variants():
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    for bg in ("transparent", "white", "cream"):
+        req = _hist_req(override_background=bg)  # type: ignore[arg-type]
+        data, _ = export_bytes(req)
+        assert len(data) > 0, f"background={bg} で失敗"
+
+
+def test_export_bytes_background_rejects_unknown():
+    with pytest.raises(ValidationError):
+        _hist_req(override_background="black")  # type: ignore[arg-type]
+
+
 def test_export_bytes_legend_position_variants():
     from backend.services.graph.matplotlib_export import export_bytes
 

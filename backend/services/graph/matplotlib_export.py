@@ -42,6 +42,18 @@ def _apply_overrides(fig, request: ExportRequest) -> None:
         ax.set_title(request.override_title)
     if request.override_hide_title:
         ax.set_title("")
+
+    # サブタイトル（スライド向け）。大見出しを左寄せ太字にし、その下にグレーの説明文を置く。
+    if request.override_subtitle:
+        current_title = ax.get_title()
+        if current_title:
+            ax.set_title(current_title, loc="left", fontweight="bold", pad=24)
+        ax.annotate(
+            request.override_subtitle,
+            xy=(0, 1), xycoords="axes fraction",
+            xytext=(0, 6), textcoords="offset points",
+            ha="left", va="bottom", fontsize=8, color="#8a8a8a",
+        )
     if request.override_x_label is not None:
         ax.set_xlabel(request.override_x_label)
     if request.override_y_label is not None:
@@ -111,10 +123,21 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
 
     _apply_overrides(fig, request)
 
+    # 背景色（スライド向け）。透過/白/クリームを選択可能。未指定時は従来の transparent 設定。
+    bg = request.override_background
+    transparent = request.transparent if bg is None else (bg == "transparent")
+    facecolor = {"white": "#ffffff", "cream": "#faf8f3"}.get(bg or "")
+    save_kwargs: dict = {"transparent": transparent}
+    if facecolor and not transparent:
+        fig.patch.set_facecolor(facecolor)
+        for a in fig.axes:
+            a.set_facecolor(facecolor)
+        save_kwargs["facecolor"] = facecolor
+
     if request.width_inches and request.height_inches:
         fig.set_size_inches(float(request.width_inches), float(request.height_inches))
     buf = io.BytesIO()
-    fig.savefig(buf, format=fmt, bbox_inches="tight", transparent=request.transparent)
+    fig.savefig(buf, format=fmt, bbox_inches="tight", **save_kwargs)
     plt.close(fig)
     buf.seek(0)
     return buf.read(), mime

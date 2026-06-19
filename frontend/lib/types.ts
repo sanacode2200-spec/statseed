@@ -500,6 +500,8 @@ export interface ExportRequest {
   override_x_dtick?: number | null;
   override_y_dtick?: number | null;
   override_show_value_labels?: boolean | null;
+  override_subtitle?: string | null;
+  override_background?: "transparent" | "white" | "cream" | null;
 }
 
 export interface GraphHandoff {

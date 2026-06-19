@@ -138,6 +138,8 @@ export default function GraphPage() {
   const [editXDtick, setEditXDtick] = useState("");
   const [editYDtick, setEditYDtick] = useState("");
   const [editShowValueLabels, setEditShowValueLabels] = useState(false);
+  const [editSubtitle, setEditSubtitle] = useState("");
+  const [editBackground, setEditBackground] = useState<"transparent" | "white" | "cream">("transparent");
   const [editDirectMode, setEditDirectMode] = useState(false);
 
   // font preset
@@ -152,6 +154,8 @@ export default function GraphPage() {
     setEditShowTitle(true);
     setEditXDtick(""); setEditYDtick("");
     setEditShowValueLabels(false);
+    setEditSubtitle("");
+    setEditBackground("transparent");
     setEditDirectMode(false);
     setEditTitle(title);
     if (type === "scatter") { setEditXLabel(scXLabel); setEditYLabel(scYLabel); }
@@ -170,6 +174,22 @@ export default function GraphPage() {
 
     const titleObj = typeof layout.title === "object" && layout.title !== null ? { ...(layout.title as Record<string, unknown>) } : {};
     layout.title = { ...titleObj, text: editShowTitle ? editTitle : "" };
+
+    // サブタイトル（スライド向け）: 大見出しを左寄せにし、その下にグレーの説明文
+    if (editSubtitle) {
+      layout.title = { ...(layout.title as Record<string, unknown>), x: 0.01, xanchor: "left" };
+      const existing = Array.isArray(layout.annotations) ? (layout.annotations as Record<string, unknown>[]) : [];
+      layout.annotations = [
+        ...existing,
+        {
+          text: editSubtitle,
+          xref: "paper", yref: "paper",
+          x: 0, y: 1.04, xanchor: "left", yanchor: "bottom",
+          showarrow: false,
+          font: { size: 11, color: "#8a8a8a" },
+        },
+      ];
+    }
 
     const xAxis: Record<string, unknown> = typeof layout.xaxis === "object" && layout.xaxis !== null ? { ...(layout.xaxis as Record<string, unknown>) } : {};
     if (editXLabel !== "") {
@@ -223,7 +243,7 @@ export default function GraphPage() {
     }
 
     return { ...figure, data, layout };
-  }, [figure, editTitle, editShowTitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editXDtick, editYDtick, editShowValueLabels, editShowLegend, editLegendPos]);
+  }, [figure, editTitle, editShowTitle, editSubtitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editXDtick, editYDtick, editShowValueLabels, editShowLegend, editLegendPos]);
 
   const csvCont = dataset ? continuousColumns(dataset.columns) : [];
   const csvCat = dataset ? categoricalColumns(dataset.columns) : [];
@@ -674,6 +694,8 @@ export default function GraphPage() {
       const yDtickEx = parseFloat(editYDtick);
       if (!isNaN(yDtickEx) && yDtickEx > 0) body.override_y_dtick = yDtickEx;
       if (editShowValueLabels) body.override_show_value_labels = true;
+      if (editSubtitle) body.override_subtitle = editSubtitle;
+      if (editBackground !== "transparent") body.override_background = editBackground;
       if (editXLabel) body.override_x_label = editXLabel;
       if (editYLabel) body.override_y_label = editYLabel;
       const xMinEx = parseFloat(editXMin), xMaxEx = parseFloat(editXMax);
@@ -970,6 +992,7 @@ export default function GraphPage() {
               <PlotlyChart
                 figure={patchedFigure}
                 aspectRatio={getAspectRatio(chartType, patchedFigure)}
+                background={editBackground}
                 editable={editDirectMode}
                 editHandlers={{
                   onTitleEdit: (t) => { setEditShowTitle(true); setEditTitle(t); },
@@ -993,6 +1016,8 @@ export default function GraphPage() {
                 showXControls={["scatter", "histogram", "roc", "kaplan_meier"].includes(chartType)}
                 editShowValueLabels={editShowValueLabels} setEditShowValueLabels={setEditShowValueLabels}
                 showValueLabelsControl={chartType === "barplot"}
+                editSubtitle={editSubtitle} setEditSubtitle={setEditSubtitle}
+                editBackground={editBackground} setEditBackground={setEditBackground}
                 editShowLegend={editShowLegend} setEditShowLegend={setEditShowLegend}
                 editLegendPos={editLegendPos} setEditLegendPos={setEditLegendPos}
                 editDirectMode={editDirectMode} setEditDirectMode={setEditDirectMode}

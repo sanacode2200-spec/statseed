@@ -36,6 +36,10 @@ interface Props {
   editShowValueLabels: boolean;
   setEditShowValueLabels: (v: boolean) => void;
   showValueLabelsControl: boolean;
+  editSubtitle: string;
+  setEditSubtitle: (v: string) => void;
+  editBackground: "transparent" | "white" | "cream";
+  setEditBackground: (v: "transparent" | "white" | "cream") => void;
   editShowLegend: boolean;
   setEditShowLegend: (v: boolean) => void;
   editLegendPos: LegendPosition;
@@ -78,6 +82,8 @@ export function GraphEditPanel({
   showXControls,
   editShowValueLabels, setEditShowValueLabels,
   showValueLabelsControl,
+  editSubtitle, setEditSubtitle,
+  editBackground, setEditBackground,
   editShowLegend, setEditShowLegend,
   editLegendPos, setEditLegendPos,
   editDirectMode, setEditDirectMode,
@@ -120,6 +126,20 @@ export function GraphEditPanel({
             onChange={(e) => setEditTitle(e.target.value)}
             className={`${inputCls} w-full`}
             placeholder="グラフタイトル"
+          />
+        </div>
+      )}
+
+      {/* サブタイトル（スライド向け） */}
+      {editShowTitle && (
+        <div>
+          <label className={labelCls}>サブタイトル</label>
+          <input
+            type="text"
+            value={editSubtitle}
+            onChange={(e) => setEditSubtitle(e.target.value)}
+            className={`${inputCls} w-full`}
+            placeholder="補足の一文（スライド向け）"
           />
         </div>
       )}
@@ -249,6 +269,20 @@ export function GraphEditPanel({
           </select>
         </div>
       )}
+
+      {/* 背景色 */}
+      <div>
+        <label className={labelCls}>背景</label>
+        <select
+          value={editBackground}
+          onChange={(e) => setEditBackground(e.target.value as "transparent" | "white" | "cream")}
+          className={`${inputCls} w-full`}
+        >
+          <option value="transparent">透過（論文・Word向け）</option>
+          <option value="white">白</option>
+          <option value="cream">クリーム（スライド向け）</option>
+        </select>
+      </div>
     </div>
   );
 }

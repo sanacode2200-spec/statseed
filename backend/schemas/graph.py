@@ -194,6 +194,8 @@ class ExportRequest(BaseModel):
     override_x_dtick: FiniteFloat | None = Field(default=None, gt=0)
     override_y_dtick: FiniteFloat | None = Field(default=None, gt=0)
     override_show_value_labels: bool | None = None
+    override_subtitle: str | None = Field(default=None, max_length=200)
+    override_background: Literal["transparent", "white", "cream"] | None = None
 
     @model_validator(mode="after")
     def check_chart_data(self) -> "ExportRequest":

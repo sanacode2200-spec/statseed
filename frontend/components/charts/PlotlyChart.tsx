@@ -42,26 +42,33 @@ export function PlotlyChart({
   aspectRatio = 1.25,
   editable = false,
   editHandlers,
+  background = "transparent",
 }: {
   figure: PlotlyFigure;
   aspectRatio?: number;
   editable?: boolean;
   editHandlers?: PlotlyEditHandlers;
+  background?: "transparent" | "white" | "cream";
 }) {
   const dark = useIsDarkMode();
 
   const lineColor = dark ? "#737373" : "#373737";
   const textColor = dark ? "#d4d4d4" : "#373737";
+  const bgColor = background === "white" ? "#ffffff" : background === "cream" ? "#faf8f3" : "rgba(0,0,0,0)";
+  // 背景色を敷く場合は文字色を濃色固定にする（ダーク用の薄色だと白/クリーム地で読めないため）
+  const onBg = background === "transparent";
+  const effTextColor = onBg ? textColor : "#373737";
+  const effLineColor = onBg ? lineColor : "#373737";
 
   const baseLayout = figure.layout as Record<string, unknown>;
   const layout: Partial<Plotly.Layout> = {
     ...baseLayout,
     autosize: true,
-    paper_bgcolor: "rgba(0,0,0,0)",
-    plot_bgcolor: "rgba(0,0,0,0)",
-    font: { ...(baseLayout.font as object), color: textColor },
-    xaxis: { ...(baseLayout.xaxis as object), linecolor: lineColor, tickcolor: lineColor },
-    yaxis: { ...(baseLayout.yaxis as object), linecolor: lineColor, tickcolor: lineColor },
+    paper_bgcolor: bgColor,
+    plot_bgcolor: bgColor,
+    font: { ...(baseLayout.font as object), color: effTextColor },
+    xaxis: { ...(baseLayout.xaxis as object), linecolor: effLineColor, tickcolor: effLineColor },
+    yaxis: { ...(baseLayout.yaxis as object), linecolor: effLineColor, tickcolor: effLineColor },
   };
 
   return (
