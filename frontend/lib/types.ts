@@ -496,6 +496,9 @@ export interface ExportRequest {
   override_y_range?: [number, number] | null;
   override_show_legend?: boolean | null;
   override_legend_position?: "top-right" | "top-left" | "bottom-right" | "bottom-left" | null;
+  override_hide_title?: boolean | null;
+  override_x_dtick?: number | null;
+  override_y_dtick?: number | null;
 }
 
 export interface GraphHandoff {

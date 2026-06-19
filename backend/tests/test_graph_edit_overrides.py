@@ -109,6 +109,60 @@ def test_export_bytes_hides_legend():
     assert len(data) > 0
 
 
+def test_override_hide_title_and_dtick_defaults_none():
+    req = _hist_req()
+    assert req.override_hide_title is None
+    assert req.override_x_dtick is None
+    assert req.override_y_dtick is None
+
+
+def test_override_dtick_must_be_positive():
+    with pytest.raises(ValidationError):
+        _hist_req(override_y_dtick=0)
+    with pytest.raises(ValidationError):
+        _hist_req(override_x_dtick=-1)
+
+
+def test_export_bytes_hide_title():
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    req = _hist_req(override_title="消える予定", override_hide_title=True)
+    data, mime = export_bytes(req)
+    assert len(data) > 0
+    assert mime == "image/png"
+
+
+def test_export_bytes_applies_tick_intervals():
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    # 数値X軸グラフ（散布図）にX/Y目盛り間隔を適用
+    req = ExportRequest(
+        chart_type="scatter",
+        format="png",
+        scatter=ScatterRequest(x=[1, 2, 3, 4, 5], y=[2, 4, 3, 5, 6]),
+        override_x_dtick=1.0,
+        override_y_dtick=2.0,
+    )
+    data, _ = export_bytes(req)
+    assert len(data) > 0
+
+
+def test_export_bytes_y_dtick_on_categorical_chart():
+    from backend.schemas.graph import BoxplotRequest
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    # カテゴリX軸（箱ひげ図）でもY目盛り間隔は適用でき、X間隔は無視される
+    req = ExportRequest(
+        chart_type="boxplot",
+        format="png",
+        boxplot=BoxplotRequest(groups=[[1, 2, 3, 4], [3, 4, 5, 6]]),
+        override_x_dtick=1.0,
+        override_y_dtick=1.0,
+    )
+    data, _ = export_bytes(req)
+    assert len(data) > 0
+
+
 def test_export_bytes_legend_position_variants():
     from backend.services.graph.matplotlib_export import export_bytes
 

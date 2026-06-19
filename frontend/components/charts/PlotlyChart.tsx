@@ -30,7 +30,24 @@ function useIsDarkMode(): boolean {
   return dark;
 }
 
-export function PlotlyChart({ figure, aspectRatio = 1.25 }: { figure: PlotlyFigure; aspectRatio?: number }) {
+/** Plotly のインプレース編集（editable）で変更されたテキストをフォーム状態へ戻すためのコールバック群。 */
+export interface PlotlyEditHandlers {
+  onTitleEdit?: (text: string) => void;
+  onXLabelEdit?: (text: string) => void;
+  onYLabelEdit?: (text: string) => void;
+}
+
+export function PlotlyChart({
+  figure,
+  aspectRatio = 1.25,
+  editable = false,
+  editHandlers,
+}: {
+  figure: PlotlyFigure;
+  aspectRatio?: number;
+  editable?: boolean;
+  editHandlers?: PlotlyEditHandlers;
+}) {
   const dark = useIsDarkMode();
 
   const lineColor = dark ? "#737373" : "#373737";
@@ -57,7 +74,23 @@ export function PlotlyChart({ figure, aspectRatio = 1.25 }: { figure: PlotlyFigu
             displaylogo: false,
             modeBarButtonsToRemove: ["sendDataToCloud", "lasso2d", "select2d"],
             responsive: true,
+            editable,
+            edits: editable
+              ? { titleText: true, axisTitleText: true, annotationText: true, annotationPosition: true, legendPosition: true }
+              : undefined,
           }}
+          onRelayout={
+            editable && editHandlers
+              ? (e: Record<string, unknown>) => {
+                  const t = e["title.text"];
+                  if (typeof t === "string") editHandlers.onTitleEdit?.(t);
+                  const xt = e["xaxis.title.text"];
+                  if (typeof xt === "string") editHandlers.onXLabelEdit?.(xt);
+                  const yt = e["yaxis.title.text"];
+                  if (typeof yt === "string") editHandlers.onYLabelEdit?.(yt);
+                }
+              : undefined
+          }
           style={{ width: "100%", height: "100%" }}
           useResizeHandler
         />

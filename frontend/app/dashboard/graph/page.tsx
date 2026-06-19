@@ -134,6 +134,10 @@ export default function GraphPage() {
   const [editYMax, setEditYMax] = useState("");
   const [editShowLegend, setEditShowLegend] = useState(true);
   const [editLegendPos, setEditLegendPos] = useState<LegendPosition>("右上");
+  const [editShowTitle, setEditShowTitle] = useState(true);
+  const [editXDtick, setEditXDtick] = useState("");
+  const [editYDtick, setEditYDtick] = useState("");
+  const [editDirectMode, setEditDirectMode] = useState(false);
 
   // font preset
   const [fontPreset, setFontPreset] = useState<FontPreset>("論文標準");
@@ -144,6 +148,9 @@ export default function GraphPage() {
     setEditXMin(""); setEditXMax(""); setEditYMin(""); setEditYMax("");
     setEditShowLegend(true);
     setEditLegendPos("右上");
+    setEditShowTitle(true);
+    setEditXDtick(""); setEditYDtick("");
+    setEditDirectMode(false);
     setEditTitle(title);
     if (type === "scatter") { setEditXLabel(scXLabel); setEditYLabel(scYLabel); }
     else if (type === "histogram") { setEditXLabel(histXLabel); setEditYLabel("度数"); }
@@ -160,7 +167,7 @@ export default function GraphPage() {
     const layout: Record<string, unknown> = { ...figure.layout };
 
     const titleObj = typeof layout.title === "object" && layout.title !== null ? { ...(layout.title as Record<string, unknown>) } : {};
-    layout.title = { ...titleObj, text: editTitle };
+    layout.title = { ...titleObj, text: editShowTitle ? editTitle : "" };
 
     const xAxis: Record<string, unknown> = typeof layout.xaxis === "object" && layout.xaxis !== null ? { ...(layout.xaxis as Record<string, unknown>) } : {};
     if (editXLabel !== "") {
@@ -169,6 +176,8 @@ export default function GraphPage() {
     }
     const xMin = parseFloat(editXMin), xMax = parseFloat(editXMax);
     if (!isNaN(xMin) && !isNaN(xMax) && xMin < xMax) { xAxis.range = [xMin, xMax]; xAxis.autorange = false; }
+    const xDtick = parseFloat(editXDtick);
+    if (!isNaN(xDtick) && xDtick > 0) { xAxis.dtick = xDtick; xAxis.tick0 = 0; }
     layout.xaxis = xAxis;
 
     const yAxis: Record<string, unknown> = typeof layout.yaxis === "object" && layout.yaxis !== null ? { ...(layout.yaxis as Record<string, unknown>) } : {};
@@ -178,6 +187,8 @@ export default function GraphPage() {
     }
     const yMin = parseFloat(editYMin), yMax = parseFloat(editYMax);
     if (!isNaN(yMin) && !isNaN(yMax) && yMin < yMax) { yAxis.range = [yMin, yMax]; yAxis.autorange = false; }
+    const yDtick = parseFloat(editYDtick);
+    if (!isNaN(yDtick) && yDtick > 0) { yAxis.dtick = yDtick; yAxis.tick0 = 0; }
     layout.yaxis = yAxis;
 
     layout.showlegend = editShowLegend;
@@ -193,7 +204,7 @@ export default function GraphPage() {
     }
 
     return { ...figure, layout };
-  }, [figure, editTitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editShowLegend, editLegendPos]);
+  }, [figure, editTitle, editShowTitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editXDtick, editYDtick, editShowLegend, editLegendPos]);
 
   const csvCont = dataset ? continuousColumns(dataset.columns) : [];
   const csvCat = dataset ? categoricalColumns(dataset.columns) : [];
@@ -637,7 +648,12 @@ export default function GraphPage() {
       }
 
       // 編集パネルのオーバーライドを反映
-      if (editTitle) body.override_title = editTitle;
+      if (editShowTitle && editTitle) body.override_title = editTitle;
+      if (!editShowTitle) body.override_hide_title = true;
+      const xDtickEx = parseFloat(editXDtick);
+      if (!isNaN(xDtickEx) && xDtickEx > 0) body.override_x_dtick = xDtickEx;
+      const yDtickEx = parseFloat(editYDtick);
+      if (!isNaN(yDtickEx) && yDtickEx > 0) body.override_y_dtick = yDtickEx;
       if (editXLabel) body.override_x_label = editXLabel;
       if (editYLabel) body.override_y_label = editYLabel;
       const xMinEx = parseFloat(editXMin), xMaxEx = parseFloat(editXMax);
@@ -931,19 +947,33 @@ export default function GraphPage() {
           {/* グラフ + 編集パネル（デスクトップ横並び） */}
           <div className="flex flex-col lg:flex-row gap-5">
             <div className="flex-1 min-w-0">
-              <PlotlyChart figure={patchedFigure} aspectRatio={getAspectRatio(chartType, patchedFigure)} />
+              <PlotlyChart
+                figure={patchedFigure}
+                aspectRatio={getAspectRatio(chartType, patchedFigure)}
+                editable={editDirectMode}
+                editHandlers={{
+                  onTitleEdit: (t) => { setEditShowTitle(true); setEditTitle(t); },
+                  onXLabelEdit: setEditXLabel,
+                  onYLabelEdit: setEditYLabel,
+                }}
+              />
             </div>
             <div className="lg:w-60 xl:w-64 shrink-0 border-t border-gray-100 dark:border-neutral-800 pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5">
               <GraphEditPanel
                 editTitle={editTitle} setEditTitle={setEditTitle}
+                editShowTitle={editShowTitle} setEditShowTitle={setEditShowTitle}
                 editXLabel={editXLabel} setEditXLabel={setEditXLabel}
                 editYLabel={editYLabel} setEditYLabel={setEditYLabel}
                 editXMin={editXMin} setEditXMin={setEditXMin}
                 editXMax={editXMax} setEditXMax={setEditXMax}
                 editYMin={editYMin} setEditYMin={setEditYMin}
                 editYMax={editYMax} setEditYMax={setEditYMax}
+                editXDtick={editXDtick} setEditXDtick={setEditXDtick}
+                editYDtick={editYDtick} setEditYDtick={setEditYDtick}
+                showXControls={["scatter", "histogram", "roc", "kaplan_meier"].includes(chartType)}
                 editShowLegend={editShowLegend} setEditShowLegend={setEditShowLegend}
                 editLegendPos={editLegendPos} setEditLegendPos={setEditLegendPos}
+                editDirectMode={editDirectMode} setEditDirectMode={setEditDirectMode}
               />
             </div>
           </div>

@@ -14,6 +14,8 @@ export const LEGEND_POSITION_MAP: Record<LegendPosition, "top-right" | "top-left
 interface Props {
   editTitle: string;
   setEditTitle: (v: string) => void;
+  editShowTitle: boolean;
+  setEditShowTitle: (v: boolean) => void;
   editXLabel: string;
   setEditXLabel: (v: string) => void;
   editYLabel: string;
@@ -26,22 +28,54 @@ interface Props {
   setEditYMin: (v: string) => void;
   editYMax: string;
   setEditYMax: (v: string) => void;
+  editXDtick: string;
+  setEditXDtick: (v: string) => void;
+  editYDtick: string;
+  setEditYDtick: (v: string) => void;
+  showXControls: boolean;
   editShowLegend: boolean;
   setEditShowLegend: (v: boolean) => void;
   editLegendPos: LegendPosition;
   setEditLegendPos: (v: LegendPosition) => void;
+  editDirectMode: boolean;
+  setEditDirectMode: (v: boolean) => void;
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
+        checked ? "bg-black dark:bg-white" : "bg-gray-200 dark:bg-neutral-700"
+      }`}
+    >
+      <span
+        className={`inline-block h-3.5 w-3.5 rounded-full bg-white dark:bg-black shadow transition-transform ${
+          checked ? "translate-x-4" : "translate-x-0.5"
+        }`}
+      />
+    </button>
+  );
 }
 
 export function GraphEditPanel({
   editTitle, setEditTitle,
+  editShowTitle, setEditShowTitle,
   editXLabel, setEditXLabel,
   editYLabel, setEditYLabel,
   editXMin, setEditXMin,
   editXMax, setEditXMax,
   editYMin, setEditYMin,
   editYMax, setEditYMax,
+  editXDtick, setEditXDtick,
+  editYDtick, setEditYDtick,
+  showXControls,
   editShowLegend, setEditShowLegend,
   editLegendPos, setEditLegendPos,
+  editDirectMode, setEditDirectMode,
 }: Props) {
   const labelCls = "block text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1";
   const rangePairCls = "flex items-center gap-1.5";
@@ -52,17 +86,38 @@ export function GraphEditPanel({
         グラフ編集
       </p>
 
-      {/* タイトル */}
+      {/* 直接編集モード */}
       <div>
-        <label className={labelCls}>タイトル</label>
-        <input
-          type="text"
-          value={editTitle}
-          onChange={(e) => setEditTitle(e.target.value)}
-          className={`${inputCls} w-full`}
-          placeholder="グラフタイトル"
-        />
+        <div className="flex items-center justify-between gap-2">
+          <span className={`${labelCls} mb-0`}>グラフを直接編集</span>
+          <Toggle checked={editDirectMode} onChange={setEditDirectMode} />
+        </div>
+        {editDirectMode && (
+          <p className="mt-1 text-[12px] leading-snug text-gray-400 dark:text-neutral-600">
+            グラフ上のタイトル・軸ラベル・注釈をダブルクリックで直接編集、ドラッグで移動できます。数値の正確な指定は下のフォームをお使いください。
+          </p>
+        )}
       </div>
+
+      {/* タイトル表示 */}
+      <div className="flex items-center justify-between gap-2">
+        <span className={`${labelCls} mb-0`}>タイトルを表示</span>
+        <Toggle checked={editShowTitle} onChange={setEditShowTitle} />
+      </div>
+
+      {/* タイトル */}
+      {editShowTitle && (
+        <div>
+          <label className={labelCls}>タイトル</label>
+          <input
+            type="text"
+            value={editTitle}
+            onChange={(e) => setEditTitle(e.target.value)}
+            className={`${inputCls} w-full`}
+            placeholder="グラフタイトル"
+          />
+        </div>
+      )}
 
       {/* X軸ラベル */}
       <div>
@@ -132,26 +187,38 @@ export function GraphEditPanel({
         </div>
       </div>
 
+      {/* 目盛り間隔 */}
+      <div className={showXControls ? "grid grid-cols-2 gap-2" : ""}>
+        {showXControls && (
+          <div>
+            <label className={labelCls}>X目盛り間隔</label>
+            <input
+              type="number"
+              min="0"
+              value={editXDtick}
+              onChange={(e) => setEditXDtick(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="自動"
+            />
+          </div>
+        )}
+        <div>
+          <label className={labelCls}>Y目盛り間隔</label>
+          <input
+            type="number"
+            min="0"
+            value={editYDtick}
+            onChange={(e) => setEditYDtick(e.target.value)}
+            className={`${inputCls} w-full`}
+            placeholder="自動"
+          />
+        </div>
+      </div>
+
       {/* 凡例トグル */}
       <div className="flex items-center justify-between gap-2">
         <span className={`${labelCls} mb-0`}>凡例を表示</span>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={editShowLegend}
-          onClick={() => setEditShowLegend(!editShowLegend)}
-          className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
-            editShowLegend
-              ? "bg-black dark:bg-white"
-              : "bg-gray-200 dark:bg-neutral-700"
-          }`}
-        >
-          <span
-            className={`inline-block h-3.5 w-3.5 rounded-full bg-white dark:bg-black shadow transition-transform ${
-              editShowLegend ? "translate-x-4" : "translate-x-0.5"
-            }`}
-          />
-        </button>
+        <Toggle checked={editShowLegend} onChange={setEditShowLegend} />
       </div>
 
       {/* 凡例位置 */}

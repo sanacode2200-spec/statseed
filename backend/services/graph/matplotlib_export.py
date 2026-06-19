@@ -40,6 +40,8 @@ def _apply_overrides(fig, request: ExportRequest) -> None:
 
     if request.override_title is not None:
         ax.set_title(request.override_title)
+    if request.override_hide_title:
+        ax.set_title("")
     if request.override_x_label is not None:
         ax.set_xlabel(request.override_x_label)
     if request.override_y_label is not None:
@@ -48,6 +50,14 @@ def _apply_overrides(fig, request: ExportRequest) -> None:
         ax.set_xlim(float(request.override_x_range[0]), float(request.override_x_range[1]))
     if request.override_y_range is not None:
         ax.set_ylim(float(request.override_y_range[0]), float(request.override_y_range[1]))
+
+    # 目盛り間隔。X軸が数値のグラフのみX間隔を適用する（カテゴリ軸には適用しない）。
+    if request.override_x_dtick is not None and request.chart_type not in ("boxplot", "barplot", "paired"):
+        from matplotlib.ticker import MultipleLocator
+        ax.xaxis.set_major_locator(MultipleLocator(float(request.override_x_dtick)))
+    if request.override_y_dtick is not None:
+        from matplotlib.ticker import MultipleLocator
+        ax.yaxis.set_major_locator(MultipleLocator(float(request.override_y_dtick)))
 
     if request.override_show_legend is not None:
         if not request.override_show_legend:

@@ -190,6 +190,9 @@ class ExportRequest(BaseModel):
     override_y_range: list[FiniteFloat] | None = None
     override_show_legend: bool | None = None
     override_legend_position: Literal["top-right", "top-left", "bottom-right", "bottom-left"] | None = None
+    override_hide_title: bool | None = None
+    override_x_dtick: FiniteFloat | None = Field(default=None, gt=0)
+    override_y_dtick: FiniteFloat | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
     def check_chart_data(self) -> "ExportRequest":
