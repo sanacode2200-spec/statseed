@@ -20,6 +20,7 @@ import { KaplanMeierPanel } from "@/components/graph/KaplanMeierPanel";
 import { BarplotPanel } from "@/components/graph/BarplotPanel";
 import { BoxplotPanel } from "@/components/graph/BoxplotPanel";
 import { GraphEditPanel, LEGEND_POSITION_MAP, type LegendPosition } from "@/components/graph/GraphEditPanel";
+import { EditSection } from "@/components/graph/EditSection";
 import { AnalysisSampleInfoCard } from "@/components/stats/TestResultCard";
 import { parseCategoricalValues, parseNumbers } from "@/lib/parse";
 import { useDataset } from "@/contexts/DataContext";
@@ -118,9 +119,9 @@ export default function GraphPage() {
   const [error, setError] = useState<string | null>(null);
   const [sampleInfo, setSampleInfo] = useState<AnalysisSampleInfo | null>(null);
   const [exportFormat, setExportFormat] = useState<"png" | "svg" | "pdf">("png");
-  const [exportTransparent, setExportTransparent] = useState(true);
   const [outputPreset, setOutputPreset] = useState<"single" | "double" | "slide">("single");
   const [exportPreviewUrl, setExportPreviewUrl] = useState<string | null>(null);
+  const [previewMode, setPreviewMode] = useState<"edit" | "output">("edit");
   const [methodText, setMethodText] = useState("");
   const [captionText, setCaptionText] = useState("");
 
@@ -141,6 +142,10 @@ export default function GraphPage() {
   const [editSubtitle, setEditSubtitle] = useState("");
   const [editBackground, setEditBackground] = useState<"transparent" | "white" | "cream">("transparent");
   const [editDirectMode, setEditDirectMode] = useState(false);
+  const [editXLabelStandoff, setEditXLabelStandoff] = useState("");
+  const [editYLabelStandoff, setEditYLabelStandoff] = useState("");
+  const [editXLabelSize, setEditXLabelSize] = useState("");
+  const [editYLabelSize, setEditYLabelSize] = useState("");
 
   // font preset
   const [fontPreset, setFontPreset] = useState<FontPreset>("論文標準");
@@ -148,6 +153,7 @@ export default function GraphPage() {
   const [customSize, setCustomSize] = useState("9");
 
   function initEditPanel(type: ChartType) {
+    setPreviewMode("edit");
     setEditXMin(""); setEditXMax(""); setEditYMin(""); setEditYMax("");
     setEditShowLegend(true);
     setEditLegendPos("右上");
@@ -157,6 +163,8 @@ export default function GraphPage() {
     setEditSubtitle("");
     setEditBackground("transparent");
     setEditDirectMode(false);
+    setEditXLabelStandoff(""); setEditYLabelStandoff("");
+    setEditXLabelSize(""); setEditYLabelSize("");
     setEditTitle(title);
     if (type === "scatter") { setEditXLabel(scXLabel); setEditYLabel(scYLabel); }
     else if (type === "histogram") { setEditXLabel(histXLabel); setEditYLabel("度数"); }
@@ -192,9 +200,17 @@ export default function GraphPage() {
     }
 
     const xAxis: Record<string, unknown> = typeof layout.xaxis === "object" && layout.xaxis !== null ? { ...(layout.xaxis as Record<string, unknown>) } : {};
-    if (editXLabel !== "") {
+    {
       const xTitleObj = typeof xAxis.title === "object" && xAxis.title !== null ? { ...(xAxis.title as Record<string, unknown>) } : {};
-      xAxis.title = { ...xTitleObj, text: editXLabel };
+      xTitleObj.text = editXLabel;
+      const xStandoff = parseFloat(editXLabelStandoff);
+      if (!isNaN(xStandoff) && xStandoff >= 0) xTitleObj.standoff = xStandoff;
+      const xSize = parseFloat(editXLabelSize);
+      if (!isNaN(xSize) && xSize > 0) {
+        const f = typeof xTitleObj.font === "object" && xTitleObj.font !== null ? { ...(xTitleObj.font as Record<string, unknown>) } : {};
+        xTitleObj.font = { ...f, size: xSize };
+      }
+      xAxis.title = xTitleObj;
     }
     const xMin = parseFloat(editXMin), xMax = parseFloat(editXMax);
     if (!isNaN(xMin) && !isNaN(xMax) && xMin < xMax) { xAxis.range = [xMin, xMax]; xAxis.autorange = false; }
@@ -203,9 +219,17 @@ export default function GraphPage() {
     layout.xaxis = xAxis;
 
     const yAxis: Record<string, unknown> = typeof layout.yaxis === "object" && layout.yaxis !== null ? { ...(layout.yaxis as Record<string, unknown>) } : {};
-    if (editYLabel !== "") {
+    {
       const yTitleObj = typeof yAxis.title === "object" && yAxis.title !== null ? { ...(yAxis.title as Record<string, unknown>) } : {};
-      yAxis.title = { ...yTitleObj, text: editYLabel };
+      yTitleObj.text = editYLabel;
+      const yStandoff = parseFloat(editYLabelStandoff);
+      if (!isNaN(yStandoff) && yStandoff >= 0) yTitleObj.standoff = yStandoff;
+      const ySize = parseFloat(editYLabelSize);
+      if (!isNaN(ySize) && ySize > 0) {
+        const f = typeof yTitleObj.font === "object" && yTitleObj.font !== null ? { ...(yTitleObj.font as Record<string, unknown>) } : {};
+        yTitleObj.font = { ...f, size: ySize };
+      }
+      yAxis.title = yTitleObj;
     }
     const yMin = parseFloat(editYMin), yMax = parseFloat(editYMax);
     if (!isNaN(yMin) && !isNaN(yMax) && yMin < yMax) { yAxis.range = [yMin, yMax]; yAxis.autorange = false; }
@@ -243,7 +267,7 @@ export default function GraphPage() {
     }
 
     return { ...figure, data, layout };
-  }, [figure, editTitle, editShowTitle, editSubtitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editXDtick, editYDtick, editShowValueLabels, editShowLegend, editLegendPos]);
+  }, [figure, editTitle, editShowTitle, editSubtitle, editXLabel, editYLabel, editXMin, editXMax, editYMin, editYMax, editXDtick, editYDtick, editShowValueLabels, editShowLegend, editLegendPos, editXLabelStandoff, editYLabelStandoff, editXLabelSize, editYLabelSize]);
 
   const csvCont = dataset ? continuousColumns(dataset.columns) : [];
   const csvCat = dataset ? categoricalColumns(dataset.columns) : [];
@@ -588,7 +612,7 @@ export default function GraphPage() {
       const body: ExportRequest = {
         chart_type: chartType as ExportRequest["chart_type"],
         format: exportFormat,
-        transparent: exportTransparent,
+        transparent: editBackground === "transparent",
         font_preset: fontPreset,
         font_family: fontPreset === "カスタム" && customFamily ? customFamily : null,
         font_size:
@@ -696,8 +720,16 @@ export default function GraphPage() {
       if (editShowValueLabels) body.override_show_value_labels = true;
       if (editSubtitle) body.override_subtitle = editSubtitle;
       if (editBackground !== "transparent") body.override_background = editBackground;
-      if (editXLabel) body.override_x_label = editXLabel;
-      if (editYLabel) body.override_y_label = editYLabel;
+      body.override_x_label = editXLabel;
+      body.override_y_label = editYLabel;
+      const xStandoffEx = parseFloat(editXLabelStandoff);
+      if (!isNaN(xStandoffEx) && xStandoffEx >= 0) body.override_x_label_standoff = xStandoffEx;
+      const yStandoffEx = parseFloat(editYLabelStandoff);
+      if (!isNaN(yStandoffEx) && yStandoffEx >= 0) body.override_y_label_standoff = yStandoffEx;
+      const xSizeEx = parseInt(editXLabelSize, 10);
+      if (!isNaN(xSizeEx) && xSizeEx > 0) body.override_x_label_size = xSizeEx;
+      const ySizeEx = parseInt(editYLabelSize, 10);
+      if (!isNaN(ySizeEx) && ySizeEx > 0) body.override_y_label_size = ySizeEx;
       const xMinEx = parseFloat(editXMin), xMaxEx = parseFloat(editXMax);
       if (!isNaN(xMinEx) && !isNaN(xMaxEx) && xMinEx < xMaxEx) body.override_x_range = [xMinEx, xMaxEx];
       const yMinEx = parseFloat(editYMin), yMaxEx = parseFloat(editYMax);
@@ -988,20 +1020,66 @@ export default function GraphPage() {
 
           {/* グラフ + 編集パネル（デスクトップ横並び） */}
           <div className="flex flex-col lg:flex-row gap-5">
-            <div className="flex-1 min-w-0">
-              <PlotlyChart
-                figure={patchedFigure}
-                aspectRatio={getAspectRatio(chartType, patchedFigure)}
-                background={editBackground}
-                editable={editDirectMode}
-                editHandlers={{
-                  onTitleEdit: (t) => { setEditShowTitle(true); setEditTitle(t); },
-                  onXLabelEdit: setEditXLabel,
-                  onYLabelEdit: setEditYLabel,
-                }}
-              />
+            <div className="flex-1 min-w-0 self-start lg:sticky lg:top-6">
+              {/* 編集(Plotly) ⇄ 最終出力(matplotlib) 切替 */}
+              <div className="mb-3 flex justify-center">
+                <SegmentedControl
+                  ariaLabel="表示モード"
+                  value={previewMode}
+                  options={[
+                    { value: "edit", label: "編集" },
+                    { value: "output", label: "最終出力" },
+                  ]}
+                  onChange={(v) => {
+                    setPreviewMode(v);
+                    if (v === "output") handleExport(false);
+                  }}
+                />
+              </div>
+
+              {previewMode === "edit" ? (
+                <PlotlyChart
+                  figure={patchedFigure}
+                  aspectRatio={getAspectRatio(chartType, patchedFigure)}
+                  background={editBackground}
+                  editable={editDirectMode}
+                  editHandlers={{
+                    onTitleEdit: (t) => { setEditShowTitle(true); setEditTitle(t); },
+                    onXLabelEdit: setEditXLabel,
+                    onYLabelEdit: setEditYLabel,
+                  }}
+                />
+              ) : (
+                <div>
+                  {exporting ? (
+                    <div className="flex min-h-[320px] items-center justify-center rounded-md border border-gray-200 dark:border-neutral-800 text-[15px] text-gray-400">
+                      最終出力を生成中...
+                    </div>
+                  ) : exportFormat === "pdf" ? (
+                    <div className="flex min-h-[320px] flex-col items-center justify-center gap-1 rounded-md border border-gray-200 dark:border-neutral-800 px-4 text-center text-[15px] text-gray-500 dark:text-neutral-500">
+                      <p>PDFはこの画面では表示できません。</p>
+                      <p className="text-[13px] text-gray-400 dark:text-neutral-600">「ダウンロード」で実ファイルをご確認ください。</p>
+                    </div>
+                  ) : exportPreviewUrl ? (
+                    <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-white p-3">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={exportPreviewUrl} alt="最終出力プレビュー" className="mx-auto max-h-[480px] max-w-full" />
+                    </div>
+                  ) : (
+                    <div className="flex min-h-[320px] items-center justify-center rounded-md border border-gray-200 dark:border-neutral-800 text-[15px] text-gray-400">
+                      プレビューを生成できませんでした。
+                    </div>
+                  )}
+                  <div className="mt-2 flex items-center justify-center gap-2">
+                    <span className="text-[13px] text-gray-400 dark:text-neutral-600">論文用の実出力（300dpi）です</span>
+                    <Button variant="secondary" onClick={() => handleExport(false)} loading={exporting}>
+                      編集を反映して更新
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="lg:w-60 xl:w-64 shrink-0 border-t border-gray-100 dark:border-neutral-800 pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5">
+            <div className="lg:w-64 xl:w-72 shrink-0 space-y-5 border-t border-gray-100 dark:border-neutral-800 pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5">
               <GraphEditPanel
                 editTitle={editTitle} setEditTitle={setEditTitle}
                 editShowTitle={editShowTitle} setEditShowTitle={setEditShowTitle}
@@ -1013,6 +1091,10 @@ export default function GraphPage() {
                 editYMax={editYMax} setEditYMax={setEditYMax}
                 editXDtick={editXDtick} setEditXDtick={setEditXDtick}
                 editYDtick={editYDtick} setEditYDtick={setEditYDtick}
+                editXLabelStandoff={editXLabelStandoff} setEditXLabelStandoff={setEditXLabelStandoff}
+                editYLabelStandoff={editYLabelStandoff} setEditYLabelStandoff={setEditYLabelStandoff}
+                editXLabelSize={editXLabelSize} setEditXLabelSize={setEditXLabelSize}
+                editYLabelSize={editYLabelSize} setEditYLabelSize={setEditYLabelSize}
                 showXControls={["scatter", "histogram", "roc", "kaplan_meier"].includes(chartType)}
                 editShowValueLabels={editShowValueLabels} setEditShowValueLabels={setEditShowValueLabels}
                 showValueLabelsControl={chartType === "barplot"}
@@ -1022,6 +1104,92 @@ export default function GraphPage() {
                 editLegendPos={editLegendPos} setEditLegendPos={setEditLegendPos}
                 editDirectMode={editDirectMode} setEditDirectMode={setEditDirectMode}
               />
+
+              {/* 出力・エクスポート */}
+              <div className="border-t border-gray-100 dark:border-neutral-800 pt-2">
+                <EditSection title="出力・エクスポート" defaultOpen>
+                  {/* フォントプリセット */}
+                  <div>
+                    <label className="block text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">フォント</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(["論文標準", "日本語対応", "ポスター", "カスタム"] as const).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setFontPreset(p)}
+                          className={toggleBtn(fontPreset === p)}
+                          style={fontPreset === p ? { backgroundColor: "#56B4E9" } : undefined}
+                        >
+                          {p}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {fontPreset === "カスタム" && (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={customFamily}
+                        onChange={(e) => setCustomFamily(e.target.value)}
+                        placeholder="フォント名（例：Helvetica）"
+                        className={`${inputCls} min-w-0 flex-1`}
+                      />
+                      <input
+                        type="number"
+                        value={customSize}
+                        onChange={(e) => setCustomSize(e.target.value)}
+                        min={6}
+                        max={24}
+                        placeholder="サイズ"
+                        className={`${inputCls} w-16 shrink-0`}
+                      />
+                      <span className="text-[14px] text-gray-400 dark:text-neutral-600 shrink-0">pt</span>
+                    </div>
+                  )}
+
+                  {/* 用途プリセット */}
+                  <div>
+                    <label className="block text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">用途</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {([
+                        ["single", "論文1段組"],
+                        ["double", "論文2段組"],
+                        ["slide", "16:9スライド"],
+                      ] as const).map(([value, label]) => (
+                        <button key={value} type="button" onClick={() => setOutputPreset(value)} className={toggleBtn(outputPreset === value)}>
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 形式 */}
+                  <div>
+                    <label className="block text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">形式</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(["png", "svg", "pdf"] as const).map((fmt) => (
+                        <button
+                          key={fmt}
+                          type="button"
+                          onClick={() => setExportFormat(fmt)}
+                          className={toggleBtn(exportFormat === fmt)}
+                          style={exportFormat === fmt ? { backgroundColor: "#009E73" } : undefined}
+                        >
+                          {fmt.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ダウンロード（プレビューは上部の「最終出力」タブで確認） */}
+                  <div className="pt-1">
+                    <Button variant="secondary" onClick={() => handleExport(true)} loading={exporting} className="w-full">
+                      ダウンロード
+                    </Button>
+                  </div>
+                </EditSection>
+              </div>
             </div>
           </div>
 
@@ -1118,119 +1286,6 @@ export default function GraphPage() {
             </div>
           )}
 
-          {/* エクスポート */}
-          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 space-y-3">
-            {/* フォントプリセット */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[14px] text-gray-400 dark:text-neutral-600 mr-1">フォント：</span>
-              {(["論文標準", "日本語対応", "ポスター", "カスタム"] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setFontPreset(p)}
-                  className={toggleBtn(fontPreset === p)}
-                  style={fontPreset === p ? { backgroundColor: "#56B4E9" } : undefined}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-
-            {fontPreset === "カスタム" && (
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={customFamily}
-                  onChange={(e) => setCustomFamily(e.target.value)}
-                  placeholder="フォント名（例：Helvetica）"
-                  className={`${inputCls} w-full sm:w-52`}
-                />
-                <input
-                  type="number"
-                  value={customSize}
-                  onChange={(e) => setCustomSize(e.target.value)}
-                  min={6}
-                  max={24}
-                  placeholder="サイズ"
-                  className={`${inputCls} w-16`}
-                />
-                <span className="text-[14px] text-gray-400 dark:text-neutral-600">pt</span>
-              </div>
-            )}
-
-            {/* 背景 */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[14px] text-gray-400 dark:text-neutral-600 mr-1">背景：</span>
-              <button
-                type="button"
-                onClick={() => setExportTransparent(true)}
-                className={toggleBtn(exportTransparent)}
-                style={exportTransparent ? { backgroundColor: "#CC79A7" } : undefined}
-              >
-                透明
-              </button>
-              <button
-                type="button"
-                onClick={() => setExportTransparent(false)}
-                className={toggleBtn(!exportTransparent)}
-                style={!exportTransparent ? { backgroundColor: "#CC79A7" } : undefined}
-              >
-                白
-              </button>
-            </div>
-
-            {/* フォーマット & ダウンロード */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[14px] text-gray-400 dark:text-neutral-600 mr-1">用途：</span>
-              {([
-                ["single", "論文1段組"],
-                ["double", "論文2段組"],
-                ["slide", "16:9スライド"],
-              ] as const).map(([value, label]) => (
-                <button key={value} type="button" onClick={() => setOutputPreset(value)} className={toggleBtn(outputPreset === value)}>
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {exportPreviewUrl && exportFormat !== "pdf" && (
-              <div className="rounded-md border border-gray-200 dark:border-neutral-800 bg-white p-3">
-                <p className="mb-2 text-[13px] text-gray-500">最終出力プレビュー</p>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={exportPreviewUrl} alt="最終出力プレビュー" className="mx-auto max-h-[420px] max-w-full" />
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-[14px] text-gray-400 dark:text-neutral-600 mr-1">形式：</span>
-              {(["png", "svg", "pdf"] as const).map((fmt) => (
-                <button
-                  key={fmt}
-                  type="button"
-                  onClick={() => setExportFormat(fmt)}
-                  className={toggleBtn(exportFormat === fmt)}
-                  style={exportFormat === fmt ? { backgroundColor: "#009E73" } : undefined}
-                >
-                  {fmt.toUpperCase()}
-                </button>
-              ))}
-              <Button
-                variant="secondary"
-                onClick={() => handleExport(false)}
-                loading={exporting}
-                className="ml-1"
-              >
-                最終出力をプレビュー
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => handleExport(true)}
-                loading={exporting}
-              >
-                ダウンロード
-              </Button>
-            </div>
-          </div>
         </Card>
       )}
     </div>

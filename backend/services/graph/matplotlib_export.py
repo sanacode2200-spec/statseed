@@ -54,10 +54,21 @@ def _apply_overrides(fig, request: ExportRequest) -> None:
             xytext=(0, 6), textcoords="offset points",
             ha="left", va="bottom", fontsize=8, color="#8a8a8a",
         )
-    if request.override_x_label is not None:
-        ax.set_xlabel(request.override_x_label)
-    if request.override_y_label is not None:
-        ax.set_ylabel(request.override_y_label)
+    # X/Y軸ラベル。文字サイズ（fontsize）と軸からの距離（labelpad）も併せて適用する。
+    if request.override_x_label is not None or request.override_x_label_size is not None or request.override_x_label_standoff is not None:
+        x_kwargs: dict = {}
+        if request.override_x_label_size is not None:
+            x_kwargs["fontsize"] = request.override_x_label_size
+        if request.override_x_label_standoff is not None:
+            x_kwargs["labelpad"] = float(request.override_x_label_standoff)
+        ax.set_xlabel(request.override_x_label if request.override_x_label is not None else ax.get_xlabel(), **x_kwargs)
+    if request.override_y_label is not None or request.override_y_label_size is not None or request.override_y_label_standoff is not None:
+        y_kwargs: dict = {}
+        if request.override_y_label_size is not None:
+            y_kwargs["fontsize"] = request.override_y_label_size
+        if request.override_y_label_standoff is not None:
+            y_kwargs["labelpad"] = float(request.override_y_label_standoff)
+        ax.set_ylabel(request.override_y_label if request.override_y_label is not None else ax.get_ylabel(), **y_kwargs)
     if request.override_x_range is not None:
         ax.set_xlim(float(request.override_x_range[0]), float(request.override_x_range[1]))
     if request.override_y_range is not None:

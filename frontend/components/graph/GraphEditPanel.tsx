@@ -1,6 +1,7 @@
 "use client";
 
 import { inputAutoCls as inputCls } from "@/components/ui/formStyles";
+import { EditSection } from "@/components/graph/EditSection";
 
 export type LegendPosition = "右上" | "右下" | "左上" | "左下";
 
@@ -32,6 +33,14 @@ interface Props {
   setEditXDtick: (v: string) => void;
   editYDtick: string;
   setEditYDtick: (v: string) => void;
+  editXLabelStandoff: string;
+  setEditXLabelStandoff: (v: string) => void;
+  editYLabelStandoff: string;
+  setEditYLabelStandoff: (v: string) => void;
+  editXLabelSize: string;
+  setEditXLabelSize: (v: string) => void;
+  editYLabelSize: string;
+  setEditYLabelSize: (v: string) => void;
   showXControls: boolean;
   editShowValueLabels: boolean;
   setEditShowValueLabels: (v: boolean) => void;
@@ -79,6 +88,10 @@ export function GraphEditPanel({
   editYMax, setEditYMax,
   editXDtick, setEditXDtick,
   editYDtick, setEditYDtick,
+  editXLabelStandoff, setEditXLabelStandoff,
+  editYLabelStandoff, setEditYLabelStandoff,
+  editXLabelSize, setEditXLabelSize,
+  editYLabelSize, setEditYLabelSize,
   showXControls,
   editShowValueLabels, setEditShowValueLabels,
   showValueLabelsControl,
@@ -92,197 +105,255 @@ export function GraphEditPanel({
   const rangePairCls = "flex items-center gap-1.5";
 
   return (
-    <div className="space-y-3.5">
-      <p className="text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-neutral-600 mb-0.5">
-        グラフ編集
-      </p>
-
-      {/* 直接編集モード */}
-      <div>
+    <div className="space-y-1">
+      {/* 直接編集モード（常時表示） */}
+      <div className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <span className={`${labelCls} mb-0`}>グラフを直接編集</span>
           <Toggle checked={editDirectMode} onChange={setEditDirectMode} />
         </div>
         {editDirectMode && (
           <p className="mt-1 text-[12px] leading-snug text-gray-400 dark:text-neutral-600">
-            グラフ上のタイトル・軸ラベル・注釈をダブルクリックで直接編集、ドラッグで移動できます。数値の正確な指定は下のフォームをお使いください。
+            グラフ上の文字をダブルクリックで直接編集できます。タイトル・凡例・注釈はドラッグで移動できます（軸ラベルの位置は「軸」の軸ラベル位置で調整）。
           </p>
         )}
       </div>
 
-      {/* タイトル表示 */}
-      <div className="flex items-center justify-between gap-2">
-        <span className={`${labelCls} mb-0`}>タイトルを表示</span>
-        <Toggle checked={editShowTitle} onChange={setEditShowTitle} />
-      </div>
-
-      {/* タイトル */}
-      {editShowTitle && (
-        <div>
-          <label className={labelCls}>タイトル</label>
-          <input
-            type="text"
-            value={editTitle}
-            onChange={(e) => setEditTitle(e.target.value)}
-            className={`${inputCls} w-full`}
-            placeholder="グラフタイトル"
-          />
+      <EditSection title="テキスト" defaultOpen>
+        {/* タイトル表示 */}
+        <div className="flex items-center justify-between gap-2">
+          <span className={`${labelCls} mb-0`}>タイトルを表示</span>
+          <Toggle checked={editShowTitle} onChange={setEditShowTitle} />
         </div>
-      )}
 
-      {/* サブタイトル（スライド向け） */}
-      {editShowTitle && (
-        <div>
-          <label className={labelCls}>サブタイトル</label>
-          <input
-            type="text"
-            value={editSubtitle}
-            onChange={(e) => setEditSubtitle(e.target.value)}
-            className={`${inputCls} w-full`}
-            placeholder="補足の一文（スライド向け）"
-          />
-        </div>
-      )}
-
-      {/* X軸ラベル */}
-      <div>
-        <label className={labelCls}>X軸ラベル</label>
-        <input
-          type="text"
-          value={editXLabel}
-          onChange={(e) => setEditXLabel(e.target.value)}
-          className={`${inputCls} w-full`}
-          placeholder="X軸のラベル"
-        />
-      </div>
-
-      {/* Y軸ラベル */}
-      <div>
-        <label className={labelCls}>Y軸ラベル</label>
-        <input
-          type="text"
-          value={editYLabel}
-          onChange={(e) => setEditYLabel(e.target.value)}
-          className={`${inputCls} w-full`}
-          placeholder="Y軸のラベル"
-        />
-      </div>
-
-      {/* X軸範囲 */}
-      <div>
-        <label className={labelCls}>X軸範囲</label>
-        <div className={rangePairCls}>
-          <input
-            type="number"
-            value={editXMin}
-            onChange={(e) => setEditXMin(e.target.value)}
-            className={`${inputCls} w-full`}
-            placeholder="最小"
-          />
-          <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">–</span>
-          <input
-            type="number"
-            value={editXMax}
-            onChange={(e) => setEditXMax(e.target.value)}
-            className={`${inputCls} w-full`}
-            placeholder="最大"
-          />
-        </div>
-      </div>
-
-      {/* Y軸範囲 */}
-      <div>
-        <label className={labelCls}>Y軸範囲</label>
-        <div className={rangePairCls}>
-          <input
-            type="number"
-            value={editYMin}
-            onChange={(e) => setEditYMin(e.target.value)}
-            className={`${inputCls} w-full`}
-            placeholder="最小"
-          />
-          <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">–</span>
-          <input
-            type="number"
-            value={editYMax}
-            onChange={(e) => setEditYMax(e.target.value)}
-            className={`${inputCls} w-full`}
-            placeholder="最大"
-          />
-        </div>
-      </div>
-
-      {/* 目盛り間隔 */}
-      <div className={showXControls ? "grid grid-cols-2 gap-2" : ""}>
-        {showXControls && (
+        {/* タイトル */}
+        {editShowTitle && (
           <div>
-            <label className={labelCls}>X目盛り間隔</label>
+            <label className={labelCls}>タイトル</label>
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="グラフタイトル"
+            />
+          </div>
+        )}
+
+        {/* サブタイトル（スライド向け） */}
+        {editShowTitle && (
+          <div>
+            <label className={labelCls}>サブタイトル</label>
+            <input
+              type="text"
+              value={editSubtitle}
+              onChange={(e) => setEditSubtitle(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="補足の一文（スライド向け）"
+            />
+          </div>
+        )}
+      </EditSection>
+
+      <EditSection title="軸" defaultOpen>
+        {/* X軸ラベル */}
+        <div>
+          <label className={labelCls}>X軸ラベル</label>
+          <input
+            type="text"
+            value={editXLabel}
+            onChange={(e) => setEditXLabel(e.target.value)}
+            className={`${inputCls} w-full`}
+            placeholder="X軸のラベル"
+          />
+        </div>
+
+        {/* Y軸ラベル */}
+        <div>
+          <label className={labelCls}>Y軸ラベル</label>
+          <input
+            type="text"
+            value={editYLabel}
+            onChange={(e) => setEditYLabel(e.target.value)}
+            className={`${inputCls} w-full`}
+            placeholder="Y軸のラベル"
+          />
+        </div>
+
+        {/* 軸ラベルの文字サイズ */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className={labelCls}>X軸ラベル文字サイズ</label>
             <input
               type="number"
-              min="0"
-              value={editXDtick}
-              onChange={(e) => setEditXDtick(e.target.value)}
+              min="6"
+              max="36"
+              value={editXLabelSize}
+              onChange={(e) => setEditXLabelSize(e.target.value)}
               className={`${inputCls} w-full`}
               placeholder="自動"
             />
           </div>
+          <div>
+            <label className={labelCls}>Y軸ラベル文字サイズ</label>
+            <input
+              type="number"
+              min="6"
+              max="36"
+              value={editYLabelSize}
+              onChange={(e) => setEditYLabelSize(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="自動"
+            />
+          </div>
+        </div>
+
+        {/* 軸ラベルの位置（軸からの距離） */}
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className={labelCls}>X軸ラベル位置</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={editXLabelStandoff}
+              onChange={(e) => setEditXLabelStandoff(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="軸からの距離"
+            />
+          </div>
+          <div>
+            <label className={labelCls}>Y軸ラベル位置</label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={editYLabelStandoff}
+              onChange={(e) => setEditYLabelStandoff(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="軸からの距離"
+            />
+          </div>
+        </div>
+
+        {/* X軸範囲 */}
+        <div>
+          <label className={labelCls}>X軸範囲</label>
+          <div className={rangePairCls}>
+            <input
+              type="number"
+              value={editXMin}
+              onChange={(e) => setEditXMin(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="最小"
+            />
+            <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">–</span>
+            <input
+              type="number"
+              value={editXMax}
+              onChange={(e) => setEditXMax(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="最大"
+            />
+          </div>
+        </div>
+
+        {/* Y軸範囲 */}
+        <div>
+          <label className={labelCls}>Y軸範囲</label>
+          <div className={rangePairCls}>
+            <input
+              type="number"
+              value={editYMin}
+              onChange={(e) => setEditYMin(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="最小"
+            />
+            <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">–</span>
+            <input
+              type="number"
+              value={editYMax}
+              onChange={(e) => setEditYMax(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="最大"
+            />
+          </div>
+        </div>
+
+        {/* 目盛り間隔 */}
+        <div className={showXControls ? "grid grid-cols-2 gap-2" : ""}>
+          {showXControls && (
+            <div>
+              <label className={labelCls}>X目盛り間隔</label>
+              <input
+                type="number"
+                min="0"
+                value={editXDtick}
+                onChange={(e) => setEditXDtick(e.target.value)}
+                className={`${inputCls} w-full`}
+                placeholder="自動"
+              />
+            </div>
+          )}
+          <div>
+            <label className={labelCls}>Y目盛り間隔</label>
+            <input
+              type="number"
+              min="0"
+              value={editYDtick}
+              onChange={(e) => setEditYDtick(e.target.value)}
+              className={`${inputCls} w-full`}
+              placeholder="自動"
+            />
+          </div>
+        </div>
+      </EditSection>
+
+      <EditSection title="スタイル">
+        {/* データ値ラベル */}
+        {showValueLabelsControl && (
+          <div className="flex items-center justify-between gap-2">
+            <span className={`${labelCls} mb-0`}>データ値を表示</span>
+            <Toggle checked={editShowValueLabels} onChange={setEditShowValueLabels} />
+          </div>
         )}
-        <div>
-          <label className={labelCls}>Y目盛り間隔</label>
-          <input
-            type="number"
-            min="0"
-            value={editYDtick}
-            onChange={(e) => setEditYDtick(e.target.value)}
-            className={`${inputCls} w-full`}
-            placeholder="自動"
-          />
-        </div>
-      </div>
 
-      {/* データ値ラベル */}
-      {showValueLabelsControl && (
+        {/* 凡例トグル */}
         <div className="flex items-center justify-between gap-2">
-          <span className={`${labelCls} mb-0`}>データ値を表示</span>
-          <Toggle checked={editShowValueLabels} onChange={setEditShowValueLabels} />
+          <span className={`${labelCls} mb-0`}>凡例を表示</span>
+          <Toggle checked={editShowLegend} onChange={setEditShowLegend} />
         </div>
-      )}
 
-      {/* 凡例トグル */}
-      <div className="flex items-center justify-between gap-2">
-        <span className={`${labelCls} mb-0`}>凡例を表示</span>
-        <Toggle checked={editShowLegend} onChange={setEditShowLegend} />
-      </div>
+        {/* 凡例位置 */}
+        {editShowLegend && (
+          <div>
+            <label className={labelCls}>凡例の位置</label>
+            <select
+              value={editLegendPos}
+              onChange={(e) => setEditLegendPos(e.target.value as LegendPosition)}
+              className={`${inputCls} w-full`}
+            >
+              {(["右上", "右下", "左上", "左下"] as const).map((pos) => (
+                <option key={pos} value={pos}>{pos}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-      {/* 凡例位置 */}
-      {editShowLegend && (
+        {/* 背景色 */}
         <div>
-          <label className={labelCls}>凡例の位置</label>
+          <label className={labelCls}>背景</label>
           <select
-            value={editLegendPos}
-            onChange={(e) => setEditLegendPos(e.target.value as LegendPosition)}
+            value={editBackground}
+            onChange={(e) => setEditBackground(e.target.value as "transparent" | "white" | "cream")}
             className={`${inputCls} w-full`}
           >
-            {(["右上", "右下", "左上", "左下"] as const).map((pos) => (
-              <option key={pos} value={pos}>{pos}</option>
-            ))}
+            <option value="transparent">透過（論文・Word向け）</option>
+            <option value="white">白</option>
+            <option value="cream">クリーム（スライド向け）</option>
           </select>
         </div>
-      )}
-
-      {/* 背景色 */}
-      <div>
-        <label className={labelCls}>背景</label>
-        <select
-          value={editBackground}
-          onChange={(e) => setEditBackground(e.target.value as "transparent" | "white" | "cream")}
-          className={`${inputCls} w-full`}
-        >
-          <option value="transparent">透過（論文・Word向け）</option>
-          <option value="white">白</option>
-          <option value="cream">クリーム（スライド向け）</option>
-        </select>
-      </div>
+      </EditSection>
     </div>
   );
 }

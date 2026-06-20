@@ -196,6 +196,11 @@ class ExportRequest(BaseModel):
     override_show_value_labels: bool | None = None
     override_subtitle: str | None = Field(default=None, max_length=200)
     override_background: Literal["transparent", "white", "cream"] | None = None
+    # 軸ラベルの位置（軸からの距離）と文字サイズ
+    override_x_label_standoff: FiniteFloat | None = Field(default=None, ge=0, le=100)
+    override_y_label_standoff: FiniteFloat | None = Field(default=None, ge=0, le=100)
+    override_x_label_size: int | None = Field(default=None, ge=6, le=36)
+    override_y_label_size: int | None = Field(default=None, ge=6, le=36)
 
     @model_validator(mode="after")
     def check_chart_data(self) -> "ExportRequest":

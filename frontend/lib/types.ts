@@ -502,6 +502,10 @@ export interface ExportRequest {
   override_show_value_labels?: boolean | null;
   override_subtitle?: string | null;
   override_background?: "transparent" | "white" | "cream" | null;
+  override_x_label_standoff?: number | null;
+  override_y_label_standoff?: number | null;
+  override_x_label_size?: number | null;
+  override_y_label_size?: number | null;
 }
 
 export interface GraphHandoff {
