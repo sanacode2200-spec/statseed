@@ -1079,7 +1079,7 @@ export default function GraphPage() {
                 </div>
               )}
             </div>
-            <div className="lg:w-64 xl:w-72 shrink-0 space-y-5 border-t border-gray-100 dark:border-neutral-800 pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5">
+            <div className="lg:w-64 xl:w-72 shrink-0 space-y-5 border-t border-gray-100 dark:border-neutral-800 pt-4 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-5 lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto lg:overscroll-contain">
               <GraphEditPanel
                 editTitle={editTitle} setEditTitle={setEditTitle}
                 editShowTitle={editShowTitle} setEditShowTitle={setEditShowTitle}
@@ -1107,7 +1107,7 @@ export default function GraphPage() {
 
               {/* 出力・エクスポート */}
               <div className="border-t border-gray-100 dark:border-neutral-800 pt-2">
-                <EditSection title="出力・エクスポート" defaultOpen>
+                <EditSection title="出力・エクスポート">
                   {/* フォントプリセット */}
                   <div>
                     <label className="block text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">フォント</label>

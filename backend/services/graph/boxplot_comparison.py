@@ -104,3 +104,15 @@ def annotated_pairs(result: BoxplotComparisonResult | None) -> list[BoxplotPairC
     if significant:
         return significant[:3]
     return result.pairs[:1] if len(result.pairs) == 1 else []
+
+
+def overall_fallback_label(result: BoxplotComparisonResult | None) -> str | None:
+    """3群以上でどのペアも有意でない場合、全体検定のp値をグラフ上に示すための代替ラベル。"""
+    if (
+        result is None
+        or result.omnibus_p_value is None
+        or len(result.pairs) <= 1
+        or any(pair.significant for pair in result.pairs)
+    ):
+        return None
+    return f"全体 {p_value_text(result.omnibus_p_value)}（有意差なし）"

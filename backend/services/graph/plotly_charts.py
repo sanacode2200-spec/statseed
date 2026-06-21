@@ -310,6 +310,7 @@ def boxplot_figure(request: BoxplotRequest) -> PlotlyFigure:
     from backend.services.graph.boxplot_comparison import (
         annotated_pairs,
         compute_boxplot_comparison,
+        overall_fallback_label,
         p_value_text,
     )
     from backend.services.graph.boxplot_style import display_names, effective_display_style
@@ -384,6 +385,7 @@ def boxplot_figure(request: BoxplotRequest) -> PlotlyFigure:
         annotated_pairs(comparison),
         key=lambda pair: abs(raw_names.index(pair.group_b) - raw_names.index(pair.group_a)),
     )
+    fallback_label = overall_fallback_label(comparison) if not pairs else None
     shapes = []
     annotations = []
     all_values = [value for group in request.groups for value in group]
@@ -391,10 +393,10 @@ def boxplot_figure(request: BoxplotRequest) -> PlotlyFigure:
     data_span = data_max - data_min or 1.0
     annotation_step = data_span * 0.075
     annotation_base = data_max + data_span * 0.06
-    for level, pair in enumerate(pairs):
-        left = raw_names.index(pair.group_a)
-        right = raw_names.index(pair.group_b)
-        y = annotation_base + level * annotation_step
+    annotation_count = 0
+    if fallback_label:
+        left, right = 0, k - 1
+        y = annotation_base
         cap = data_span * 0.025
         shapes.extend([
             {"type": "line", "x0": left, "x1": left, "y0": y - cap, "y1": y, "line": {"color": "#525252", "width": 1}},
@@ -402,14 +404,36 @@ def boxplot_figure(request: BoxplotRequest) -> PlotlyFigure:
             {"type": "line", "x0": right, "x1": right, "y0": y - cap, "y1": y, "line": {"color": "#525252", "width": 1}},
         ])
         annotations.append({
-            "text": p_value_text(pair.p_value),
+            "text": fallback_label,
             "x": (left + right) / 2,
             "y": y + cap,
             "showarrow": False,
             "font": {"size": 10, "color": "#525252"},
             "yanchor": "bottom",
         })
+        annotation_count = 1
+    else:
+        for level, pair in enumerate(pairs):
+            left = raw_names.index(pair.group_a)
+            right = raw_names.index(pair.group_b)
+            y = annotation_base + level * annotation_step
+            cap = data_span * 0.025
+            shapes.extend([
+                {"type": "line", "x0": left, "x1": left, "y0": y - cap, "y1": y, "line": {"color": "#525252", "width": 1}},
+                {"type": "line", "x0": left, "x1": right, "y0": y, "y1": y, "line": {"color": "#525252", "width": 1}},
+                {"type": "line", "x0": right, "x1": right, "y0": y - cap, "y1": y, "line": {"color": "#525252", "width": 1}},
+            ])
+            annotations.append({
+                "text": p_value_text(pair.p_value),
+                "x": (left + right) / 2,
+                "y": y + cap,
+                "showarrow": False,
+                "font": {"size": 10, "color": "#525252"},
+                "yanchor": "bottom",
+            })
+        annotation_count = len(pairs)
 
+    has_annotation = bool(pairs) or bool(fallback_label)
     yaxis = dict(
         _LAYOUT_BASE["yaxis"],
         title=request.y_label,
@@ -418,13 +442,13 @@ def boxplot_figure(request: BoxplotRequest) -> PlotlyFigure:
         gridwidth=0.7,
         zeroline=False,
     )
-    annotation_top = annotation_base + len(pairs) * annotation_step + data_span * 0.05
+    annotation_top = annotation_base + annotation_count * annotation_step + data_span * 0.05
     if request.y_min is not None or request.y_max is not None:
         yaxis["range"] = [
             request.y_min,
-            max(request.y_max, annotation_top) if request.y_max is not None and pairs else request.y_max,
+            max(request.y_max, annotation_top) if request.y_max is not None and has_annotation else request.y_max,
         ]
-    elif pairs:
+    elif has_annotation:
         yaxis["range"] = [data_min - data_span * 0.08, annotation_top]
 
     layout = _layout(

@@ -160,6 +160,7 @@ def _boxplot_fig(req: BoxplotRequest, plt):  # type: ignore[no-untyped-def]
     from backend.services.graph.boxplot_comparison import (
         annotated_pairs,
         compute_boxplot_comparison,
+        overall_fallback_label,
         p_value_text,
     )
     from backend.services.graph.boxplot_style import display_names, effective_display_style
@@ -236,25 +237,35 @@ def _boxplot_fig(req: BoxplotRequest, plt):  # type: ignore[no-untyped-def]
     ax.spines["right"].set_visible(False)
     ax.set_axisbelow(True)
     ax.yaxis.grid(req.show_grid, color="#D4D4D4", linewidth=0.6, alpha=0.65)
+    comparison = compute_boxplot_comparison(req)
     pairs = sorted(
-        annotated_pairs(compute_boxplot_comparison(req)),
+        annotated_pairs(comparison),
         key=lambda pair: abs(raw_names.index(pair.group_b) - raw_names.index(pair.group_a)),
     )
+    fallback_label = overall_fallback_label(comparison) if not pairs else None
     annotation_top = None
-    if pairs:
+    if pairs or fallback_label:
         all_values = [value for group in req.groups for value in group]
         data_min, data_max = min(all_values), max(all_values)
         data_span = data_max - data_min or 1.0
         annotation_step = data_span * 0.075
         annotation_base = data_max + data_span * 0.06
         cap = data_span * 0.025
-        for level, pair in enumerate(pairs):
-            left = raw_names.index(pair.group_a) + 1
-            right = raw_names.index(pair.group_b) + 1
-            y = annotation_base + level * annotation_step
+        if fallback_label:
+            left, right = 1, k
+            y = annotation_base
             ax.plot([left, left, right, right], [y - cap, y, y, y - cap], color="#525252", linewidth=0.8)
-            ax.text((left + right) / 2, y + cap, p_value_text(pair.p_value), ha="center", va="bottom", fontsize=8, color="#525252")
-        annotation_top = annotation_base + len(pairs) * annotation_step + data_span * 0.05
+            ax.text((left + right) / 2, y + cap, fallback_label, ha="center", va="bottom", fontsize=8, color="#525252")
+            annotation_count = 1
+        else:
+            for level, pair in enumerate(pairs):
+                left = raw_names.index(pair.group_a) + 1
+                right = raw_names.index(pair.group_b) + 1
+                y = annotation_base + level * annotation_step
+                ax.plot([left, left, right, right], [y - cap, y, y, y - cap], color="#525252", linewidth=0.8)
+                ax.text((left + right) / 2, y + cap, p_value_text(pair.p_value), ha="center", va="bottom", fontsize=8, color="#525252")
+            annotation_count = len(pairs)
+        annotation_top = annotation_base + annotation_count * annotation_step + data_span * 0.05
 
     if req.y_min is not None or req.y_max is not None:
         top = max(req.y_max, annotation_top) if req.y_max is not None and annotation_top is not None else req.y_max

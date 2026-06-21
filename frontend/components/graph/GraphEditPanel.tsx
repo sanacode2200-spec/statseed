@@ -119,7 +119,7 @@ export function GraphEditPanel({
         )}
       </div>
 
-      <EditSection title="テキスト" defaultOpen>
+      <EditSection title="テキスト">
         {/* タイトル表示 */}
         <div className="flex items-center justify-between gap-2">
           <span className={`${labelCls} mb-0`}>タイトルを表示</span>
@@ -155,7 +155,7 @@ export function GraphEditPanel({
         )}
       </EditSection>
 
-      <EditSection title="軸" defaultOpen>
+      <EditSection title="軸">
         {/* X軸ラベル */}
         <div>
           <label className={labelCls}>X軸ラベル</label>
