@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 
@@ -25,6 +27,8 @@ from backend.services.graph.plotly_charts import (
     scatter_figure,
     paired_figure,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ROCResult(BaseModel):
@@ -99,6 +103,9 @@ def export(request: ExportRequest) -> Response:
         raise HTTPException(status_code=422, detail=str(e))
     except RuntimeError as e:
         raise HTTPException(status_code=500, detail=f"論文出力の生成に失敗しました: {e}")
+    except Exception:
+        logger.exception("Unexpected graph export failure: chart_type=%s format=%s", request.chart_type, request.format)
+        raise HTTPException(status_code=500, detail="論文出力の生成中に予期しないエラーが発生しました")
 
     ext = request.format
     filename = f"statseed_graph.{ext}"

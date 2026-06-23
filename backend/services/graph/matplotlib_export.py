@@ -132,26 +132,28 @@ def export_bytes(request: ExportRequest) -> tuple[bytes, str]:
     else:
         fig = _scatter_fig(request.scatter, plt)  # type: ignore[arg-type]
 
-    _apply_overrides(fig, request)
+    try:
+        _apply_overrides(fig, request)
 
-    # 背景色（スライド向け）。透過/白/クリームを選択可能。未指定時は従来の transparent 設定。
-    bg = request.override_background
-    transparent = request.transparent if bg is None else (bg == "transparent")
-    facecolor = {"white": "#ffffff", "cream": "#faf8f3"}.get(bg or "")
-    save_kwargs: dict = {"transparent": transparent}
-    if facecolor and not transparent:
-        fig.patch.set_facecolor(facecolor)
-        for a in fig.axes:
-            a.set_facecolor(facecolor)
-        save_kwargs["facecolor"] = facecolor
+        # 背景色（スライド向け）。透過/白/クリームを選択可能。未指定時は従来の transparent 設定。
+        bg = request.override_background
+        transparent = request.transparent if bg is None else (bg == "transparent")
+        facecolor = {"white": "#ffffff", "cream": "#faf8f3"}.get(bg or "")
+        save_kwargs: dict = {"transparent": transparent}
+        if facecolor and not transparent:
+            fig.patch.set_facecolor(facecolor)
+            for a in fig.axes:
+                a.set_facecolor(facecolor)
+            save_kwargs["facecolor"] = facecolor
 
-    if request.width_inches and request.height_inches:
-        fig.set_size_inches(float(request.width_inches), float(request.height_inches))
-    buf = io.BytesIO()
-    fig.savefig(buf, format=fmt, bbox_inches="tight", **save_kwargs)
-    plt.close(fig)
-    buf.seek(0)
-    return buf.read(), mime
+        if request.width_inches and request.height_inches:
+            fig.set_size_inches(float(request.width_inches), float(request.height_inches))
+        buf = io.BytesIO()
+        fig.savefig(buf, format=fmt, bbox_inches="tight", **save_kwargs)
+        buf.seek(0)
+        return buf.read(), mime
+    finally:
+        plt.close(fig)
 
 
 def _boxplot_fig(req: BoxplotRequest, plt):  # type: ignore[no-untyped-def]
@@ -194,7 +196,7 @@ def _boxplot_fig(req: BoxplotRequest, plt):  # type: ignore[no-untyped-def]
 
     bp = ax.boxplot(
         req.groups,
-        labels=names,
+        tick_labels=names,
         patch_artist=True,
         widths=0.30 if style == "distribution" else 0.42,
         medianprops={"color": "#373737", "linewidth": 2},

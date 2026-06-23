@@ -13,6 +13,7 @@ COPY backend ./backend
 RUN pip install --no-cache-dir ".[analysis,graph]"
 
 ENV STATSEED_ENABLE_SCIPY=1
+ENV MPLCONFIGDIR=/tmp/matplotlib
 
 EXPOSE 8000
 

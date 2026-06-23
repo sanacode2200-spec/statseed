@@ -161,6 +161,54 @@ def test_export_returns_503_when_graph_dependency_is_missing(monkeypatch) -> Non
     assert exc_info.value.status_code == 503
 
 
+def test_export_returns_json_500_for_unexpected_failure(monkeypatch) -> None:
+    def unexpected_failure(_request: ExportRequest) -> tuple[bytes, str]:
+        raise TypeError("internal implementation detail")
+
+    monkeypatch.setattr(
+        "backend.services.graph.matplotlib_export.export_bytes",
+        unexpected_failure,
+    )
+    request = ExportRequest(
+        chart_type="histogram",
+        histogram=HistogramRequest(values=[1, 2, 3]),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        graph.export(request)
+
+    assert exc_info.value.status_code == 500
+    assert exc_info.value.detail == "論文出力の生成中に予期しないエラーが発生しました"
+
+
+def test_boxplot_export_uses_current_matplotlib_tick_labels_api(monkeypatch) -> None:
+    import matplotlib.axes
+
+    original_boxplot = matplotlib.axes.Axes.boxplot
+    calls: list[dict[str, object]] = []
+
+    def recording_boxplot(self, *args, **kwargs):  # type: ignore[no-untyped-def]
+        calls.append(kwargs)
+        return original_boxplot(self, *args, **kwargs)
+
+    monkeypatch.setattr(matplotlib.axes.Axes, "boxplot", recording_boxplot)
+    from backend.services.graph.matplotlib_export import export_bytes
+
+    data, mime = export_bytes(ExportRequest(
+        chart_type="boxplot",
+        format="png",
+        boxplot=BoxplotRequest(
+            groups=[[1, 2, 3], [3, 4, 5]],
+            group_names=["対照群", "介入群"],
+        ),
+    ))
+
+    assert data[:8] == b"\x89PNG\r\n\x1a\n"
+    assert mime == "image/png"
+    assert calls[0]["tick_labels"] == ["対照群\n(n = 3)", "介入群\n(n = 3)"]
+    assert "labels" not in calls[0]
+
+
 @pytest.mark.parametrize("preset", list(FONT_PRESETS.keys()))
 def test_export_bytes_applies_each_font_preset(preset: str) -> None:
     from backend.services.graph.matplotlib_export import export_bytes
