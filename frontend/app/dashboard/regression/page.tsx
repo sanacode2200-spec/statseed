@@ -7,20 +7,21 @@ import { Card } from "@/components/ui/Card";
 import { ErrorMessage } from "@/components/ui/ErrorMessage";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { inputCls, textareaCls } from "@/components/ui/formStyles";
-import { parseNullableNumbers } from "@/lib/parse";
+import { parseNullableNumbers, parseCategoricalValues } from "@/lib/parse";
 import type {
   LinearRegressionRequest,
   LinearRegressionResult,
   LogisticRegressionResult,
+  MixedModelResult,
   PoissonRegressionResult,
   RegressionPredictor,
 } from "@/lib/types";
 import { useDataset } from "@/contexts/DataContext";
-import { continuousColumns, numericAnalysisColumns, findColumn } from "@/lib/dataUtils";
+import { continuousColumns, numericAnalysisColumns, groupColumns, findColumn } from "@/lib/dataUtils";
 
 type PredState = { id: number; name: string; rawText: string };
 type InputMode = "csv" | "manual";
-type ModelType = "linear" | "logistic" | "poisson";
+type ModelType = "linear" | "logistic" | "poisson" | "mixed";
 
 let _id = 0;
 function nextId() { return ++_id; }
@@ -35,22 +36,27 @@ export default function RegressionPage() {
   const [outcomeName, setOutcomeName] = useState("目的変数");
   const [outcomeText, setOutcomeText] = useState("");
   const [preds, setPreds] = useState<PredState[]>([makePred()]);
+  const [groupName, setGroupName] = useState("患者ID");
+  const [groupText, setGroupText] = useState("");
 
   // CSV
   const [csvOutcomeCol, setCsvOutcomeCol] = useState("");
   const [csvPredCols, setCsvPredCols] = useState<Record<string, boolean>>({});
+  const [csvGroupCol, setCsvGroupCol] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<LinearRegressionResult | null>(null);
   const [logitResult, setLogitResult] = useState<LogisticRegressionResult | null>(null);
   const [poissonResult, setPoissonResult] = useState<PoissonRegressionResult | null>(null);
+  const [mixedResult, setMixedResult] = useState<MixedModelResult | null>(null);
 
   const isLogistic = modelType === "logistic";
   const isPoisson = modelType === "poisson";
+  const isMixed = modelType === "mixed";
   // ロジスティック(0/1)・ポアソン(カウント)のアウトカムは数値列全体から選べるようにする
   const outcomeColumns = dataset
-    ? (modelType === "linear" ? continuousColumns(dataset.columns) : numericAnalysisColumns(dataset.columns))
+    ? (modelType === "logistic" || modelType === "poisson" ? numericAnalysisColumns(dataset.columns) : continuousColumns(dataset.columns))
     : [];
 
   useEffect(() => {
@@ -63,6 +69,8 @@ export default function RegressionPage() {
       for (const c of cont) next[c.name] = prev[c.name] ?? false;
       return next;
     });
+    const groups = groupColumns(dataset.columns);
+    setCsvGroupCol((prev) => (groups.some((c) => c.name === prev) ? prev : (groups[0]?.name ?? "")));
   }, [dataset]);
 
   const updatePred = useCallback((id: number, patch: Partial<PredState>) => {
@@ -77,21 +85,30 @@ export default function RegressionPage() {
     setResult(null);
     setLogitResult(null);
     setPoissonResult(null);
+    setMixedResult(null);
     try {
       let outcome: (number | null)[];
       let predictors: RegressionPredictor[];
       let outName: string;
+      let group: (string | null)[] = [];
+      let groupNameUsed = "";
 
       if (inputMode === "csv" && dataset) {
         const outCol = findColumn(dataset.columns, csvOutcomeCol);
         if (!outCol) throw new Error("目的変数の列を選択してください。");
         const predCols = continuousColumns(dataset.columns).filter(
-          (c) => csvPredCols[c.name] && c.name !== csvOutcomeCol
+          (c) => csvPredCols[c.name] && c.name !== csvOutcomeCol && c.name !== csvGroupCol
         );
         if (predCols.length === 0) throw new Error("説明変数の列を1つ以上選択してください。");
         outName = outCol.name;
         outcome = outCol.values;
         predictors = predCols.map((c) => ({ name: c.name, values: c.values }));
+        if (isMixed) {
+          const groupCol = findColumn(dataset.columns, csvGroupCol);
+          if (!groupCol) throw new Error("グループ（クラスタリング単位）の列を選択してください。");
+          group = groupCol.cat_values;
+          groupNameUsed = groupCol.name;
+        }
       } else {
         outcome = parseNullableNumbers(outcomeText);
         predictors = preds
@@ -100,12 +117,27 @@ export default function RegressionPage() {
           .map((p) => ({ name: p.name, values: parseNullableNumbers(p.rawText) }));
         if (predictors.length === 0) throw new Error("説明変数を1つ以上入力してください。");
         outName = outcomeName.trim() || (isLogistic ? "アウトカム" : isPoisson ? "件数" : "目的変数");
+        if (isMixed) {
+          group = parseCategoricalValues(groupText);
+          if (group.length === 0) throw new Error("グループ（クラスタリング単位）を入力してください。");
+          groupNameUsed = groupName.trim() || "グループ";
+        }
       }
 
       if (isLogistic) {
         setLogitResult(await api.regressionLogistic({ outcome_name: outName, outcome, predictors }));
       } else if (isPoisson) {
         setPoissonResult(await api.regressionPoisson({ outcome_name: outName, outcome, predictors }));
+      } else if (isMixed) {
+        setMixedResult(
+          await api.regressionMixed({
+            outcome_name: outName,
+            outcome,
+            predictors,
+            group_name: groupNameUsed,
+            group,
+          })
+        );
       } else {
         const req: LinearRegressionRequest = { outcome_name: outName, outcome, predictors };
         setResult(await api.regressionLinear(req));
@@ -126,6 +158,8 @@ export default function RegressionPage() {
             ? "0/1 の2値アウトカム（1=イベント発生）を説明変数で予測します。各説明変数のオッズ比(OR)と95%CIを算出します。"
             : isPoisson
             ? "カウント（0以上の整数。例：転倒回数）を説明変数で予測します。各説明変数の発生率比(IRR)と95%CIを算出します。"
+            : isMixed
+            ? "患者IDなど繰り返し測定・クラスタリングの単位（グループ）をランダム切片で調整したうえで、説明変数の影響を推定します（線形混合モデル）。"
             : "1つの目的変数（連続変数）を1つ以上の説明変数で予測します。説明変数を複数指定すると重回帰（共変量調整）になります。"}
         </p>
       </div>
@@ -136,6 +170,7 @@ export default function RegressionPage() {
           { value: "linear", label: "線形回帰" },
           { value: "logistic", label: "ロジスティック回帰" },
           { value: "poisson", label: "ポアソン回帰" },
+          { value: "mixed", label: "混合効果モデル" },
         ]}
         onChange={setModelType}
         ariaLabel="回帰の種類"
@@ -172,12 +207,29 @@ export default function RegressionPage() {
             </select>
           </Card>
 
+          {isMixed && (
+            <Card className="p-4">
+              <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
+                グループ（患者IDなどクラスタリングの単位）
+              </label>
+              <select
+                value={csvGroupCol}
+                onChange={(e) => setCsvGroupCol(e.target.value)}
+                className={inputCls + " w-full sm:w-72"}
+              >
+                {groupColumns(dataset.columns).map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
+                ))}
+              </select>
+            </Card>
+          )}
+
           <Card className="p-4">
             <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-2.5">
               説明変数（連続変数・複数選択可）
             </p>
             <div className="space-y-1.5">
-              {continuousColumns(dataset.columns).filter((c) => c.name !== csvOutcomeCol).map((c) => (
+              {continuousColumns(dataset.columns).filter((c) => c.name !== csvOutcomeCol && c.name !== (isMixed ? csvGroupCol : "")).map((c) => (
                 <label key={c.name} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -218,6 +270,27 @@ export default function RegressionPage() {
               onChange={(e) => setOutcomeText(e.target.value)}
             />
           </Card>
+
+          {isMixed && (
+            <Card className="p-4">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <span className="text-[14px] text-gray-500 dark:text-neutral-500 shrink-0">グループ</span>
+                <input
+                  className={inputCls + " flex-1 min-w-[8rem]"}
+                  placeholder="グループ名（例：患者ID）"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                />
+              </div>
+              <textarea
+                className={textareaCls}
+                rows={3}
+                placeholder="患者IDなどクラスタリングの単位を目的変数と同じ順番・件数で入力（改行・カンマ区切り）"
+                value={groupText}
+                onChange={(e) => setGroupText(e.target.value)}
+              />
+            </Card>
+          )}
 
           {preds.map((p, idx) => (
             <Card key={p.id} className="p-4">
@@ -287,6 +360,14 @@ export default function RegressionPage() {
           <PoissonModelFit result={poissonResult} />
           <RateTable result={poissonResult} />
           <InterpretationCard text={poissonResult.interpretation} />
+        </div>
+      )}
+
+      {mixedResult && (
+        <div className="mt-6 space-y-4">
+          <MixedModelFit result={mixedResult} />
+          <MixedCoefTable result={mixedResult} />
+          <InterpretationCard text={mixedResult.interpretation} />
         </div>
       )}
     </div>
@@ -440,6 +521,65 @@ function RateTable({ result }: { result: PoissonRegressionResult }) {
                 {fmt(c.rr_ci95_low, 3)} – {fmt(c.rr_ci95_high, 3)}
               </td>
               <td className="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-neutral-500">{fmt(c.coef, 4)}</td>
+              <td className={`px-4 py-2 text-right tabular-nums ${
+                c.p_value < 0.05 ? "font-semibold text-white" : "text-gray-500 dark:text-neutral-500"
+              }`}>
+                {fmtP(c.p_value)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function MixedModelFit({ result }: { result: MixedModelResult }) {
+  const items: [string, string][] = [
+    [`${result.group_name}間のばらつき（群間分散）`, fmt(result.group_var, 3)],
+    ["残差分散", fmt(result.resid_var, 3)],
+    ["ICC（群内相関係数）", fmt(result.icc, 3)],
+    [`${result.group_name}の数`, String(result.n_groups)],
+    ["解析に使用 / 全体", `${result.n_used} / ${result.n_total}`],
+    ["欠損で除外", String(result.n_excluded)],
+  ];
+  return (
+    <Card className="p-4">
+      <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>
+      <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 sm:grid-cols-3">
+        {items.map(([label, val]) => (
+          <div key={label}>
+            <div className="text-[13px] text-gray-400 dark:text-neutral-600">{label}</div>
+            <div className="text-[18px] font-semibold text-gray-800 dark:text-neutral-200 tabular-nums">{val}</div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function MixedCoefTable({ result }: { result: MixedModelResult }) {
+  return (
+    <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-neutral-800">
+      <table className="w-full text-[16px]">
+        <thead>
+          <tr className="border-b border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-950 text-gray-500 dark:text-neutral-500">
+            <th className="text-left px-4 py-2.5 font-medium">項目（固定効果）</th>
+            <th className="text-right px-4 py-2.5 font-medium">係数</th>
+            <th className="text-center px-4 py-2.5 font-medium">95%CI</th>
+            <th className="text-right px-4 py-2.5 font-medium">z値</th>
+            <th className="text-right px-4 py-2.5 font-medium">p値</th>
+          </tr>
+        </thead>
+        <tbody>
+          {result.coefficients.map((c, i) => (
+            <tr key={i} className="border-b border-gray-100 dark:border-neutral-900 last:border-0">
+              <td className="px-4 py-2 font-medium text-gray-800 dark:text-neutral-200">{c.name}</td>
+              <td className="px-4 py-2 text-right tabular-nums text-gray-700 dark:text-neutral-300">{fmt(c.coef, 4)}</td>
+              <td className="px-4 py-2 text-center tabular-nums text-gray-500 dark:text-neutral-500">
+                {fmt(c.ci95_low, 3)} – {fmt(c.ci95_high, 3)}
+              </td>
+              <td className="px-4 py-2 text-right tabular-nums text-gray-500 dark:text-neutral-500">{fmt(c.z_value, 3)}</td>
               <td className={`px-4 py-2 text-right tabular-nums ${
                 c.p_value < 0.05 ? "font-semibold text-white" : "text-gray-500 dark:text-neutral-500"
               }`}>

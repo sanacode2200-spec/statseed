@@ -6,6 +6,9 @@ from backend.schemas.regression import (
     LinearRegressionResult,
     LogisticRegressionRequest,
     LogisticRegressionResult,
+    MixedCoefficient,
+    MixedModelRequest,
+    MixedModelResult,
     OddsRatio,
     PoissonRegressionRequest,
     PoissonRegressionResult,
@@ -479,5 +482,188 @@ def _interpret_poisson(
 
     if n_excluded > 0:
         lines.append(f"欠損のため {n_excluded}件を除外し、{n_used}件で解析しました。")
+
+    return " ".join(lines)
+
+
+# ── 混合効果モデル（線形混合モデル・ランダム切片） ─────────────────────────────
+
+def _listwise_rows_with_group(outcome, predictors, group):
+    """目的変数・全説明変数・グループが揃っている行のみを返す。"""
+    y_list: list[float] = []
+    x_rows: list[list[float]] = []
+    g_list: list[str] = []
+    for i in range(len(outcome)):
+        y_i = outcome[i]
+        x_i = [p.values[i] for p in predictors]
+        g_i = group[i]
+        if y_i is None or g_i is None or any(v is None for v in x_i):
+            continue
+        y_list.append(float(y_i))
+        x_rows.append([float(v) for v in x_i])
+        g_list.append(str(g_i))
+    return y_list, x_rows, g_list
+
+
+def run_mixed_model(request: MixedModelRequest) -> MixedModelResult:
+    """ランダム切片付き線形混合モデル（LMM）。
+
+    患者IDなどのグループ単位の繰り返し測定・クラスタリングを調整したうえで、
+    固定効果（説明変数）の影響を推定する。計算は statsmodels.MixedLM を直接利用し、
+    自前実装は行わない（REML推定、固定効果はWald z検定）。
+    欠損は行単位（リストワイズ）で除外する。
+    """
+    import numpy as np
+    import statsmodels.api as sm
+
+    n_total = len(request.outcome)
+    k = len(request.predictors)
+
+    y_list, x_rows, g_list = _listwise_rows_with_group(
+        request.outcome, request.predictors, request.group
+    )
+    n_used = len(y_list)
+    n_excluded = n_total - n_used
+
+    group_counts: dict[str, int] = {}
+    for g in g_list:
+        group_counts[g] = group_counts.get(g, 0) + 1
+    n_groups = len(group_counts)
+
+    if n_groups < 3:
+        raise ValueError(
+            f"グループ「{request.group_name}」の数({n_groups}個)が不足しています。"
+            f"ランダム切片を推定するには少なくとも3グループ必要です。"
+        )
+    if max(group_counts.values()) <= 1:
+        raise ValueError(
+            f"すべてのグループで観測が1件のみです。ランダム切片を推定するには、"
+            f"いずれかのグループに2件以上の観測が必要です。"
+        )
+    if n_used < k + 3:
+        raise ValueError(
+            f"有効データ数({n_used}件)が説明変数の数({k}個)に対して不足しています。"
+            f"少なくとも{k + 3}件必要です。"
+        )
+
+    y = np.asarray(y_list, dtype=float)
+    x = np.asarray(x_rows, dtype=float)
+
+    for j, p in enumerate(request.predictors):
+        if float(np.ptp(x[:, j])) == 0.0:
+            raise ValueError(f"説明変数「{p.name}」の値がすべて同じため回帰できません")
+
+    design = sm.add_constant(x, has_constant="add")
+    try:
+        model = sm.MixedLM(y, design, groups=g_list)
+        fit = model.fit(reml=True)
+    except Exception:
+        raise ValueError(
+            "混合モデルが収束しませんでした。説明変数を減らすか、"
+            "グループ・データを確認してください。"
+        )
+
+    n_fe = design.shape[1]
+    fe_params = np.asarray(fit.fe_params, dtype=float)
+    fe_bse = np.asarray(fit.bse_fe, dtype=float)
+    if not fit.converged or not (
+        np.all(np.isfinite(fe_params)) and np.all(np.isfinite(fe_bse))
+    ):
+        raise ValueError(
+            "混合モデルが収束しませんでした。説明変数を減らすか、"
+            "グループ・データを確認してください。"
+        )
+
+    conf = fit.conf_int(0.05)
+    names = [_INTERCEPT_LABEL] + [p.name for p in request.predictors]
+
+    coefficients: list[MixedCoefficient] = []
+    for idx, name in enumerate(names):
+        coefficients.append(
+            MixedCoefficient(
+                name=name,
+                coef=float(fe_params[idx]),
+                std_err=float(fe_bse[idx]),
+                z_value=float(fit.tvalues[idx]),
+                p_value=float(fit.pvalues[idx]),
+                ci95_low=float(conf[idx][0]),
+                ci95_high=float(conf[idx][1]),
+            )
+        )
+
+    group_var = float(fit.cov_re[0][0])
+    resid_var = float(fit.scale)
+    icc = group_var / (group_var + resid_var) if (group_var + resid_var) > 0 else 0.0
+
+    interpretation = _interpret_mixed(
+        request, coefficients, n_used, n_excluded, n_groups, group_var, resid_var, icc
+    )
+
+    return MixedModelResult(
+        outcome_name=request.outcome_name,
+        group_name=request.group_name,
+        coefficients=coefficients,
+        n_total=n_total,
+        n_used=n_used,
+        n_excluded=n_excluded,
+        n_groups=n_groups,
+        group_var=group_var,
+        resid_var=resid_var,
+        icc=icc,
+        log_likelihood=float(fit.llf),
+        converged=bool(fit.converged),
+        interpretation=interpretation,
+    )
+
+
+def _interpret_mixed(
+    request: MixedModelRequest,
+    coefficients: list[MixedCoefficient],
+    n_used: int,
+    n_excluded: int,
+    n_groups: int,
+    group_var: float,
+    resid_var: float,
+    icc: float,
+) -> str:
+    lines: list[str] = []
+    k = len(request.predictors)
+    if k == 1:
+        lines.append(
+            f"{request.outcome_name}を「{request.predictors[0].name}」で予測し、"
+            f"「{request.group_name}」単位の繰り返し測定・クラスタリングを"
+            f"ランダム切片で調整した混合効果モデルです。"
+        )
+    else:
+        lines.append(
+            f"{request.outcome_name}を{k}個の説明変数で予測し、"
+            f"「{request.group_name}」単位の繰り返し測定・クラスタリングを"
+            f"ランダム切片で調整した混合効果モデルです。"
+            f"各固定効果は他の変数を一定としたときの独立した影響を表します。"
+        )
+
+    lines.append(
+        f"{request.group_name}間のばらつき（群間分散）= {group_var:.3g}、"
+        f"残差分散 = {resid_var:.3g}、群内相関係数(ICC) = {icc:.3f}。"
+        f"ICCは{request.outcome_name}の全体のばらつきのうち"
+        f"{request.group_name}間の違いで説明できる割合を表します。"
+    )
+
+    sig = [c for c in coefficients if c.name != _INTERCEPT_LABEL and c.p_value < 0.05]
+    if sig:
+        parts = []
+        for c in sig:
+            direction = "増える" if c.coef > 0 else "減る"
+            parts.append(
+                f"「{c.name}」が1増えると{request.outcome_name}は平均 "
+                f"{abs(c.coef):.3g} {direction}（p = {_fmt_p(c.p_value)}）"
+            )
+        lines.append("有意な固定効果: " + "、".join(parts) + "。")
+    else:
+        lines.append("個々の固定効果で統計的に有意なものはありませんでした。")
+
+    lines.append(f"{n_groups}個の{request.group_name}、{n_used}件のデータで解析しました。")
+    if n_excluded > 0:
+        lines.append(f"欠損のため {n_excluded}件を除外しました。")
 
     return " ".join(lines)

@@ -26,6 +26,14 @@ export function numericAnalysisColumns(columns: ColumnInfo[]): ColumnInfo[] {
   return analysisColumns(columns).filter((c) => c.values.length > 0);
 }
 
+/** 患者IDなどクラスタリング単位の候補列（ID・カテゴリ・順序尺度） */
+export function groupColumns(columns: ColumnInfo[]): ColumnInfo[] {
+  return columns.filter((c) => {
+    const role = columnRole(c);
+    return role === "id" || role === "categorical" || role === "ordinal";
+  });
+}
+
 export function findColumn(columns: ColumnInfo[], name: string): ColumnInfo | undefined {
   return columns.find((c) => c.name === name);
 }

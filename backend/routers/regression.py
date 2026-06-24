@@ -5,12 +5,15 @@ from backend.schemas.regression import (
     LinearRegressionResult,
     LogisticRegressionRequest,
     LogisticRegressionResult,
+    MixedModelRequest,
+    MixedModelResult,
     PoissonRegressionRequest,
     PoissonRegressionResult,
 )
 from backend.services.stats.regression import (
     run_linear_regression,
     run_logistic_regression,
+    run_mixed_model,
     run_poisson_regression,
 )
 
@@ -43,6 +46,16 @@ def logistic(request: LogisticRegressionRequest) -> LogisticRegressionResult:
 def poisson(request: PoissonRegressionRequest) -> PoissonRegressionResult:
     try:
         return run_poisson_regression(request)
+    except ImportError:
+        raise HTTPException(status_code=503, detail=_DEP_ERROR)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.post("/mixed", response_model=MixedModelResult)
+def mixed(request: MixedModelRequest) -> MixedModelResult:
+    try:
+        return run_mixed_model(request)
     except ImportError:
         raise HTTPException(status_code=503, detail=_DEP_ERROR)
     except ValueError as e:

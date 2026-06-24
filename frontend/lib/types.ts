@@ -331,6 +331,40 @@ export interface PoissonRegressionResult {
   interpretation: string;
 }
 
+export interface MixedModelRequest {
+  outcome_name?: string;
+  outcome: (number | null)[];
+  predictors: RegressionPredictor[];
+  group_name?: string;
+  group: (string | null)[];
+}
+
+export interface MixedCoefficient {
+  name: string;
+  coef: number;
+  std_err: number;
+  z_value: number;
+  p_value: number;
+  ci95_low: number;
+  ci95_high: number;
+}
+
+export interface MixedModelResult {
+  outcome_name: string;
+  group_name: string;
+  coefficients: MixedCoefficient[];
+  n_total: number;
+  n_used: number;
+  n_excluded: number;
+  n_groups: number;
+  group_var: number;
+  resid_var: number;
+  icc: number;
+  log_likelihood: number;
+  converged: boolean;
+  interpretation: string;
+}
+
 // --- 反復測定 ANOVA ---
 
 export interface RepeatedCondition {

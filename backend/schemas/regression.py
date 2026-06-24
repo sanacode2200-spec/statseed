@@ -150,3 +150,60 @@ class PoissonRegressionResult(BaseModel):
     lr_pvalue: float  # 尤度比検定
     deviance: float
     interpretation: str
+
+
+# ── 混合効果モデル（線形混合モデル・ランダム切片） ─────────────────────────────
+
+class MixedModelRequest(BaseModel):
+    outcome_name: str = Field(default="目的変数", min_length=1, max_length=80)
+    outcome: list[FiniteFloat | None] = Field(min_length=3)
+    predictors: list[Predictor] = Field(min_length=1, max_length=20)
+    group_name: str = Field(default="グループ", min_length=1, max_length=80)
+    # 患者IDなどクラスタリングの単位（ランダム切片）
+    group: list[str | None] = Field(min_length=3)
+
+    @model_validator(mode="after")
+    def check_request(self) -> "MixedModelRequest":
+        n = len(self.outcome)
+        if len(self.group) != n:
+            raise ValueError(
+                f"グループ「{self.group_name}」のデータ数({len(self.group)}件)が"
+                f"目的変数({n}件)と一致しません"
+            )
+        names: list[str] = []
+        for p in self.predictors:
+            if len(p.values) != n:
+                raise ValueError(
+                    f"説明変数「{p.name}」のデータ数({len(p.values)}件)が"
+                    f"目的変数({n}件)と一致しません"
+                )
+            names.append(p.name)
+        if len(set(names)) != len(names):
+            raise ValueError("説明変数名が重複しています")
+        return self
+
+
+class MixedCoefficient(BaseModel):
+    name: str
+    coef: float
+    std_err: float
+    z_value: float
+    p_value: float
+    ci95_low: float
+    ci95_high: float
+
+
+class MixedModelResult(BaseModel):
+    outcome_name: str
+    group_name: str
+    coefficients: list[MixedCoefficient]
+    n_total: int
+    n_used: int
+    n_excluded: int
+    n_groups: int
+    group_var: float  # ランダム切片の分散（群間分散）
+    resid_var: float  # 残差分散
+    icc: float  # 群内相関係数 = group_var / (group_var + resid_var)
+    log_likelihood: float
+    converged: bool
+    interpretation: str
