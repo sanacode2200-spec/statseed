@@ -201,11 +201,12 @@ export default function Table1Page() {
                     )}
                   </label>
                   {columnRole(c) === "continuous" && c.name !== csvGroupCol && (
-                    <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden shrink-0">
+                    <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden shrink-0" role="group" aria-label={`${c.name} の表示形式`}>
                       {([["mean_sd", "平均±SD"], ["median_iqr", "中央値(IQR)"]] as const).map(([val, label]) => (
                         <button
                           key={val}
                           type="button"
+                          aria-pressed={(csvDisplayByCol[c.name] ?? "mean_sd") === val}
                           onClick={() => setCsvDisplayByCol((prev) => ({ ...prev, [c.name]: val }))}
                           className={`px-3 py-1 text-[13px] transition-colors ${
                             (csvDisplayByCol[c.name] ?? "mean_sd") === val
@@ -224,10 +225,11 @@ export default function Table1Page() {
           </Card>
 
           <Card className="p-4">
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
+            <label htmlFor="table1-group-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
               群分け（任意・p値を計算）
             </label>
             <select
+              id="table1-group-col"
               value={csvGroupCol}
               onChange={(e) => setCsvGroupCol(e.target.value)}
               className={inputCls + " w-full sm:w-64"}
@@ -245,19 +247,21 @@ export default function Table1Page() {
         {vars.map((v, idx) => (
           <Card key={v.id} className="p-4">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="text-[13px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</span>
+              <label htmlFor={`table1-var-name-${v.id}`} className="text-[13px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</label>
               <input
+                id={`table1-var-name-${v.id}`}
                 className={inputCls + " flex-1"}
                 placeholder="変数名"
                 value={v.name}
                 onChange={(e) => updateVar(v.id, { name: e.target.value })}
               />
               {/* 型切り替え */}
-              <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden shrink-0">
+              <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden shrink-0" role="group" aria-label="変数の型">
                 {(["continuous", "categorical"] as const).map((t) => (
                   <button
                     key={t}
                     onClick={() => updateVar(v.id, { type: t })}
+                    aria-pressed={v.type === t}
                     className={`px-3 py-1 text-[13px] transition-colors ${
                       v.type === t
                         ? "bg-white text-black"
@@ -270,11 +274,12 @@ export default function Table1Page() {
               </div>
               {/* 表示形式（連続のみ） */}
               {v.type === "continuous" && (
-                <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden shrink-0">
+                <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden shrink-0" role="group" aria-label="表示形式">
                   {([["mean_sd", "平均±SD"], ["median_iqr", "中央値(IQR)"]] as const).map(([val, label]) => (
                     <button
                       key={val}
                       onClick={() => updateVar(v.id, { display: val })}
+                      aria-pressed={v.display === val}
                       className={`px-3 py-1 text-[13px] transition-colors ${
                         v.display === val
                           ? "bg-white text-black"
@@ -291,12 +296,14 @@ export default function Table1Page() {
                   onClick={() => removeVar(v.id)}
                   className="text-gray-300 dark:text-neutral-700 hover:text-red-400 transition-colors text-[22px] leading-none shrink-0"
                   title="削除"
+                  aria-label={`変数${idx + 1}を削除`}
                 >
                   ×
                 </button>
               )}
             </div>
             <textarea
+              aria-label={`変数${idx + 1}の値`}
               className={textareaCls}
               rows={3}
               placeholder={v.type === "continuous" ? "数値をスペース・改行・カンマで区切って入力（欠損: NA, -）" : "カテゴリ値を1行1件（またはカンマ区切り）で入力"}
@@ -327,6 +334,7 @@ export default function Table1Page() {
             </label>
             {useGroup && (
               <input
+                aria-label="群変数名"
                 className={inputCls + " w-32"}
                 placeholder="群変数名"
                 value={groupName}
@@ -336,6 +344,7 @@ export default function Table1Page() {
           </div>
           {useGroup && (
             <textarea
+              aria-label="群ラベル"
               className={textareaCls}
               rows={3}
               placeholder="群ラベルを変数と同じ順番で入力（例: A, A, B, B, ...）"

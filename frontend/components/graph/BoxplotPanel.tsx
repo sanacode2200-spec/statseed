@@ -71,8 +71,9 @@ export function BoxplotPanel({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
+        <label htmlFor="boxplot-y-label" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
         <input
+          id="boxplot-y-label"
           type="text"
           value={bpYLabel}
           onChange={(e) => setBpYLabel(e.target.value)}
@@ -83,16 +84,16 @@ export function BoxplotPanel({
       {csvMode ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
-            <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
+            <label htmlFor="boxplot-value-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
+            <select id="boxplot-value-col" value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
               {csvCont.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
-            <select value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
+            <label htmlFor="boxplot-group-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
+            <select id="boxplot-group-col" value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
               {csvCat.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
               ))}
@@ -106,6 +107,7 @@ export function BoxplotPanel({
               <div className="flex gap-1 mb-1">
                 <input
                   type="text"
+                  aria-label={`群${i + 1}の名前`}
                   value={bpGroupNames[i]}
                   onChange={(e) => updateBpName(i, e.target.value)}
                   className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[16px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
@@ -114,6 +116,7 @@ export function BoxplotPanel({
                   <button
                     type="button"
                     onClick={() => removeBpGroup(i)}
+                    aria-label={`群${i + 1}を削除`}
                     className="text-[14px] text-red-400 dark:text-red-500 hover:text-red-600"
                   >
                     ✕
@@ -121,6 +124,7 @@ export function BoxplotPanel({
                 )}
               </div>
               <textarea
+                aria-label={`群${i + 1}の値`}
                 value={text}
                 onChange={(e) => updateBpGroup(i, e.target.value)}
                 rows={5}
@@ -157,6 +161,7 @@ export function BoxplotPanel({
               <button
                 key={value}
                 type="button"
+                aria-pressed={bpDisplayStyle === value}
                 onClick={() => setBpDisplayStyle(value)}
                 className={`rounded-md border px-3 py-2 text-left transition-colors ${
                   bpDisplayStyle === value
@@ -173,12 +178,13 @@ export function BoxplotPanel({
 
         <div className="flex flex-wrap items-end gap-4">
           <div>
-            <label className="block text-[13px] text-gray-400 dark:text-neutral-600 mb-1">配色</label>
-            <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
+            <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-1">配色</p>
+            <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden" role="group" aria-label="配色">
               {([["color", "カラー"], ["monochrome", "白黒"]] as const).map(([value, label]) => (
                 <button
                   key={value}
                   type="button"
+                  aria-pressed={bpColorMode === value}
                   onClick={() => setBpColorMode(value)}
                   className={`px-3 py-1.5 text-[14px] transition-colors ${
                     bpColorMode === value
@@ -201,13 +207,13 @@ export function BoxplotPanel({
           </label>
           <div className="flex flex-wrap gap-2">
             <div>
-              <label className="block text-[13px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最小</label>
-              <input type="number" value={bpYMin} onChange={(e) => setBpYMin(e.target.value)}
+              <label htmlFor="boxplot-y-min" className="block text-[13px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最小</label>
+              <input id="boxplot-y-min" type="number" value={bpYMin} onChange={(e) => setBpYMin(e.target.value)}
                 className={`${inputCls} w-24`} placeholder="自動" step="any" />
             </div>
             <div>
-              <label className="block text-[13px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最大</label>
-              <input type="number" value={bpYMax} onChange={(e) => setBpYMax(e.target.value)}
+              <label htmlFor="boxplot-y-max" className="block text-[13px] text-gray-400 dark:text-neutral-600 mb-1">Y軸 最大</label>
+              <input id="boxplot-y-max" type="number" value={bpYMax} onChange={(e) => setBpYMax(e.target.value)}
                 className={`${inputCls} w-24`} placeholder="自動" step="any" />
             </div>
           </div>
@@ -226,7 +232,7 @@ export function BoxplotPanel({
           {bpShowComparison && (
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <span className="text-[13px] text-gray-400 dark:text-neutral-600">データの扱い：</span>
-              <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
+              <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden" role="group" aria-label="データの扱い">
                 {([
                   ["parametric", "平均値を比較", "Welch / ANOVA + Tukey"],
                   ["nonparametric", "順位を比較", "Mann–Whitney / Kruskal–Wallis + Dunn-Holm"],
@@ -235,6 +241,7 @@ export function BoxplotPanel({
                     key={value}
                     type="button"
                     title={detail}
+                    aria-pressed={bpComparisonMethod === value}
                     onClick={() => setBpComparisonMethod(value)}
                     className={`px-3 py-1.5 text-[14px] transition-colors ${
                       bpComparisonMethod === value

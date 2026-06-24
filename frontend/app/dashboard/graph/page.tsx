@@ -785,12 +785,13 @@ export default function GraphPage() {
         <form onSubmit={handleDraw} className="space-y-4">
           {/* グラフ種別 */}
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">グラフの種類</label>
-            <div className="flex flex-wrap gap-1.5">
+            <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">グラフの種類</p>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-label="グラフの種類">
               {CHART_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   type="button"
+                  aria-pressed={chartType === opt.value}
                   onClick={() => {
                     setChartType(opt.value);
                     setFigure(null);
@@ -815,8 +816,9 @@ export default function GraphPage() {
 
           {/* タイトル */}
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">タイトル（任意）</label>
+            <label htmlFor="graph-title" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">タイトル（任意）</label>
             <input
+              id="graph-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -1110,12 +1112,13 @@ export default function GraphPage() {
                 <EditSection title="出力・エクスポート">
                   {/* フォントプリセット */}
                   <div>
-                    <label className="block text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">フォント</label>
-                    <div className="flex flex-wrap gap-1.5">
+                    <p className="text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">フォント</p>
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label="フォント">
                       {(["論文標準", "日本語対応", "ポスター", "カスタム"] as const).map((p) => (
                         <button
                           key={p}
                           type="button"
+                          aria-pressed={fontPreset === p}
                           onClick={() => setFontPreset(p)}
                           className={toggleBtn(fontPreset === p)}
                           style={fontPreset === p ? { backgroundColor: "#56B4E9" } : undefined}
@@ -1130,6 +1133,7 @@ export default function GraphPage() {
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
+                        aria-label="フォント名"
                         value={customFamily}
                         onChange={(e) => setCustomFamily(e.target.value)}
                         placeholder="フォント名（例：Helvetica）"
@@ -1137,6 +1141,7 @@ export default function GraphPage() {
                       />
                       <input
                         type="number"
+                        aria-label="フォントサイズ"
                         value={customSize}
                         onChange={(e) => setCustomSize(e.target.value)}
                         min={6}
@@ -1150,14 +1155,14 @@ export default function GraphPage() {
 
                   {/* 用途プリセット */}
                   <div>
-                    <label className="block text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">用途</label>
-                    <div className="flex flex-wrap gap-1.5">
+                    <p className="text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">用途</p>
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label="用途">
                       {([
                         ["single", "論文1段組"],
                         ["double", "論文2段組"],
                         ["slide", "16:9スライド"],
                       ] as const).map(([value, label]) => (
-                        <button key={value} type="button" onClick={() => setOutputPreset(value)} className={toggleBtn(outputPreset === value)}>
+                        <button key={value} type="button" aria-pressed={outputPreset === value} onClick={() => setOutputPreset(value)} className={toggleBtn(outputPreset === value)}>
                           {label}
                         </button>
                       ))}
@@ -1166,12 +1171,13 @@ export default function GraphPage() {
 
                   {/* 形式 */}
                   <div>
-                    <label className="block text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">形式</label>
-                    <div className="flex flex-wrap gap-1.5">
+                    <p className="text-[13px] font-medium text-gray-500 dark:text-neutral-500 mb-1">形式</p>
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label="形式">
                       {(["png", "svg", "pdf"] as const).map((fmt) => (
                         <button
                           key={fmt}
                           type="button"
+                          aria-pressed={exportFormat === fmt}
                           onClick={() => setExportFormat(fmt)}
                           className={toggleBtn(exportFormat === fmt)}
                           style={exportFormat === fmt ? { backgroundColor: "#009E73" } : undefined}

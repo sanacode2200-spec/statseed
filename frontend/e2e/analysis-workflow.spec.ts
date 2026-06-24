@@ -21,6 +21,23 @@ test("手入力から記述統計を実行できる", async ({ page }) => {
   await expect(page.getByText("解釈", { exact: true })).toBeVisible();
 });
 
+test("データ読み込みのドロップゾーンをキーボードで操作できる", async ({ page }) => {
+  await page.goto("/dashboard/data");
+
+  const dropzone = page.getByRole("button", {
+    name: "クリックまたはドラッグ＆ドロップでCSV・Excelファイルを選択",
+  });
+  await expect(dropzone).toBeVisible();
+
+  const [chooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    dropzone.focus().then(() => page.keyboard.press("Enter")),
+  ]);
+  await chooser.setFiles(sampleCsv);
+
+  await expect(page.getByRole("heading", { name: "01_rehab_pre_post.csv" })).toBeVisible();
+});
+
 test("CSV読込から対応あり検定を実行しグラフへ引き継げる", async ({ page }) => {
   await page.goto("/dashboard/data");
   await page.locator('input[type="file"]').setInputFiles(sampleCsv);
@@ -29,7 +46,7 @@ test("CSV読込から対応あり検定を実行しグラフへ引き継げる",
   await expect(page.getByText("このタブ内だけに保存中")).toBeVisible();
   await expect(page.getByText("個人識別情報を含む可能性があります")).toBeVisible();
 
-  await page.getByRole("link", { name: "Tests" }).click();
+  await page.getByRole("link", { name: "群の差・関連" }).click();
   await selectNearLabel(page, "検定の種類").selectOption("ttest-paired");
   await selectNearLabel(page, "介入前の列").selectOption("FIM_介入前");
   await selectNearLabel(page, "介入後の列").selectOption("FIM_介入後");

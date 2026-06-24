@@ -43,23 +43,23 @@ export function ScatterPanel({
       {csvMode ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸の列</label>
-            <select value={csvScatterXCol} onChange={(e) => setCsvScatterXCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
+            <label htmlFor="scatter-x-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸の列</label>
+            <select id="scatter-x-col" value={csvScatterXCol} onChange={(e) => setCsvScatterXCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
               {csvCont.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
               ))}
             </select>
-            <input type="text" value={scXLabel} onChange={(e) => setScXLabel(e.target.value)}
+            <input type="text" aria-label="X軸ラベル" value={scXLabel} onChange={(e) => setScXLabel(e.target.value)}
               placeholder="X軸ラベル" className={`${inputCls} w-full`} />
           </div>
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸の列</label>
-            <select value={csvScatterYCol} onChange={(e) => setCsvScatterYCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
+            <label htmlFor="scatter-y-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸の列</label>
+            <select id="scatter-y-col" value={csvScatterYCol} onChange={(e) => setCsvScatterYCol(e.target.value)} className={`${inputCls} w-full mb-1.5`}>
               {csvCont.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
               ))}
             </select>
-            <input type="text" value={scYLabel} onChange={(e) => setScYLabel(e.target.value)}
+            <input type="text" aria-label="Y軸ラベル" value={scYLabel} onChange={(e) => setScYLabel(e.target.value)}
               placeholder="Y軸ラベル" className={`${inputCls} w-full`} />
           </div>
         </div>
@@ -72,12 +72,14 @@ export function ScatterPanel({
             <div key={label}>
               <input
                 type="text"
+                aria-label={`${label}軸ラベル`}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={`${label}軸ラベル`}
                 className={`${inputCls} w-full mb-1.5`}
               />
               <textarea
+                aria-label={`${label}軸の値`}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={6}

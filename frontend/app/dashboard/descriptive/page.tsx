@@ -120,6 +120,7 @@ export default function DescriptivePage() {
             key={opt.value}
             type="button"
             onClick={() => switchMode(opt.value)}
+            aria-pressed={mode === opt.value}
             className={`px-3 py-1 rounded-md text-[14px] font-medium border transition-colors ${
               mode === opt.value
                 ? "text-white border-transparent"
@@ -148,7 +149,7 @@ export default function DescriptivePage() {
 
           {inputMode === "csv" && dataset ? (
             <div>
-              <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+              <label htmlFor="descriptive-csv-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                 {mode === "continuous" ? "連続変数の列" : "カテゴリ変数の列"}
               </label>
               {csvCols.length === 0 ? (
@@ -157,6 +158,7 @@ export default function DescriptivePage() {
                 </p>
               ) : (
                 <select
+                  id="descriptive-csv-col"
                   value={csvColName}
                   onChange={(e) => setCsvColName(e.target.value)}
                   className={inputCls}
@@ -172,8 +174,9 @@ export default function DescriptivePage() {
           ) : (
             <>
               <div>
-                <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
+                <label htmlFor="descriptive-variable-name" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
                 <input
+                  id="descriptive-variable-name"
                   type="text"
                   value={variableName}
                   onChange={(e) => setVariableName(e.target.value)}
@@ -183,7 +186,7 @@ export default function DescriptivePage() {
               </div>
 
               <div>
-                <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
+                <label htmlFor="descriptive-raw-text" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
                 {mode === "continuous" ? (
                   <p className="text-[14px] text-gray-400 dark:text-neutral-600 mb-1.5">
                     数値を改行・スペース・カンマのいずれかで区切って入力してください。欠損値はNA、- で表せます。
@@ -194,6 +197,7 @@ export default function DescriptivePage() {
                   </p>
                 )}
                 <textarea
+                  id="descriptive-raw-text"
                   value={rawText}
                   onChange={(e) => setRawText(e.target.value)}
                   rows={8}

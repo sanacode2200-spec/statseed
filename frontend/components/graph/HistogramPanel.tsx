@@ -29,8 +29,9 @@ export function HistogramPanel({
   return (
     <div className="space-y-3">
       <div>
-        <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
+        <label htmlFor="hist-x-label" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">X軸ラベル</label>
         <input
+          id="hist-x-label"
           type="text"
           value={histXLabel}
           onChange={(e) => setHistXLabel(e.target.value)}
@@ -40,8 +41,8 @@ export function HistogramPanel({
       </div>
       {csvMode ? (
         <div>
-          <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データの列</label>
-          <select value={csvHistCol} onChange={(e) => setCsvHistCol(e.target.value)} className={`${inputCls} w-full`}>
+          <label htmlFor="hist-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データの列</label>
+          <select id="hist-col" value={csvHistCol} onChange={(e) => setCsvHistCol(e.target.value)} className={`${inputCls} w-full`}>
             {csvCont.map((c) => (
               <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
             ))}
@@ -49,8 +50,9 @@ export function HistogramPanel({
         </div>
       ) : (
         <div>
-          <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
+          <label htmlFor="hist-text" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">データ</label>
           <textarea
+            id="hist-text"
             value={histText}
             onChange={(e) => setHistText(e.target.value)}
             rows={7}

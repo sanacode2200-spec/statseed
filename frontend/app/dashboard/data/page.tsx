@@ -147,17 +147,26 @@ export default function DataPage() {
 
       {/* Drop zone */}
       <div
+        role="button"
+        tabIndex={0}
+        aria-label="クリックまたはドラッグ＆ドロップでCSV・Excelファイルを選択"
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
         className={`mb-5 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed cursor-pointer transition-colors px-6 py-10 ${
           dragging
             ? "border-white/30 bg-neutral-900"
             : "border-gray-200 dark:border-neutral-800 bg-white dark:bg-[#111] hover:border-gray-300 dark:hover:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-950"
         }`}
       >
-        <div className="text-3xl">📂</div>
+        <div className="text-3xl" aria-hidden="true">📂</div>
         <p className="text-[16px] font-medium text-gray-500 dark:text-neutral-500">
           クリックまたはドラッグ＆ドロップでファイルを選択
         </p>
@@ -167,6 +176,8 @@ export default function DataPage() {
           type="file"
           accept={ACCEPT}
           onChange={onInputChange}
+          tabIndex={-1}
+          aria-hidden="true"
           className="sr-only"
         />
       </div>

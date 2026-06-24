@@ -102,12 +102,12 @@ export default function RepeatedAnovaPage() {
       <Card className="p-4 mb-3">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">測定値の名前</label>
-            <input className={inputCls} value={variableName} onChange={(e) => setVariableName(e.target.value)} placeholder="例：握力" />
+            <label htmlFor="repeated-variable-name" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">測定値の名前</label>
+            <input id="repeated-variable-name" className={inputCls} value={variableName} onChange={(e) => setVariableName(e.target.value)} placeholder="例：握力" />
           </div>
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">条件の呼び名</label>
-            <input className={inputCls} value={conditionLabel} onChange={(e) => setConditionLabel(e.target.value)} placeholder="例：時点" />
+            <label htmlFor="repeated-condition-label" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">条件の呼び名</label>
+            <input id="repeated-condition-label" className={inputCls} value={conditionLabel} onChange={(e) => setConditionLabel(e.target.value)} placeholder="例：時点" />
           </div>
         </div>
       </Card>
@@ -139,8 +139,9 @@ export default function RepeatedAnovaPage() {
           {conds.map((c, idx) => (
             <Card key={c.id} className="p-4">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="text-[13px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</span>
+                <label htmlFor={`repeated-cond-name-${c.id}`} className="text-[13px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</label>
                 <input
+                  id={`repeated-cond-name-${c.id}`}
                   className={inputCls + " flex-1 min-w-[8rem]"}
                   placeholder={`条件${idx + 1}の名前（例：${idx === 0 ? "前" : idx === 1 ? "中" : "後"}）`}
                   value={c.name}
@@ -151,12 +152,14 @@ export default function RepeatedAnovaPage() {
                     onClick={() => removeCond(c.id)}
                     className="text-gray-300 dark:text-neutral-700 hover:text-red-400 transition-colors text-[22px] leading-none shrink-0"
                     title="削除"
+                    aria-label={`条件${idx + 1}を削除`}
                   >
                     ×
                   </button>
                 )}
               </div>
               <textarea
+                aria-label={`条件${idx + 1}の測定値`}
                 className={textareaCls}
                 rows={3}
                 placeholder="この条件の測定値を、対象の順番をそろえて1行1件で入力"

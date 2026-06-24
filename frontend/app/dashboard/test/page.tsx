@@ -63,11 +63,13 @@ const TEST_OPTIONS: { value: TestType; label: string; category: string }[] = [
 ];
 
 function ColSelect({
+  id,
   label,
   columns,
   value,
   onChange,
 }: {
+  id: string;
   label: string;
   columns: ColumnInfo[];
   value: string;
@@ -75,11 +77,11 @@ function ColSelect({
 }) {
   return (
     <div>
-      <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">{label}</label>
+      <label htmlFor={id} className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">{label}</label>
       {columns.length === 0 ? (
         <p className="text-[14px] text-orange-500 dark:text-orange-400">該当する列が見つかりません。</p>
       ) : (
-        <select value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
+        <select id={id} value={value} onChange={(e) => onChange(e.target.value)} className={inputCls}>
           {columns.map((c) => (
             <option key={c.name} value={c.name}>{c.name}</option>
           ))}
@@ -413,8 +415,9 @@ export default function TestPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* 検定選択 */}
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">検定の種類</label>
+            <label htmlFor="test-type" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">検定の種類</label>
             <select
+              id="test-type"
               value={testType}
               onChange={(e) => {
                 setTestType(e.target.value as TestType);
@@ -457,8 +460,9 @@ export default function TestPage() {
           {/* 変数名（テーブル系以外・手入力時のみ） */}
           {!isTable && !(inputMode === "csv" && dataset) && (
             <div>
-              <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
+              <label htmlFor="test-variable-name" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">変数名</label>
               <input
+                id="test-variable-name"
                 type="text"
                 value={variableName}
                 onChange={(e) => setVariableName(e.target.value)}
@@ -473,20 +477,20 @@ export default function TestPage() {
             inputMode === "csv" && dataset ? (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <ColSelect label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
-                  <ColSelect label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
+                  <ColSelect id="test-value-col" label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
+                  <ColSelect id="test-group-col" label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
                 </div>
                 {csvGroupOptions.length > 0 && (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群A</label>
-                      <select value={csvGroupA} onChange={(e) => setCsvGroupA(e.target.value)} className={inputCls}>
+                      <label htmlFor="test-group-a" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群A</label>
+                      <select id="test-group-a" value={csvGroupA} onChange={(e) => setCsvGroupA(e.target.value)} className={inputCls}>
                         {csvGroupOptions.map((g) => <option key={g} value={g}>{g}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群B</label>
-                      <select value={csvGroupB} onChange={(e) => setCsvGroupB(e.target.value)} className={inputCls}>
+                      <label htmlFor="test-group-b" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群B</label>
+                      <select id="test-group-b" value={csvGroupB} onChange={(e) => setCsvGroupB(e.target.value)} className={inputCls}>
                         {csvGroupOptions.map((g) => <option key={g} value={g}>{g}</option>)}
                       </select>
                     </div>
@@ -502,11 +506,13 @@ export default function TestPage() {
                   <div key={i}>
                     <input
                       type="text"
+                      aria-label={`群${i === 0 ? "A" : "B"}の名前`}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className={`${inputCls} mb-1.5`}
                     />
                     <textarea
+                      aria-label={`群${i === 0 ? "A" : "B"}の値`}
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       rows={6}
@@ -523,18 +529,19 @@ export default function TestPage() {
           {isPaired && (
             inputMode === "csv" && dataset ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <ColSelect label="介入前の列" columns={csvCont} value={csvBeforeCol} onChange={setCsvBeforeCol} />
-                <ColSelect label="介入後の列" columns={csvCont} value={csvAfterCol} onChange={setCsvAfterCol} />
+                <ColSelect id="test-before-col" label="介入前の列" columns={csvCont} value={csvBeforeCol} onChange={setCsvBeforeCol} />
+                <ColSelect id="test-after-col" label="介入後の列" columns={csvCont} value={csvAfterCol} onChange={setCsvAfterCol} />
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {[
-                  { label: "介入前", text: beforeText, setText: setBeforeText },
-                  { label: "介入後", text: afterText, setText: setAfterText },
-                ].map(({ label, text, setText }) => (
+                  { label: "介入前", id: "test-paired-before", text: beforeText, setText: setBeforeText },
+                  { label: "介入後", id: "test-paired-after", text: afterText, setText: setAfterText },
+                ].map(({ label, id, text, setText }) => (
                   <div key={label}>
-                    <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</p>
+                    <label htmlFor={id} className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">{label}</label>
                     <textarea
+                      id={id}
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       rows={6}
@@ -551,8 +558,8 @@ export default function TestPage() {
           {(isMultiGroup || isPosthoc) && (
             inputMode === "csv" && dataset ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <ColSelect label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
-                <ColSelect label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
+                <ColSelect id="test-value-col" label="値の列（連続変数）" columns={csvCont} value={csvValueCol} onChange={setCsvValueCol} />
+                <ColSelect id="test-group-col" label="群の列（カテゴリ変数）" columns={csvCat} value={csvGroupCol} onChange={setCsvGroupCol} />
                 {csvGroupOptions.length > 0 && (
                   <p className="col-span-2 text-[14px] text-gray-400 dark:text-neutral-600">
                     検出されたグループ: {csvGroupOptions.join(" / ")}
@@ -567,6 +574,7 @@ export default function TestPage() {
                     <div className="mb-1 flex flex-wrap gap-2">
                       <input
                         type="text"
+                        aria-label={`群${i + 1}の名前`}
                         value={multiGroupNames[i]}
                         onChange={(e) => updateMultiGroupName(i, e.target.value)}
                         className="w-28 rounded-md border border-gray-200 dark:border-neutral-800 px-3 py-1.5 text-[16px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700"
@@ -575,6 +583,7 @@ export default function TestPage() {
                         <button
                           type="button"
                           onClick={() => removeGroup(i)}
+                          aria-label={`群${i + 1}を削除`}
                           className="text-[14px] text-red-500 dark:text-red-400 hover:underline"
                         >
                           削除
@@ -582,6 +591,7 @@ export default function TestPage() {
                       )}
                     </div>
                     <textarea
+                      aria-label={`群${i + 1}の値`}
                       value={text}
                       onChange={(e) => updateMultiGroup(i, e.target.value)}
                       rows={4}
@@ -606,18 +616,19 @@ export default function TestPage() {
           {isTable && (
             inputMode === "csv" && dataset ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <ColSelect label="行変数（カテゴリ）" columns={csvCat} value={csvRowCol} onChange={setCsvRowCol} />
-                <ColSelect label="列変数（カテゴリ）" columns={csvCat} value={csvColCol} onChange={setCsvColCol} />
+                <ColSelect id="test-row-col" label="行変数（カテゴリ）" columns={csvCat} value={csvRowCol} onChange={setCsvRowCol} />
+                <ColSelect id="test-col-col" label="列変数（カテゴリ）" columns={csvCat} value={csvColCol} onChange={setCsvColCol} />
               </div>
             ) : (
               <div>
-                <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
+                <label htmlFor="test-cross-table" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">
                   クロス集計表
                 </label>
                 <p className="text-[14px] text-gray-400 dark:text-neutral-600 mb-1.5">
                   行を改行で、列をスペース/タブ/カンマで区切って入力してください。
                 </p>
                 <textarea
+                  id="test-cross-table"
                   value={tableText}
                   onChange={(e) => setTableText(e.target.value)}
                   rows={5}
@@ -632,8 +643,8 @@ export default function TestPage() {
           {isCorrelation && (
             inputMode === "csv" && dataset ? (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <ColSelect label="X列（連続変数）" columns={csvCont} value={csvXCol} onChange={setCsvXCol} />
-                <ColSelect label="Y列（連続変数）" columns={csvCont} value={csvYCol} onChange={setCsvYCol} />
+                <ColSelect id="test-x-col" label="X列（連続変数）" columns={csvCont} value={csvXCol} onChange={setCsvXCol} />
+                <ColSelect id="test-y-col" label="Y列（連続変数）" columns={csvCont} value={csvYCol} onChange={setCsvYCol} />
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -644,12 +655,14 @@ export default function TestPage() {
                   <div key={i}>
                     <input
                       type="text"
+                      aria-label={i === 0 ? "X変数名" : "Y変数名"}
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       className={`${inputCls} mb-1.5`}
                       placeholder={i === 0 ? "X 変数名" : "Y 変数名"}
                     />
                     <textarea
+                      aria-label={i === 0 ? "X変数の値" : "Y変数の値"}
                       value={text}
                       onChange={(e) => setText(e.target.value)}
                       rows={6}

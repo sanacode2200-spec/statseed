@@ -57,12 +57,13 @@ interface Props {
   setEditDirectMode: (v: boolean) => void;
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
       onClick={() => onChange(!checked)}
       className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full transition-colors ${
         checked ? "bg-black dark:bg-white" : "bg-gray-200 dark:bg-neutral-700"
@@ -110,7 +111,7 @@ export function GraphEditPanel({
       <div className="pb-2">
         <div className="flex items-center justify-between gap-2">
           <span className={`${labelCls} mb-0`}>グラフを直接編集</span>
-          <Toggle checked={editDirectMode} onChange={setEditDirectMode} />
+          <Toggle checked={editDirectMode} onChange={setEditDirectMode} label="グラフを直接編集" />
         </div>
         {editDirectMode && (
           <p className="mt-1 text-[12px] leading-snug text-gray-400 dark:text-neutral-600">
@@ -123,14 +124,15 @@ export function GraphEditPanel({
         {/* タイトル表示 */}
         <div className="flex items-center justify-between gap-2">
           <span className={`${labelCls} mb-0`}>タイトルを表示</span>
-          <Toggle checked={editShowTitle} onChange={setEditShowTitle} />
+          <Toggle checked={editShowTitle} onChange={setEditShowTitle} label="タイトルを表示" />
         </div>
 
         {/* タイトル */}
         {editShowTitle && (
           <div>
-            <label className={labelCls}>タイトル</label>
+            <label htmlFor="graphedit-title" className={labelCls}>タイトル</label>
             <input
+              id="graphedit-title"
               type="text"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
@@ -143,8 +145,9 @@ export function GraphEditPanel({
         {/* サブタイトル（スライド向け） */}
         {editShowTitle && (
           <div>
-            <label className={labelCls}>サブタイトル</label>
+            <label htmlFor="graphedit-subtitle" className={labelCls}>サブタイトル</label>
             <input
+              id="graphedit-subtitle"
               type="text"
               value={editSubtitle}
               onChange={(e) => setEditSubtitle(e.target.value)}
@@ -158,8 +161,9 @@ export function GraphEditPanel({
       <EditSection title="軸">
         {/* X軸ラベル */}
         <div>
-          <label className={labelCls}>X軸ラベル</label>
+          <label htmlFor="graphedit-x-label" className={labelCls}>X軸ラベル</label>
           <input
+            id="graphedit-x-label"
             type="text"
             value={editXLabel}
             onChange={(e) => setEditXLabel(e.target.value)}
@@ -170,8 +174,9 @@ export function GraphEditPanel({
 
         {/* Y軸ラベル */}
         <div>
-          <label className={labelCls}>Y軸ラベル</label>
+          <label htmlFor="graphedit-y-label" className={labelCls}>Y軸ラベル</label>
           <input
+            id="graphedit-y-label"
             type="text"
             value={editYLabel}
             onChange={(e) => setEditYLabel(e.target.value)}
@@ -183,8 +188,9 @@ export function GraphEditPanel({
         {/* 軸ラベルの文字サイズ */}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className={labelCls}>X軸ラベル文字サイズ</label>
+            <label htmlFor="graphedit-x-label-size" className={labelCls}>X軸ラベル文字サイズ</label>
             <input
+              id="graphedit-x-label-size"
               type="number"
               min="6"
               max="36"
@@ -195,8 +201,9 @@ export function GraphEditPanel({
             />
           </div>
           <div>
-            <label className={labelCls}>Y軸ラベル文字サイズ</label>
+            <label htmlFor="graphedit-y-label-size" className={labelCls}>Y軸ラベル文字サイズ</label>
             <input
+              id="graphedit-y-label-size"
               type="number"
               min="6"
               max="36"
@@ -211,8 +218,9 @@ export function GraphEditPanel({
         {/* 軸ラベルの位置（軸からの距離） */}
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className={labelCls}>X軸ラベル位置</label>
+            <label htmlFor="graphedit-x-label-standoff" className={labelCls}>X軸ラベル位置</label>
             <input
+              id="graphedit-x-label-standoff"
               type="number"
               min="0"
               max="100"
@@ -223,8 +231,9 @@ export function GraphEditPanel({
             />
           </div>
           <div>
-            <label className={labelCls}>Y軸ラベル位置</label>
+            <label htmlFor="graphedit-y-label-standoff" className={labelCls}>Y軸ラベル位置</label>
             <input
+              id="graphedit-y-label-standoff"
               type="number"
               min="0"
               max="100"
@@ -238,10 +247,11 @@ export function GraphEditPanel({
 
         {/* X軸範囲 */}
         <div>
-          <label className={labelCls}>X軸範囲</label>
+          <p className={labelCls}>X軸範囲</p>
           <div className={rangePairCls}>
             <input
               type="number"
+              aria-label="X軸の最小値"
               value={editXMin}
               onChange={(e) => setEditXMin(e.target.value)}
               className={`${inputCls} w-full`}
@@ -250,6 +260,7 @@ export function GraphEditPanel({
             <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">–</span>
             <input
               type="number"
+              aria-label="X軸の最大値"
               value={editXMax}
               onChange={(e) => setEditXMax(e.target.value)}
               className={`${inputCls} w-full`}
@@ -260,10 +271,11 @@ export function GraphEditPanel({
 
         {/* Y軸範囲 */}
         <div>
-          <label className={labelCls}>Y軸範囲</label>
+          <p className={labelCls}>Y軸範囲</p>
           <div className={rangePairCls}>
             <input
               type="number"
+              aria-label="Y軸の最小値"
               value={editYMin}
               onChange={(e) => setEditYMin(e.target.value)}
               className={`${inputCls} w-full`}
@@ -272,6 +284,7 @@ export function GraphEditPanel({
             <span className="text-[13px] text-gray-400 dark:text-neutral-600 shrink-0">–</span>
             <input
               type="number"
+              aria-label="Y軸の最大値"
               value={editYMax}
               onChange={(e) => setEditYMax(e.target.value)}
               className={`${inputCls} w-full`}
@@ -284,8 +297,9 @@ export function GraphEditPanel({
         <div className={showXControls ? "grid grid-cols-2 gap-2" : ""}>
           {showXControls && (
             <div>
-              <label className={labelCls}>X目盛り間隔</label>
+              <label htmlFor="graphedit-x-dtick" className={labelCls}>X目盛り間隔</label>
               <input
+                id="graphedit-x-dtick"
                 type="number"
                 min="0"
                 value={editXDtick}
@@ -296,8 +310,9 @@ export function GraphEditPanel({
             </div>
           )}
           <div>
-            <label className={labelCls}>Y目盛り間隔</label>
+            <label htmlFor="graphedit-y-dtick" className={labelCls}>Y目盛り間隔</label>
             <input
+              id="graphedit-y-dtick"
               type="number"
               min="0"
               value={editYDtick}
@@ -314,21 +329,22 @@ export function GraphEditPanel({
         {showValueLabelsControl && (
           <div className="flex items-center justify-between gap-2">
             <span className={`${labelCls} mb-0`}>データ値を表示</span>
-            <Toggle checked={editShowValueLabels} onChange={setEditShowValueLabels} />
+            <Toggle checked={editShowValueLabels} onChange={setEditShowValueLabels} label="データ値を表示" />
           </div>
         )}
 
         {/* 凡例トグル */}
         <div className="flex items-center justify-between gap-2">
           <span className={`${labelCls} mb-0`}>凡例を表示</span>
-          <Toggle checked={editShowLegend} onChange={setEditShowLegend} />
+          <Toggle checked={editShowLegend} onChange={setEditShowLegend} label="凡例を表示" />
         </div>
 
         {/* 凡例位置 */}
         {editShowLegend && (
           <div>
-            <label className={labelCls}>凡例の位置</label>
+            <label htmlFor="graphedit-legend-pos" className={labelCls}>凡例の位置</label>
             <select
+              id="graphedit-legend-pos"
               value={editLegendPos}
               onChange={(e) => setEditLegendPos(e.target.value as LegendPosition)}
               className={`${inputCls} w-full`}
@@ -342,8 +358,9 @@ export function GraphEditPanel({
 
         {/* 背景色 */}
         <div>
-          <label className={labelCls}>背景</label>
+          <label htmlFor="graphedit-background" className={labelCls}>背景</label>
           <select
+            id="graphedit-background"
             value={editBackground}
             onChange={(e) => setEditBackground(e.target.value as "transparent" | "white" | "cream")}
             className={`${inputCls} w-full`}

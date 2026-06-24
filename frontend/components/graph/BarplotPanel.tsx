@@ -44,15 +44,15 @@ export function BarplotPanel({
     <div className="space-y-3">
       <div className="flex gap-4 flex-wrap">
         <div>
-          <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
-          <input type="text" value={barYLabel} onChange={(e) => setBarYLabel(e.target.value)}
+          <label htmlFor="bar-y-label" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">Y軸ラベル</label>
+          <input id="bar-y-label" type="text" value={barYLabel} onChange={(e) => setBarYLabel(e.target.value)}
             className={`${inputCls} w-full sm:w-48`} placeholder="例：握力 (kg)" />
         </div>
         <div>
-          <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">エラーバー</label>
-          <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden">
+          <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">エラーバー</p>
+          <div className="flex rounded-md border border-gray-200 dark:border-neutral-800 overflow-hidden" role="group" aria-label="エラーバー">
             {([["sd", "SD"], ["sem", "SEM"], ["ci95", "95%CI"]] as const).map(([val, label]) => (
-              <button key={val} type="button" onClick={() => setBarErrorType(val)}
+              <button key={val} type="button" aria-pressed={barErrorType === val} onClick={() => setBarErrorType(val)}
                 className={`px-3 py-1.5 text-[14px] transition-colors ${barErrorType === val
                   ? "bg-white text-black" : "bg-white dark:bg-[#111] text-gray-500 dark:text-neutral-500 hover:bg-gray-50"}`}>
                 {label}
@@ -64,16 +64,16 @@ export function BarplotPanel({
       {csvMode ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
-            <select value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
+            <label htmlFor="bar-value-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">値（連続変数）の列</label>
+            <select id="bar-value-col" value={csvGroupedValueCol} onChange={(e) => setCsvGroupedValueCol(e.target.value)} className={`${inputCls} w-full`}>
               {csvCont.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
-            <select value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
+            <label htmlFor="bar-group-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1">群（カテゴリ変数）の列</label>
+            <select id="bar-group-col" value={csvGroupedGroupCol} onChange={(e) => setCsvGroupedGroupCol(e.target.value)} className={`${inputCls} w-full`}>
               {csvCat.map((c) => (
                 <option key={c.name} value={c.name}>{c.name}（有効 {c.n_valid} / 欠損 {c.n_missing}）</option>
               ))}
@@ -86,14 +86,14 @@ export function BarplotPanel({
             {barGroupTexts.map((text, i) => (
               <div key={i}>
                 <div className="flex gap-1 mb-1">
-                  <input type="text" value={barGroupNames[i]} onChange={(e) => updateBarName(i, e.target.value)}
+                  <input type="text" aria-label={`群${i + 1}の名前`} value={barGroupNames[i]} onChange={(e) => updateBarName(i, e.target.value)}
                     className="flex-1 rounded-md border border-gray-200 dark:border-neutral-800 px-2 py-1 text-[16px] bg-white dark:bg-[#111] text-gray-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-neutral-300 dark:focus:ring-neutral-700" />
                   {barGroupTexts.length > 2 && (
-                    <button type="button" onClick={() => removeBarGroup(i)}
+                    <button type="button" onClick={() => removeBarGroup(i)} aria-label={`群${i + 1}を削除`}
                       className="text-[14px] text-red-400 hover:text-red-600">✕</button>
                   )}
                 </div>
-                <textarea value={text} onChange={(e) => updateBarGroup(i, e.target.value)}
+                <textarea aria-label={`群${i + 1}の値`} value={text} onChange={(e) => updateBarGroup(i, e.target.value)}
                   rows={5} className={textareaCls} placeholder="1行1データ" />
               </div>
             ))}
