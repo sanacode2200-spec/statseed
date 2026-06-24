@@ -38,6 +38,7 @@ export default function RegressionPage() {
   const [preds, setPreds] = useState<PredState[]>([makePred()]);
   const [groupName, setGroupName] = useState("患者ID");
   const [groupText, setGroupText] = useState("");
+  const [randomSlope, setRandomSlope] = useState("");
 
   // CSV
   const [csvOutcomeCol, setCsvOutcomeCol] = useState("");
@@ -58,6 +59,16 @@ export default function RegressionPage() {
   const outcomeColumns = dataset
     ? (modelType === "logistic" || modelType === "poisson" ? numericAnalysisColumns(dataset.columns) : continuousColumns(dataset.columns))
     : [];
+
+  // ランダム傾きの選択候補（現在指定されている説明変数名）
+  const predictorNameCandidates =
+    inputMode === "csv" && dataset
+      ? continuousColumns(dataset.columns)
+          .filter((c) => csvPredCols[c.name] && c.name !== csvOutcomeCol && c.name !== csvGroupCol)
+          .map((c) => c.name)
+      : preds.map((p) => p.name.trim()).filter(Boolean);
+  // 選択中の説明変数が削除・改名された場合は未選択扱いにする
+  const effectiveRandomSlope = predictorNameCandidates.includes(randomSlope) ? randomSlope : "";
 
   useEffect(() => {
     if (!dataset) return;
@@ -136,6 +147,7 @@ export default function RegressionPage() {
             predictors,
             group_name: groupNameUsed,
             group,
+            random_slope: effectiveRandomSlope || null,
           })
         );
       } else {
@@ -193,10 +205,11 @@ export default function RegressionPage() {
       {inputMode === "csv" && dataset ? (
         <div className="space-y-3">
           <Card className="p-4">
-            <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
+            <label htmlFor="regression-outcome-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
               {isLogistic ? "アウトカム（0/1 の列）" : isPoisson ? "件数（カウントの列）" : "目的変数（連続変数）"}
             </label>
             <select
+              id="regression-outcome-col"
               value={csvOutcomeCol}
               onChange={(e) => setCsvOutcomeCol(e.target.value)}
               className={inputCls + " w-full sm:w-72"}
@@ -209,10 +222,11 @@ export default function RegressionPage() {
 
           {isMixed && (
             <Card className="p-4">
-              <label className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
+              <label htmlFor="regression-group-col" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
                 グループ（患者IDなどクラスタリングの単位）
               </label>
               <select
+                id="regression-group-col"
                 value={csvGroupCol}
                 onChange={(e) => setCsvGroupCol(e.target.value)}
                 className={inputCls + " w-full sm:w-72"}
@@ -250,8 +264,9 @@ export default function RegressionPage() {
         <div className="space-y-3">
           <Card className="p-4">
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span className="text-[14px] text-gray-500 dark:text-neutral-500 shrink-0">{isLogistic ? "アウトカム" : isPoisson ? "件数" : "目的変数"}</span>
+              <label htmlFor="regression-outcome-name" className="text-[14px] text-gray-500 dark:text-neutral-500 shrink-0">{isLogistic ? "アウトカム" : isPoisson ? "件数" : "目的変数"}</label>
               <input
+                id="regression-outcome-name"
                 className={inputCls + " flex-1 min-w-[8rem]"}
                 placeholder={isLogistic ? "アウトカム名（例：再入院）" : isPoisson ? "件数名（例：転倒回数）" : "目的変数名"}
                 value={outcomeName}
@@ -259,6 +274,7 @@ export default function RegressionPage() {
               />
             </div>
             <textarea
+              aria-label={isLogistic ? "アウトカムの値" : isPoisson ? "件数の値" : "目的変数の値"}
               className={textareaCls}
               rows={3}
               placeholder={isLogistic
@@ -274,8 +290,9 @@ export default function RegressionPage() {
           {isMixed && (
             <Card className="p-4">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="text-[14px] text-gray-500 dark:text-neutral-500 shrink-0">グループ</span>
+                <label htmlFor="regression-group-name" className="text-[14px] text-gray-500 dark:text-neutral-500 shrink-0">グループ</label>
                 <input
+                  id="regression-group-name"
                   className={inputCls + " flex-1 min-w-[8rem]"}
                   placeholder="グループ名（例：患者ID）"
                   value={groupName}
@@ -283,6 +300,7 @@ export default function RegressionPage() {
                 />
               </div>
               <textarea
+                aria-label="グループの値"
                 className={textareaCls}
                 rows={3}
                 placeholder="患者IDなどクラスタリングの単位を目的変数と同じ順番・件数で入力（改行・カンマ区切り）"
@@ -295,8 +313,9 @@ export default function RegressionPage() {
           {preds.map((p, idx) => (
             <Card key={p.id} className="p-4">
               <div className="mb-3 flex flex-wrap items-center gap-2">
-                <span className="text-[13px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</span>
+                <label htmlFor={`regression-predictor-name-${p.id}`} className="text-[13px] text-gray-400 dark:text-neutral-600 w-5">{idx + 1}</label>
                 <input
+                  id={`regression-predictor-name-${p.id}`}
                   className={inputCls + " flex-1 min-w-[8rem]"}
                   placeholder={`説明変数${idx + 1}の名前`}
                   value={p.name}
@@ -307,12 +326,14 @@ export default function RegressionPage() {
                     onClick={() => removePred(p.id)}
                     className="text-gray-300 dark:text-neutral-700 hover:text-red-400 transition-colors text-[22px] leading-none shrink-0"
                     title="削除"
+                    aria-label={`説明変数${idx + 1}を削除`}
                   >
                     ×
                   </button>
                 )}
               </div>
               <textarea
+                aria-label={`説明変数${idx + 1}の値`}
                 className={textareaCls}
                 rows={3}
                 placeholder="説明変数の数値を目的変数と同じ順番・件数で入力"
@@ -329,6 +350,28 @@ export default function RegressionPage() {
             <span className="text-[19px] leading-none">+</span> 説明変数を追加
           </button>
         </div>
+      )}
+
+      {isMixed && predictorNameCandidates.length > 0 && (
+        <Card className="p-4 mt-3">
+          <label htmlFor="regression-random-slope" className="block text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-1.5">
+            ランダム傾き（任意）
+          </label>
+          <p className="text-[13px] text-gray-400 dark:text-neutral-600 mb-2">
+            指定した説明変数の効果がグループごとに変動することを許容します（例：時間経過の効果が患者ごとに異なる）
+          </p>
+          <select
+            id="regression-random-slope"
+            value={effectiveRandomSlope}
+            onChange={(e) => setRandomSlope(e.target.value)}
+            className={inputCls + " w-full sm:w-72"}
+          >
+            <option value="">なし（ランダム切片のみ）</option>
+            {predictorNameCandidates.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+        </Card>
       )}
 
       <div className="mt-4">
@@ -543,6 +586,10 @@ function MixedModelFit({ result }: { result: MixedModelResult }) {
     ["解析に使用 / 全体", `${result.n_used} / ${result.n_total}`],
     ["欠損で除外", String(result.n_excluded)],
   ];
+  if (result.random_slope_name !== null && result.slope_var !== null) {
+    items.push([`「${result.random_slope_name}」のランダム傾き分散`, fmt(result.slope_var, 3)]);
+    items.push(["切片と傾きの相関", fmt(result.intercept_slope_corr ?? NaN, 3)]);
+  }
   return (
     <Card className="p-4">
       <p className="text-[14px] font-medium text-gray-500 dark:text-neutral-500 mb-3">モデルの当てはまり</p>

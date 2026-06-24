@@ -147,3 +147,75 @@ def test_mixed_router_422() -> None:
     with pytest.raises(HTTPException) as exc:
         router.mixed(req)
     assert exc.value.status_code == 422
+
+
+def test_mixed_unknown_random_slope_raises() -> None:
+    with pytest.raises(Exception):
+        _req(
+            outcome=_Y,
+            predictors=[{"name": "time", "values": _TIME}],
+            group=_GROUP,
+            random_slope="nonexistent",
+        )
+
+
+# ── ランダム傾き付き混合モデル（既知の答え：R lme4 と statsmodels で突合済み） ───
+# y ~ time + (1+time|group)。group=P1..P10（各6時点）。
+# R: lmer(y ~ time + (1+time|group), REML=TRUE) と完全一致を確認済み
+# (Intercept)=9.2583, time=1.6315, intercept var=6.561, slope var=0.3735,
+# residual var=0.9236, intercept-slope corr=0.40
+
+_SLOPE_Y = [
+    10.6923, 12.3006, 16.7882, 17.3393, 19.2142, 21.5092,
+    7.5188, 9.4408, 11.6198, 13.7637, 17.939, 17.0035,
+    11.6367, 12.8277, 16.0962, 18.2646, 18.3259, 19.0073,
+    11.8323, 16.0042, 18.5172, 20.6789, 21.6303, 25.1093,
+    4.2869, 6.2833, 8.9406, 10.0372, 12.4576, 13.598,
+    6.4404, 7.6636, 5.97, 8.1476, 8.7793, 9.3896,
+    10.0534, 13.9725, 12.9345, 16.9305, 15.5441, 18.9567,
+    9.2466, 10.4876, 11.3705, 12.202, 11.5644, 12.1609,
+    10.9792, 11.9228, 12.8243, 15.1979, 17.6573, 21.56,
+    7.6118, 9.7295, 9.8483, 12.0113, 14.0318, 14.3699,
+]
+_SLOPE_TIME = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0] * 10
+_SLOPE_GROUP = [f"P{i}" for i in range(1, 11) for _ in range(6)]
+
+
+def test_mixed_random_slope_known_values() -> None:
+    result = run_mixed_model(_req(
+        outcome_name="スコア",
+        outcome=_SLOPE_Y,
+        predictors=[{"name": "time", "values": _SLOPE_TIME}],
+        group_name="患者ID",
+        group=_SLOPE_GROUP,
+        random_slope="time",
+    ))
+    intercept = _coef(result, "（切片）")
+    time_coef = _coef(result, "time")
+
+    assert intercept.coef == pytest.approx(9.25826, abs=1e-3)
+    assert intercept.std_err == pytest.approx(0.83930, abs=1e-3)
+    assert time_coef.coef == pytest.approx(1.63151, abs=1e-3)
+    assert time_coef.std_err == pytest.approx(0.20645, abs=1e-3)
+
+    assert result.group_var == pytest.approx(6.56054, abs=1e-3)
+    assert result.resid_var == pytest.approx(0.92360, abs=1e-3)
+    assert result.random_slope_name == "time"
+    assert result.slope_var == pytest.approx(0.37345, abs=1e-3)
+    assert result.intercept_slope_corr == pytest.approx(0.4003, abs=1e-3)
+    assert result.converged is True
+    assert result.n_groups == 10
+    assert result.n_used == 60
+    assert "ランダム傾き" in result.interpretation
+
+
+def test_mixed_random_slope_too_few_per_group_raises() -> None:
+    # 5グループ×2件のみ → ランダム傾きの推定に必要な「いずれかのグループに3件以上」を満たさない
+    group = [g for g in ("G1", "G2", "G3", "G4", "G5") for _ in range(2)]
+    with pytest.raises(ValueError):
+        run_mixed_model(_req(
+            outcome=[1.0, 2.0, 3.0, 4.0, 2.0, 3.0, 4.0, 5.0, 3.0, 4.0],
+            predictors=[{"name": "time", "values": [0.0, 1.0] * 5}],
+            group=group,
+            random_slope="time",
+        ))

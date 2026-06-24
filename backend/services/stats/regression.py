@@ -506,7 +506,7 @@ def _listwise_rows_with_group(outcome, predictors, group):
 
 
 def run_mixed_model(request: MixedModelRequest) -> MixedModelResult:
-    """ランダム切片付き線形混合モデル（LMM）。
+    """ランダム切片（+ オプションでランダム傾き）付き線形混合モデル（LMM）。
 
     患者IDなどのグループ単位の繰り返し測定・クラスタリングを調整したうえで、
     固定効果（説明変数）の影響を推定する。計算は statsmodels.MixedLM を直接利用し、
@@ -518,6 +518,12 @@ def run_mixed_model(request: MixedModelRequest) -> MixedModelResult:
 
     n_total = len(request.outcome)
     k = len(request.predictors)
+    has_slope = request.random_slope is not None
+    slope_idx = (
+        next(i for i, p in enumerate(request.predictors) if p.name == request.random_slope)
+        if has_slope
+        else None
+    )
 
     y_list, x_rows, g_list = _listwise_rows_with_group(
         request.outcome, request.predictors, request.group
@@ -540,10 +546,15 @@ def run_mixed_model(request: MixedModelRequest) -> MixedModelResult:
             f"すべてのグループで観測が1件のみです。ランダム切片を推定するには、"
             f"いずれかのグループに2件以上の観測が必要です。"
         )
-    if n_used < k + 3:
+    min_n = k + 5 if has_slope else k + 3
+    if n_used < min_n:
         raise ValueError(
             f"有効データ数({n_used}件)が説明変数の数({k}個)に対して不足しています。"
-            f"少なくとも{k + 3}件必要です。"
+            f"少なくとも{min_n}件必要です。"
+        )
+    if has_slope and max(group_counts.values()) <= 2:
+        raise ValueError(
+            "ランダム傾きを推定するには、いずれかのグループに3件以上の観測が必要です。"
         )
 
     y = np.asarray(y_list, dtype=float)
@@ -554,8 +565,11 @@ def run_mixed_model(request: MixedModelRequest) -> MixedModelResult:
             raise ValueError(f"説明変数「{p.name}」の値がすべて同じため回帰できません")
 
     design = sm.add_constant(x, has_constant="add")
+    exog_re = (
+        sm.add_constant(x[:, [slope_idx]], has_constant="add") if has_slope else None
+    )
     try:
-        model = sm.MixedLM(y, design, groups=g_list)
+        model = sm.MixedLM(y, design, groups=g_list, exog_re=exog_re)
         fit = model.fit(reml=True)
     except Exception:
         raise ValueError(
@@ -563,7 +577,6 @@ def run_mixed_model(request: MixedModelRequest) -> MixedModelResult:
             "グループ・データを確認してください。"
         )
 
-    n_fe = design.shape[1]
     fe_params = np.asarray(fit.fe_params, dtype=float)
     fe_bse = np.asarray(fit.bse_fe, dtype=float)
     if not fit.converged or not (
@@ -595,8 +608,16 @@ def run_mixed_model(request: MixedModelRequest) -> MixedModelResult:
     resid_var = float(fit.scale)
     icc = group_var / (group_var + resid_var) if (group_var + resid_var) > 0 else 0.0
 
+    slope_var: float | None = None
+    intercept_slope_corr: float | None = None
+    if has_slope:
+        slope_var = float(fit.cov_re[1][1])
+        denom = math.sqrt(group_var * slope_var)
+        intercept_slope_corr = float(fit.cov_re[0][1] / denom) if denom > 0 else 0.0
+
     interpretation = _interpret_mixed(
-        request, coefficients, n_used, n_excluded, n_groups, group_var, resid_var, icc
+        request, coefficients, n_used, n_excluded, n_groups, group_var, resid_var, icc,
+        slope_var, intercept_slope_corr,
     )
 
     return MixedModelResult(
@@ -612,6 +633,9 @@ def run_mixed_model(request: MixedModelRequest) -> MixedModelResult:
         icc=icc,
         log_likelihood=float(fit.llf),
         converged=bool(fit.converged),
+        random_slope_name=request.random_slope,
+        slope_var=slope_var,
+        intercept_slope_corr=intercept_slope_corr,
         interpretation=interpretation,
     )
 
@@ -625,20 +649,25 @@ def _interpret_mixed(
     group_var: float,
     resid_var: float,
     icc: float,
+    slope_var: float | None,
+    intercept_slope_corr: float | None,
 ) -> str:
     lines: list[str] = []
     k = len(request.predictors)
+    slope_phrase = (
+        f"＋「{request.random_slope}」のランダム傾き" if request.random_slope else ""
+    )
     if k == 1:
         lines.append(
             f"{request.outcome_name}を「{request.predictors[0].name}」で予測し、"
             f"「{request.group_name}」単位の繰り返し測定・クラスタリングを"
-            f"ランダム切片で調整した混合効果モデルです。"
+            f"ランダム切片{slope_phrase}で調整した混合効果モデルです。"
         )
     else:
         lines.append(
             f"{request.outcome_name}を{k}個の説明変数で予測し、"
             f"「{request.group_name}」単位の繰り返し測定・クラスタリングを"
-            f"ランダム切片で調整した混合効果モデルです。"
+            f"ランダム切片{slope_phrase}で調整した混合効果モデルです。"
             f"各固定効果は他の変数を一定としたときの独立した影響を表します。"
         )
 
@@ -648,6 +677,12 @@ def _interpret_mixed(
         f"ICCは{request.outcome_name}の全体のばらつきのうち"
         f"{request.group_name}間の違いで説明できる割合を表します。"
     )
+
+    if slope_var is not None and intercept_slope_corr is not None:
+        lines.append(
+            f"「{request.random_slope}」の効果も{request.group_name}間で異なり、"
+            f"その傾きの分散 = {slope_var:.3g}、切片と傾きの相関 = {intercept_slope_corr:.3f}。"
+        )
 
     sig = [c for c in coefficients if c.name != _INTERCEPT_LABEL and c.p_value < 0.05]
     if sig:

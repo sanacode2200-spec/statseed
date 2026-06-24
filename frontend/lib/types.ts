@@ -337,6 +337,7 @@ export interface MixedModelRequest {
   predictors: RegressionPredictor[];
   group_name?: string;
   group: (string | null)[];
+  random_slope?: string | null;
 }
 
 export interface MixedCoefficient {
@@ -362,6 +363,9 @@ export interface MixedModelResult {
   icc: number;
   log_likelihood: number;
   converged: boolean;
+  random_slope_name: string | null;
+  slope_var: number | null;
+  intercept_slope_corr: number | null;
   interpretation: string;
 }
 

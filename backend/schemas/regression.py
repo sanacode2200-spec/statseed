@@ -161,6 +161,8 @@ class MixedModelRequest(BaseModel):
     group_name: str = Field(default="グループ", min_length=1, max_length=80)
     # 患者IDなどクラスタリングの単位（ランダム切片）
     group: list[str | None] = Field(min_length=3)
+    # 指定した説明変数についてランダム傾き（群ごとに傾きが変動）も推定する
+    random_slope: str | None = Field(default=None, max_length=80)
 
     @model_validator(mode="after")
     def check_request(self) -> "MixedModelRequest":
@@ -180,6 +182,10 @@ class MixedModelRequest(BaseModel):
             names.append(p.name)
         if len(set(names)) != len(names):
             raise ValueError("説明変数名が重複しています")
+        if self.random_slope is not None and self.random_slope not in names:
+            raise ValueError(
+                f"ランダム傾きに指定された「{self.random_slope}」が説明変数に見つかりません"
+            )
         return self
 
 
@@ -206,4 +212,8 @@ class MixedModelResult(BaseModel):
     icc: float  # 群内相関係数 = group_var / (group_var + resid_var)
     log_likelihood: float
     converged: bool
+    # ランダム傾きを指定した場合のみ値が入る
+    random_slope_name: str | None = None
+    slope_var: float | None = None  # ランダム傾きの分散
+    intercept_slope_corr: float | None = None  # 切片と傾きの相関
     interpretation: str
