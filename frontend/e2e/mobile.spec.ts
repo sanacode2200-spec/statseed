@@ -16,6 +16,21 @@ test("モバイルナビを開き、遷移後に閉じられる", async ({ page 
   await expect(openButton).toHaveAttribute("aria-expanded", "false");
 });
 
+test("モバイルナビで現在のページを選んでも閉じられる", async ({ page }) => {
+  await page.goto("/dashboard/descriptive");
+
+  const openButton = page.getByRole("button", { name: "メニューを開く" });
+  await openButton.click();
+
+  const drawer = page.getByRole("dialog", { name: "ナビゲーション" });
+  await expect(drawer).toBeVisible();
+
+  await drawer.getByRole("link", { name: "データを要約" }).click();
+  await expect(page).toHaveURL(/\/dashboard\/descriptive$/);
+  await expect(drawer).not.toBeVisible();
+  await expect(openButton).toHaveAttribute("aria-expanded", "false");
+});
+
 test("モバイルヘッダーからテーマを切り替えられる", async ({ page }) => {
   await page.goto("/dashboard");
 

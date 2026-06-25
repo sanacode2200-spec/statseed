@@ -96,7 +96,7 @@ export function Sidebar() {
     return exact ? pathname === href : pathname.startsWith(href);
   }
 
-  const renderSidebar = () => (
+  const renderSidebar = ({ onNavigate }: { onNavigate?: () => void } = {}) => (
     <aside className="w-[240px] md:w-[200px] shrink-0 flex flex-col h-full md:h-screen md:sticky md:top-0
       bg-white dark:bg-black
       border-r border-gray-200 dark:border-neutral-900">
@@ -104,6 +104,7 @@ export function Sidebar() {
       {/* ロゴ / プロダクト名 */}
       <Link
         href="/dashboard"
+        onClick={onNavigate}
         className="flex items-center gap-2 px-5 py-3 border-b border-gray-100 dark:border-neutral-900
           hover:bg-gray-50 dark:hover:bg-neutral-950 transition-colors"
       >
@@ -129,7 +130,7 @@ export function Sidebar() {
           <span className="text-emerald-500 dark:text-emerald-400 shrink-0">
             <DotIcon />
           </span>
-          <Link href="/dashboard/data" className="min-w-0 flex-1 truncate text-gray-600 dark:text-neutral-400 hover:underline">
+          <Link href="/dashboard/data" onClick={onNavigate} className="min-w-0 flex-1 truncate text-gray-600 dark:text-neutral-400 hover:underline">
             {dataset.filename}
           </Link>
           <span
@@ -166,6 +167,7 @@ export function Sidebar() {
                   <Link
                     key={href}
                     href={href}
+                    onClick={onNavigate}
                     className={`flex items-center gap-2 px-2 py-[6px] rounded-md text-[16px] transition-colors ${
                       active
                         ? "bg-neutral-800 text-white font-medium"
@@ -229,7 +231,7 @@ export function Sidebar() {
             aria-label="ナビゲーション"
             className="relative h-full w-[min(82vw,280px)] shadow-xl"
           >
-            {renderSidebar()}
+            {renderSidebar({ onNavigate: () => setMobileOpen(false) })}
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
