@@ -149,8 +149,8 @@ export function BoxplotPanel({
 
       <div className="rounded-lg border border-gray-200 dark:border-neutral-800 p-3 space-y-3">
         <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[14px] font-medium text-gray-600 dark:text-neutral-400">表示スタイル</span>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-2">
+            <span className="shrink-0 whitespace-nowrap text-[14px] font-medium text-gray-600 dark:text-neutral-400">表示スタイル</span>
             <span className="text-[13px] text-gray-400 dark:text-neutral-600">個別値の点サイズはデータ数に合わせて調整されます</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">

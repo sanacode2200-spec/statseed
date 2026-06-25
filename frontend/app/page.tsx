@@ -134,7 +134,7 @@ export default function LandingPage() {
         <section className="px-5 py-24 sm:py-32">
           <div className="mx-auto max-w-6xl rounded-[28px] bg-black px-6 py-20 text-center text-white dark:bg-white dark:text-black sm:py-24">
             <p className="text-[11px] font-semibold tracking-[0.18em] text-neutral-500">START YOUR ANALYSIS</p>
-            <h2 className="mt-5 text-[34px] font-bold tracking-[-0.04em] sm:text-[52px]">そのデータを、根拠に変えよう。</h2>
+            <h2 className="mt-5 text-[34px] font-bold tracking-[-0.04em] dark:text-black sm:text-[52px]">そのデータを、根拠に変えよう。</h2>
             <Link href="/dashboard/data" className="mt-8 inline-block rounded-full bg-white px-7 py-3.5 text-[14px] font-semibold text-black dark:bg-black dark:text-white">
               データを読み込んで始める
             </Link>

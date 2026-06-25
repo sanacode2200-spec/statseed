@@ -1022,7 +1022,7 @@ export default function GraphPage() {
 
           {/* グラフ + 編集パネル（デスクトップ横並び） */}
           <div className="flex flex-col lg:flex-row gap-5">
-            <div className="flex-1 min-w-0 self-start lg:sticky lg:top-6">
+            <div className="flex-1 min-w-0 lg:self-start lg:sticky lg:top-6">
               {/* 編集(Plotly) ⇄ 最終出力(matplotlib) 切替 */}
               <div className="mb-3 flex justify-center">
                 <SegmentedControl
