@@ -87,6 +87,40 @@ def test_boxplot_multigroup_comparison_uses_adjusted_pairwise_results() -> None:
     assert result.omnibus_p_value is not None
 
 
+def test_boxplot_three_groups_shows_every_pairwise_p_value_even_when_none_significant() -> None:
+    # 3群でどのペアも有意でなくても、全体検定p値ではなくペアごとのp値を表示する
+    request = BoxplotRequest(
+        groups=[[5, 6, 7, 6, 5], [6, 5, 7, 6, 6], [5, 7, 6, 5, 6]],
+        group_names=["通常ケア", "運動療法", "複合介入"],
+        show_comparison=True,
+        comparison_method="parametric",
+    )
+    fig = boxplot_figure(request)
+
+    # 3ペア分のブラケット（各3本の線）= 9 shapes
+    assert len(fig.layout["shapes"]) == 9
+    texts = [a["text"] for a in fig.layout["annotations"]]
+    assert len(texts) == 3
+    assert all(t.startswith("p ") for t in texts)
+    assert not any("全体" in t for t in texts)
+
+
+def test_boxplot_four_groups_falls_back_to_overall_p_value_when_none_significant() -> None:
+    # 4群以上はペアが多すぎるため、有意ペアが無ければ従来どおり全体検定p値にフォールバック
+    request = BoxplotRequest(
+        groups=[[5, 6, 7, 6, 5], [6, 5, 7, 6, 6], [5, 7, 6, 5, 6], [6, 6, 5, 7, 5]],
+        group_names=["A", "B", "C", "D"],
+        show_comparison=True,
+        comparison_method="parametric",
+    )
+    fig = boxplot_figure(request)
+
+    assert len(fig.layout["shapes"]) == 3  # 全体ブラケット1本のみ
+    texts = [a["text"] for a in fig.layout["annotations"]]
+    assert len(texts) == 1
+    assert "全体" in texts[0]
+
+
 def test_graph_request_rejects_non_finite_values() -> None:
     with pytest.raises(ValidationError):
         HistogramRequest(values=[1, 2, math.inf])

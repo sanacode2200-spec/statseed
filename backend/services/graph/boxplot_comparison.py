@@ -97,21 +97,28 @@ def p_value_text(p_value: float) -> str:
 def annotated_pairs(result: BoxplotComparisonResult | None) -> list[BoxplotPairComparison]:
     if result is None:
         return []
+    # ペア数が少ない（2群=1ペア / 3群=3ペア）ときは、有意・非有意を問わず
+    # 全ペアのp値をブラケット表示する。論文では通常このペアごとの比較が必要なため。
+    if len(result.pairs) <= 3:
+        return list(result.pairs)
+    # 4群以上はペアが多すぎてブラケットが重なるため、有意なペアを優先表示（最大3）。
+    # 有意ペアが無い場合は overall_fallback_label が全体検定p値を代わりに示す。
     significant = sorted(
         (pair for pair in result.pairs if pair.significant),
         key=lambda pair: pair.p_value,
     )
-    if significant:
-        return significant[:3]
-    return result.pairs[:1] if len(result.pairs) == 1 else []
+    return significant[:3]
 
 
 def overall_fallback_label(result: BoxplotComparisonResult | None) -> str | None:
-    """3群以上でどのペアも有意でない場合、全体検定のp値をグラフ上に示すための代替ラベル。"""
+    """4群以上でどのペアも有意でなくブラケットを表示しないとき、全体検定のp値を代わりに示すラベル。
+
+    3群以下では annotated_pairs が全ペアのp値を返すため、このフォールバックは使われない。
+    """
     if (
         result is None
         or result.omnibus_p_value is None
-        or len(result.pairs) <= 1
+        or len(result.pairs) <= 3
         or any(pair.significant for pair in result.pairs)
     ):
         return None
