@@ -356,6 +356,7 @@ STATSEED_PATH=$(pwd) bash verify/run_all.sh
 - [x] **レスポンシブUI** — モバイルヘッダー・ドロワーナビ、フォーム縦積み、結果カード・操作行の折り返し、表の横スクロール対応。モバイル実機相当の幅（390px）でPlaywright監査を実施し、グラフ作成ページでPlotlyグラフ幅が140pxに潰れる不具合（`flex-col`時に`self-start`が横幅を縮めていた→`lg:self-start`化）・ランディングCTA見出しがダークモードで低コントラストになる不具合（`.dark h2`が`dark:text-black`継承を上書き→直接指定で修正）・箱ひげ図パネルの「表示スタイル」ラベルが単語途中で改行される不具合（`flex-wrap`+`shrink-0`で修正）を発見・修正済み。モバイルドロワーはページ遷移だけでなく、現在表示中ページのリンク再タップ・ロゴ・読み込み中データリンクでも閉じる
 - [x] **主要ワークフローE2Eテスト** — Playwrightで手入力記述統計、CSV読込 → 対応あり検定 → グラフ引き継ぎ、データ読み込みドロップゾーンのキーボード操作、モバイルナビ（別ページ遷移・同一ページリンク・テーマ切替）を検証
 - [x] **アクセシビリティ改善（label/input関連付け）** — 全ダッシュボードページ・グラフ編集パネルのフォーム`input`/`select`/`textarea`に`label htmlFor`/`id`または`aria-label`を付与。トグルボタン群に`role="group"`+`aria-pressed`、データ読み込みドロップゾーンにキーボード操作（`role="button"`+`tabIndex`+`Enter/Space`ハンドラ）を追加
+- [x] **完全マニュアル自動生成** — Playwrightで本番環境を操作し、トップ画面〜全機能・全10検定（Welch/対応t/Mann-Whitney/Wilcoxon/χ²/Fisher/Pearson/Spearman/ANOVA/重回帰）・グラフ編集（タイトル/X・Y軸ラベル/軸範囲/凡例表示・位置/直接編集）・全グラフ種別・出力（PNG/SVG/PDF・実寸プリセット）・図注/方法文を網羅したスクショ（`screenshots/manual/`、deviceScaleFactor 2で漫画・note転用可）とMarkdownマニュアル（`docs/manual/00〜12`、各ページ「いつ使うか／手順／結果の読み方／つまずき」）を自動生成。`scripts/capture-full-manual.ts`（撮影）+ `scripts/generate-manual.ts`（Markdown生成）。凡例デモは凡例を持つKM曲線で撮影する`scripts/capture-legend-fix.ts`で補完。サンプルは`verify/data/`・`sample-data/`を使用
 
 ## 次の開発候補
 
